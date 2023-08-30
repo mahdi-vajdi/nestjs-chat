@@ -19,6 +19,10 @@ export class UsersService {
     });
   }
 
+  async findOne(username: string) {
+    return this.usersRepository.findOne({ username });
+  }
+
   private async validateCreateUserDto(createUserDto: CreateUserDto) {
     try {
       await this.usersRepository.findOne({ username: createUserDto.username });

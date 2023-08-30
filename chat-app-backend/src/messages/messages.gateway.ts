@@ -8,17 +8,25 @@ import {
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { Server, Socket } from 'socket.io';
+import { UseGuards } from '@nestjs/common';
+import { SocketAuthMiddleware } from 'src/auth/ws-auth.middleware';
+import { JwtService } from '@nestjs/jwt';
+import { WsJwtAuthGuard } from 'src/auth/guards/ws-jwt.guard';
 
-@WebSocketGateway({
-  cors: {
-    origin: '*',
-  },
-})
+@WebSocketGateway({ namespace: 'messages' })
+@UseGuards(WsJwtAuthGuard)
 export class MessagesGateway {
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly messagesService: MessagesService) {}
+  constructor(
+    private readonly messagesService: MessagesService,
+    private readonly jwtService: JwtService,
+  ) {}
+
+  afterInit(client: Socket) {
+    client.use(SocketAuthMiddleware(this.jwtService) as any);
+  }
 
   @SubscribeMessage('createMessage')
   create(
@@ -26,6 +34,7 @@ export class MessagesGateway {
     @ConnectedSocket() client: Socket,
   ) {
     const message = this.messagesService.create(createMessageDto, client.id);
+    console.log('message: ' + message);
     this.server.emit('message', message);
     return message;
   }
