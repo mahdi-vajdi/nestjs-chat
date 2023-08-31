@@ -6,7 +6,7 @@ import { ChatsRepository } from './chats.repository';
 import { UsersModule } from 'src/users/users.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ChatDocument, ChatSchema } from './models/chat.schema';
-import { redisModule } from 'src/redis.config';
+import { redisModule } from 'src/redis/redis.config';
 
 @Module({
   imports: [

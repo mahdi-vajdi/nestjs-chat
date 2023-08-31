@@ -6,7 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MessageDocument, MessageSchema } from './models/message.schema';
 import { MessagesRepository } from './messages.repository';
 import { UsersModule } from 'src/users/users.module';
-import { redisModule } from 'src/redis.config';
+import { redisModule } from 'src/redis/redis.config';
 
 @Module({
   imports: [
