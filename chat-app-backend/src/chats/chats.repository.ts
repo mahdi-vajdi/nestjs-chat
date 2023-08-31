@@ -19,4 +19,8 @@ export class ChatsRepository {
     });
     return (await createdDocument.save()).toJSON() as unknown as ChatDocument;
   }
+
+  async findAllChats(userId: string) {
+    return this.chatModel.find({ $or: [{ user1: userId }, { user2: userId }] });
+  }
 }

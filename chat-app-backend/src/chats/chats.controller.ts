@@ -26,8 +26,8 @@ export class ChatsController {
   }
 
   @Get()
-  findAll() {
-    return this.chatsService.findAll();
+  findAll(@Req() req: Request) {
+    return this.chatsService.findAllChats(req.user as UserDocument);
   }
 
   @Get(':id')

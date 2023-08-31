@@ -21,8 +21,8 @@ export class ChatsService {
     });
   }
 
-  findAll() {
-    return `This action returns all chats`;
+  async findAllChats(user: UserDocument) {
+    return this.chatsRepository.findAllChats(user._id.toHexString());
   }
 
   findOne(id: number) {
