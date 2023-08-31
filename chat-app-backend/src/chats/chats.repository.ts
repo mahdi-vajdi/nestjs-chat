@@ -2,7 +2,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ChatDocument } from './models/chat.schema';
 import { Model, Types } from 'mongoose';
 import Redis from 'ioredis';
-import { IORedisKey } from 'src/redis.module';
+import { IORedisKey } from 'src/redis/redis.module';
 import { Inject } from '@nestjs/common';
 
 export class ChatsRepository {

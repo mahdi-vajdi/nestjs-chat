@@ -2,8 +2,9 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { MessageDocument } from './models/message.schema';
-import { IORedisKey } from 'src/redis.module';
+import { IORedisKey } from 'src/redis/redis.module';
 import Redis from 'ioredis';
+import { redisUserSocketId } from 'src/redis/redis.keys';
 
 @Injectable()
 export class MessagesRepository {
@@ -16,15 +17,15 @@ export class MessagesRepository {
   ) {}
 
   async onSocketConnected(username: string, socketId: string) {
-    await this.redisClient.set(`users:socket#${username}`, socketId);
+    await this.redisClient.set(redisUserSocketId(username), socketId);
   }
 
   async onSocketDisconnected(username: string) {
-    await this.redisClient.del(`users:socket#${username}`);
+    await this.redisClient.del(redisUserSocketId(username));
   }
 
   async getSocket(username: string) {
-    return this.redisClient.get(`users:socket#${username}`);
+    return this.redisClient.get(redisUserSocketId(username));
   }
 
   async createMessage(message: Omit<MessageDocument, '_id'>) {
