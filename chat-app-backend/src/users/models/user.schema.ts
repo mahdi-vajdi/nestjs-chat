@@ -9,6 +9,9 @@ export class UserDocument {
   _id: Types.ObjectId;
 
   @Prop()
+  createdAt: Date;
+
+  @Prop()
   username: string;
 
   @Prop()
