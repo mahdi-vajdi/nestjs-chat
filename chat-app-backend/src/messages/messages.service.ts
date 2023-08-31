@@ -2,12 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { MessagesRepository } from './messages.repository';
 import { UsersService } from 'src/users/users.service';
+import { Types } from 'mongoose';
+import { MessageDocument } from './models/message.schema';
+import { ResponseMessage } from './interfaces/response-message.interface';
+import { ChatsService } from 'src/chats/chats.service';
 
 @Injectable()
 export class MessagesService {
   constructor(
     private readonly messagesRepository: MessagesRepository,
     private readonly usersService: UsersService,
+    private readonly chatService: ChatsService,
   ) {}
 
   async onSocketConnected(username: string, clientId: string) {
@@ -22,31 +27,37 @@ export class MessagesService {
     return this.messagesRepository.getSocket(username);
   }
 
-  async create({ text, receiver, chatId }: CreateMessageDto, username: string) {
-    const sender = await this.usersService.findOne(username);
-    const receiverDoc = await this.usersService.findOne(receiver);
-    return await this.messagesRepository.createMessage({
+  async createMessage(
+    { text, receiver, chatId }: CreateMessageDto,
+    currentUsername: string,
+  ): Promise<ResponseMessage> {
+    const chat = await this.chatService.findChatById(chatId);
+    const senderUser = await this.usersService.findOne(currentUsername);
+    const receiverUser = await this.usersService.findOne(receiver);
+
+    const message = await this.messagesRepository.createMessage({
       timestamp: new Date(),
-      chat: chatId,
+      chat,
       text,
-      sender: sender,
-      receiver: receiverDoc,
+      sender: senderUser,
+      receiver: receiverUser,
     });
+
+    return this.deserialize(message);
   }
 
-  async getAllMessagesForChat(chatId: string) {
-    const messages = await this.messagesRepository.getAllMessagesForChat(
-      chatId,
-    );
-    console.log(messages);
+  async findAllMessages(chatId: Types.ObjectId) {
+    const messages = await this.messagesRepository.findAllMessages(chatId);
+    return messages.map((message) => this.deserialize(message));
   }
 
-  // identify(name: string, clientId: string) {
-  //   this.clientToUser[clientId] = name;
-  //   return Object.values(this.clientToUser);
-  // }
-
-  // getClientName(clientId: string) {
-  //   return this.clientToUser[clientId];
-  // }
+  private deserialize(message: MessageDocument): ResponseMessage {
+    return {
+      messageId: message._id.toHexString(),
+      timestamp: message.timestamp,
+      chatId: message.chat._id.toHexString(),
+      sender: message.sender.username,
+      receiver: message.receiver.username,
+    };
+  }
 }

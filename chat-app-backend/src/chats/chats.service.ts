@@ -41,6 +41,10 @@ export class ChatsService {
     return chats.map((chat) => this.deserialize(chat));
   }
 
+  async findChatById(chatId: string) {
+    return await this.chatsRepository.findChatById(chatId);
+  }
+
   private deserialize(document: ChatDocument): ResponseChat {
     return {
       chatId: document._id.toHexString(),

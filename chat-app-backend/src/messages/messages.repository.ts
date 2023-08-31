@@ -41,11 +41,7 @@ export class MessagesRepository {
     ).toJSON() as unknown as MessageDocument;
   }
 
-  async find(filterQuery: FilterQuery<MessageDocument>) {
-    return this.messageModel.find(filterQuery, {}, { lean: true });
-  }
-
-  async getAllMessagesForChat(chatId: string) {
-    this.messageModel.find({ chat: chatId }, {}, { lean: true });
+  async findAllMessages(chatId: Types.ObjectId) {
+    return this.messageModel.find({ chat: chatId }, {}, { lean: true });
   }
 }

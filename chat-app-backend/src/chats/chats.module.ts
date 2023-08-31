@@ -19,5 +19,6 @@ import { redisModule } from 'src/redis/redis.config';
   ],
   controllers: [ChatsController],
   providers: [ChatsService, ChatsRepository],
+  exports: [ChatsService],
 })
 export class ChatsModule {}

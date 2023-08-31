@@ -17,6 +17,7 @@ import {
 } from 'src/auth/ws-auth.middleware';
 import { JwtService } from '@nestjs/jwt';
 import { WsJwtAuthGuard } from 'src/auth/guards/ws-jwt.guard';
+import { ResponseMessage } from './interfaces/response-message.interface';
 
 @WebSocketGateway({ namespace: 'messages' })
 @UseGuards(WsJwtAuthGuard)
@@ -48,16 +49,16 @@ export class MessagesGateway
   }
 
   @SubscribeMessage('createMessage')
-  async create(
+  async createMessage(
     @MessageBody() createMessageDto: CreateMessageDto,
     @ConnectedSocket() client: SocketWithUser,
   ) {
-    const message = await this.messagesService.create(
+    const message: ResponseMessage = await this.messagesService.createMessage(
       createMessageDto,
       client.username,
     );
 
-    // see if receiver is connected and get its socket id
+    // See if receiver is connected and get its socket id
     const receiverSocket = await this.messagesService.getSocket(
       createMessageDto.receiver,
     );

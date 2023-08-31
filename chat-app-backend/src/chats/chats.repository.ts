@@ -35,4 +35,8 @@ export class ChatsRepository {
       ],
     });
   }
+
+  async findChatById(chatId: string) {
+    return this.chatModel.findById(chatId);
+  }
 }

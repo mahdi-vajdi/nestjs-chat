@@ -10,11 +10,13 @@ import {
 import { MessagesRepository } from './messages.repository';
 import { UsersModule } from 'src/users/users.module';
 import { redisModule } from 'src/redis/redis.config';
+import { ChatsModule } from 'src/chats/chats.module';
 
 @Module({
   imports: [
     AuthModule,
     UsersModule,
+    ChatsModule,
     MongooseModule.forFeature([
       {
         name: MESSAGE_COLLECTION_NAME,
