@@ -3,7 +3,10 @@ import { MessagesService } from './messages.service';
 import { MessagesGateway } from './messages.gateway';
 import { AuthModule } from 'src/auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
-import { MessageDocument, MessageSchema } from './models/message.schema';
+import {
+  MESSAGE_COLLECTION_NAME,
+  MessageSchema,
+} from './models/message.schema';
 import { MessagesRepository } from './messages.repository';
 import { UsersModule } from 'src/users/users.module';
 import { redisModule } from 'src/redis/redis.config';
@@ -14,7 +17,7 @@ import { redisModule } from 'src/redis/redis.config';
     UsersModule,
     MongooseModule.forFeature([
       {
-        name: MessageDocument.name,
+        name: MESSAGE_COLLECTION_NAME,
         schema: MessageSchema,
       },
     ]),

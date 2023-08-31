@@ -19,17 +19,13 @@ export class ChatsController {
   constructor(private readonly chatsService: ChatsService) {}
 
   @Post()
-  create(@Req() req: Request, @Body() createChatDto: CreateChatDto) {
+  async create(@Req() req: Request, @Body() createChatDto: CreateChatDto) {
+    console.log('user doc', req.user);
     return this.chatsService.create(createChatDto, req.user as UserDocument);
   }
 
   @Get()
-  findAll(@Req() req: Request) {
+  async findAll(@Req() req: Request) {
     return this.chatsService.findAllChats(req.user as UserDocument);
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.chatsService.findOne(+id);
   }
 }

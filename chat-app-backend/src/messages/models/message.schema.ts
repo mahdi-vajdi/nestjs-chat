@@ -1,7 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { SchemaTypes, Types } from 'mongoose';
+import mongoose, { SchemaTypes, Types } from 'mongoose';
+import { UserDocument } from 'src/users/models/user.schema';
 
-@Schema({ versionKey: false })
+export const MESSAGE_COLLECTION_NAME = 'messages';
+
+@Schema({ collection: MESSAGE_COLLECTION_NAME, versionKey: false })
 export class MessageDocument {
   @Prop({ type: SchemaTypes.ObjectId })
   _id: Types.ObjectId;
@@ -10,13 +13,24 @@ export class MessageDocument {
   timestamp: Date;
 
   @Prop()
+  chat: string;
+
+  @Prop()
   text: string;
 
-  @Prop()
-  sender: string;
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: UserDocument.name,
+  })
+  sender: UserDocument;
 
-  @Prop()
-  receiver: string;
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: UserDocument.name,
+  })
+  receiver: UserDocument;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(MessageDocument);

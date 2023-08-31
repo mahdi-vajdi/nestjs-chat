@@ -8,7 +8,6 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Observable } from 'rxjs';
 import { Socket } from 'socket.io';
-import { UsersService } from 'src/users/users.service';
 import { AuthService } from '../auth.service';
 
 @Injectable()
@@ -27,7 +26,7 @@ export class WsJwtAuthGuard implements CanActivate {
     // if we use a frontend, it's suggested that we use: 'client.handshake.auth' as a statndard
     const { authorization } = client.handshake.headers;
 
-    Logger.log('ws-jwt-auth-guard', { authorization });
+    Logger.log(`ws-jwt-auth-guard: ${{ authorization }}`);
 
     WsJwtAuthGuard.validateToken(client, this.jwtService);
     // const user = this.authService.getUserByUsername(payload.username);

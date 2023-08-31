@@ -1,7 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
-import { MessageDocument } from './models/message.schema';
+import {
+  MESSAGE_COLLECTION_NAME,
+  MessageDocument,
+} from './models/message.schema';
 import { IORedisKey } from 'src/redis/redis.module';
 import Redis from 'ioredis';
 import { redisUserSocketId } from 'src/redis/redis.keys';
@@ -11,7 +14,7 @@ export class MessagesRepository {
   protected readonly logger: Logger = new Logger(MessagesRepository.name);
 
   constructor(
-    @InjectModel(MessageDocument.name)
+    @InjectModel(MESSAGE_COLLECTION_NAME)
     private readonly messageModel: Model<MessageDocument>,
     @Inject(IORedisKey) private readonly redisClient: Redis,
   ) {}
@@ -39,6 +42,10 @@ export class MessagesRepository {
   }
 
   async find(filterQuery: FilterQuery<MessageDocument>) {
-    return this.messageModel.find(filterQuery);
+    return this.messageModel.find(filterQuery, {}, { lean: true });
+  }
+
+  async getAllMessagesForChat(chatId: string) {
+    this.messageModel.find({ chat: chatId }, {}, { lean: true });
   }
 }

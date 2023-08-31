@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { UseGuards } from '@nestjs/common';
 import {
   SocketAuthMiddleware,
@@ -17,7 +17,6 @@ import {
 } from 'src/auth/ws-auth.middleware';
 import { JwtService } from '@nestjs/jwt';
 import { WsJwtAuthGuard } from 'src/auth/guards/ws-jwt.guard';
-import { UserDocument } from 'src/users/models/user.schema';
 
 @WebSocketGateway({ namespace: 'messages' })
 @UseGuards(WsJwtAuthGuard)

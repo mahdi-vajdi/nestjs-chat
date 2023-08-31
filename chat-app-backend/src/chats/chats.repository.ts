@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/mongoose';
-import { ChatDocument } from './models/chat.schema';
+import { CHAT_COLLECTION_NAME, ChatDocument } from './models/chat.schema';
 import { Model, Types } from 'mongoose';
 import Redis from 'ioredis';
 import { IORedisKey } from 'src/redis/redis.module';
@@ -7,7 +7,7 @@ import { Inject } from '@nestjs/common';
 
 export class ChatsRepository {
   constructor(
-    @InjectModel(ChatDocument.name)
+    @InjectModel(CHAT_COLLECTION_NAME)
     private readonly chatModel: Model<ChatDocument>,
     @Inject(IORedisKey) private readonly redisClient: Redis,
   ) {}
@@ -20,7 +20,19 @@ export class ChatsRepository {
     return (await createdDocument.save()).toJSON() as unknown as ChatDocument;
   }
 
-  async findAllChats(userId: string) {
-    return this.chatModel.find({ $or: [{ user1: userId }, { user2: userId }] });
+  async findAllChats(userId: Types.ObjectId) {
+    return this.chatModel
+      .find({ $or: [{ user1: userId }, { user2: userId }] })
+      .populate(['user1', 'user2'])
+      .exec();
+  }
+
+  async findOneChat(user1: Types.ObjectId, user2: Types.ObjectId) {
+    return this.chatModel.findOne({
+      $or: [
+        { user1, user2 },
+        { user1: user2, user2: user1 },
+      ],
+    });
   }
 }
