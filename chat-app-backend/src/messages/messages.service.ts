@@ -1,31 +1,56 @@
 import { Injectable } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { Message } from './entities/message.entity';
+import { MessagesRepository } from './messages.repository';
+import { UserDocument } from 'src/users/models/user.schema';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class MessagesService {
-  messages: Message[] = [{ name: 'Mahdi', text: 'Hi' }];
-  clientToUser = {};
+  constructor(
+    private readonly messagesRepository: MessagesRepository,
+    private readonly usersService: UsersService,
+  ) {}
 
-  create(createMessageDto: CreateMessageDto, clientId: string) {
-    const message = {
-      name: this.clientToUser[clientId],
-      text: createMessageDto.text,
-    };
-    this.messages.push(message);
-    return message;
+  async onSocketConnected(username: string, clientId: string) {
+    this.messagesRepository.onSocketConnected(username, clientId);
   }
 
-  findAll() {
-    return this.messages;
+  async onSocketDisconnected(username: string) {
+    this.messagesRepository.onSocketDisconnected(username);
   }
 
-  identify(name: string, clientId: string) {
-    this.clientToUser[clientId] = name;
-    return Object.values(this.clientToUser);
+  async getSocket(username: string) {
+    return this.messagesRepository.getSocket(username);
   }
 
-  getClientName(clientId: string) {
-    return this.clientToUser[clientId];
+  async create({ text, receiver }: CreateMessageDto, username: string) {
+    const sender = await this.usersService.findOne(username);
+    const receiverId = (await this.usersService.findOne(receiver))._id;
+    return await this.messagesRepository.createMessage({
+      timestamp: new Date(),
+      text,
+      sender: sender._id.toHexString(),
+      receiver: receiverId.toHexString(),
+    });
   }
+
+  async findAllReceived(userId: string) {
+    return this.messagesRepository.find({ receiver: userId });
+  }
+
+  findAllReceivedFromSender(userId: string, senderId: string) {
+    const messages = this.messagesRepository.find({
+      receiver: userId,
+      sender: senderId,
+    });
+  }
+
+  // identify(name: string, clientId: string) {
+  //   this.clientToUser[clientId] = name;
+  //   return Object.values(this.clientToUser);
+  // }
+
+  // getClientName(clientId: string) {
+  //   return this.clientToUser[clientId];
+  // }
 }

@@ -1,9 +1,12 @@
 import { Socket } from 'socket.io';
 import { WsJwtAuthGuard } from './guards/ws-jwt.guard';
 import { JwtService } from '@nestjs/jwt';
+import { UserDocument } from 'src/users/models/user.schema';
+
+export type SocketWithUser = Socket & UserDocument;
 
 type SocketIOMiddleware = {
-  (client: Socket, next: (err?: Error) => void);
+  (client: SocketWithUser, next: (err?: Error) => void);
 };
 
 export const SocketAuthMiddleware = (
@@ -11,7 +14,9 @@ export const SocketAuthMiddleware = (
 ): SocketIOMiddleware => {
   return (client, next) => {
     try {
-      WsJwtAuthGuard.validateToken(client, jwtService);
+      const payload = WsJwtAuthGuard.validateToken(client, jwtService);
+      client.username = payload.username;
+      client._id = payload.sub;
       next();
     } catch (error) {
       next(error);

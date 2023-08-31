@@ -29,4 +29,8 @@ export class AuthService {
   async validate(username: string, password: string) {
     return this.usersService.verifyUser(username, password);
   }
+
+  async getUserByUsername(username: string) {
+    return this.usersService.findOne(username);
+  }
 }
