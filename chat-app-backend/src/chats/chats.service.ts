@@ -3,7 +3,7 @@ import { CreateChatDto } from './dto/create-chat.dto';
 import { ChatsRepository } from './chats.repository';
 import { UserDocument } from 'src/users/models/user.schema';
 import { UsersService } from 'src/users/users.service';
-import { ResponseChat } from './dto/chats-response.dto';
+import { ResponseChat } from './interfaces/response-chat.interface';
 import { ChatDocument } from './models/chat.schema';
 
 @Injectable()
