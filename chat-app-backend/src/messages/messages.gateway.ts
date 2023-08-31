@@ -64,7 +64,6 @@ export class MessagesGateway
     );
 
     if (receiverSocket) {
-      console.log('socket exists: ', receiverSocket);
       this.server.to(receiverSocket).emit('message', message);
     }
 

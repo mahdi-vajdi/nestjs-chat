@@ -1,8 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { AbstractDocument } from 'src/database/abstract.schema';
+import { SchemaTypes, Types } from 'mongoose';
 
 @Schema({ versionKey: false })
-export class ChatDocument extends AbstractDocument {
+export class ChatDocument {
+  @Prop({ type: SchemaTypes.ObjectId })
+  _id: Types.ObjectId;
+
   @Prop()
   createdAt: Date;
 
