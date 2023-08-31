@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ChatsModule } from './chats/chats.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -26,6 +27,7 @@ import * as Joi from 'joi';
     MessagesModule,
     AuthModule,
     UsersModule,
+    ChatsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
