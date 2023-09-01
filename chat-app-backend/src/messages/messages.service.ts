@@ -46,9 +46,13 @@ export class MessagesService {
     return this.deserialize(message);
   }
 
-  async findAllMessages(chatId: Types.ObjectId) {
-    const messages = await this.messagesRepository.findAllMessages(chatId);
+  async findChatAllMessages(chatId: Types.ObjectId) {
+    const messages = await this.messagesRepository.findAllChatMessages(chatId);
     return messages.map((message) => this.deserialize(message));
+  }
+
+  async findAllUserMessages(userId: string) {
+    const messages = await this.messagesRepository.findAllUserMessages(userId);
   }
 
   private deserialize(message: MessageDocument): ResponseMessage {

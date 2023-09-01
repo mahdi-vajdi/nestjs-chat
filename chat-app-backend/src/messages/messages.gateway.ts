@@ -42,6 +42,8 @@ export class MessagesGateway
 
   async handleConnection(client: SocketWithUser) {
     this.messagesService.onSocketConnected(client.username, client.id);
+    // const messages =
+    // this.server.to(client.id).emit(this.messagesService.)
   }
 
   async handleDisconnect(client: SocketWithUser) {

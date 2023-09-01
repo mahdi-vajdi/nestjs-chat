@@ -13,14 +13,14 @@ import { ResponseUser } from './interfaces/response-user.interface';
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
-  async create(createUserDto: CreateUserDto): Promise<ResponseUser> {
+  async create(createUserDto: CreateUserDto) {
     await this.validateCreateUserDto(createUserDto);
     const user = await this.usersRepository.create({
       ...createUserDto,
       createdAt: new Date(),
       password: await bcrypt.hash(createUserDto.password, 10),
     });
-    return this.deserialize(user);
+    return user;
   }
 
   async findOne(username: string) {

@@ -12,7 +12,13 @@ export class AuthService {
   ) {}
 
   async signup(signupDto: SignupDto) {
-    return this.usersService.create(signupDto);
+    const createdUser = await this.usersService.create(signupDto);
+    const signinObject = this.signin(createdUser);
+    return {
+      message: 'Signup Successfull',
+      username: createdUser.username,
+      access_token: signinObject.access_token,
+    };
   }
 
   signin(user: UserDocument): { access_token: string } {

@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model, Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import {
   MESSAGE_COLLECTION_NAME,
   MessageDocument,
@@ -41,7 +41,13 @@ export class MessagesRepository {
     ).toJSON() as unknown as MessageDocument;
   }
 
-  async findAllMessages(chatId: Types.ObjectId) {
+  async findAllChatMessages(chatId: Types.ObjectId) {
     return this.messageModel.find({ chat: chatId }, {}, { lean: true });
+  }
+
+  async findAllUserMessages(userId: string) {
+    return this.messageModel.find({
+      $or: [{ sender: userId }, { receiver: userId }],
+    });
   }
 }
