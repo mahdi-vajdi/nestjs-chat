@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { MessagesRepository } from './messages.repository';
 import { UsersService } from 'src/users/users.service';
-import { Types } from 'mongoose';
 import { MessageDocument } from './models/message.schema';
 import { ResponseMessage } from './interfaces/response-message.interface';
 import { ChatsService } from 'src/chats/chats.service';
@@ -52,13 +51,9 @@ export class MessagesService {
     return this.deserialize(message);
   }
 
-  async findChatAllMessages(chatId: Types.ObjectId) {
+  async findAllChatMessages(chatId: string) {
     const messages = await this.messagesRepository.findAllChatMessages(chatId);
     return messages.map((message) => this.deserialize(message));
-  }
-
-  async findAllUserMessages(userId: string) {
-    const messages = await this.messagesRepository.findAllUserMessages(userId);
   }
 
   private deserialize(message: MessageDocument): ResponseMessage {
@@ -68,6 +63,7 @@ export class MessagesService {
       chatId: message.chat._id.toHexString(),
       sender: message.sender.username,
       receiver: message.receiver.username,
+      text: message.text,
     };
   }
 }

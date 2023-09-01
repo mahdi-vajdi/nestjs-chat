@@ -70,37 +70,17 @@ export class MessagesGateway
     );
 
     if (receiverSocket) {
-      this.server.to(receiverSocket).emit('message', { text });
-      console.log(`Socket: ${receiverSocket}`, message);
+      this.server.to(receiverSocket).emit('message', { message });
     }
 
     return message;
   }
 
-  // @SubscribeMessage('findAllReceived')
-  // findAllReceived() {
-  //   const messages = this.messagesService.findAllReceived(
-  //     user._id.toHexString(),
-  //   );
-  //   console.log('messages' + JSON.stringify(messages));
-  //   return messages;
-  // }
-
-  // @SubscribeMessage('join')
-  // joinRoom(
-  //   @MessageBody('name') name: string,
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   return this.messagesService.identify(name, client.id);
-  // }
-
-  // @SubscribeMessage('typing')
-  // typing(
-  //   @MessageBody('isTyping') isTyping: boolean,
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   const name = this.messagesService.getClientName(client.id);
-
-  //   client.broadcast.emit('typing', { name, isTyping });
-  // }
+  @SubscribeMessage('getAllMessages')
+  async findAllChatMessages(@ConnectedSocket() client: SocketWithUser) {
+    const messages = await this.messagesService.findAllChatMessages(
+      client.handshake.query['chatId'] as string,
+    );
+    return messages;
+  }
 }

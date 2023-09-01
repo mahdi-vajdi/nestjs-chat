@@ -48,8 +48,11 @@ export class MessagesRepository {
     ).toJSON() as unknown as MessageDocument;
   }
 
-  async findAllChatMessages(chatId: Types.ObjectId) {
-    return this.messageModel.find({ chat: chatId }, {}, { lean: true });
+  async findAllChatMessages(chatId: string) {
+    return this.messageModel
+      .find({ chat: chatId }, {}, { lean: true })
+      .populate(['sender', 'receiver'])
+      .exec();
   }
 
   async findAllUserMessages(userId: string) {

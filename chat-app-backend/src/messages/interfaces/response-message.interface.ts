@@ -4,4 +4,5 @@ export interface ResponseMessage {
   chatId: string;
   sender: string;
   receiver: string;
+  text: string;
 }
