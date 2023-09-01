@@ -37,6 +37,6 @@ export class ChatsRepository {
   }
 
   async findChatById(chatId: string) {
-    return this.chatModel.findById(chatId);
+    return this.chatModel.findById(chatId).populate(['user1', 'user2']).exec();
   }
 }

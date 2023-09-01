@@ -41,9 +41,11 @@ export class MessagesGateway
   }
 
   async handleConnection(client: SocketWithUser) {
-    this.messagesService.onSocketConnected(client.username, client.id);
-    // const messages =
-    // this.server.to(client.id).emit(this.messagesService.)
+    this.messagesService.onSocketConnected(
+      client.handshake.query['chatId'] as string,
+      client.username,
+      client.id,
+    );
   }
 
   async handleDisconnect(client: SocketWithUser) {
@@ -52,21 +54,24 @@ export class MessagesGateway
 
   @SubscribeMessage('createMessage')
   async createMessage(
-    @MessageBody() createMessageDto: CreateMessageDto,
+    @MessageBody() { text }: CreateMessageDto,
     @ConnectedSocket() client: SocketWithUser,
   ) {
     const message: ResponseMessage = await this.messagesService.createMessage(
-      createMessageDto,
+      text,
+      client.handshake.query['chatId'] as string,
       client.username,
     );
 
     // See if receiver is connected and get its socket id
     const receiverSocket = await this.messagesService.getSocket(
-      createMessageDto.receiver,
+      client.handshake.query['chatId'] as string,
+      message.receiver,
     );
 
     if (receiverSocket) {
-      this.server.to(receiverSocket).emit('message', message);
+      this.server.to(receiverSocket).emit('message', { text });
+      console.log(`Socket: ${receiverSocket}`, message);
     }
 
     return message;

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { CreateMessageDto } from './dto/create-message.dto';
 import { MessagesRepository } from './messages.repository';
 import { UsersService } from 'src/users/users.service';
 import { Types } from 'mongoose';
@@ -15,31 +14,38 @@ export class MessagesService {
     private readonly chatService: ChatsService,
   ) {}
 
-  async onSocketConnected(username: string, clientId: string) {
-    this.messagesRepository.onSocketConnected(username, clientId);
+  async onSocketConnected(chatId: string, username: string, clientId: string) {
+    this.messagesRepository.onSocketConnected(chatId, username, clientId);
   }
 
   async onSocketDisconnected(username: string) {
     this.messagesRepository.onSocketDisconnected(username);
   }
 
-  async getSocket(username: string) {
-    return this.messagesRepository.getSocket(username);
+  async getSocket(chatId: string, username: string) {
+    return this.messagesRepository.getSocket(chatId, username);
   }
 
   async createMessage(
-    { text, receiver, chatId }: CreateMessageDto,
-    currentUsername: string,
+    text: string,
+    chatId: string,
+    senderUsername: string,
   ): Promise<ResponseMessage> {
     const chat = await this.chatService.findChatById(chatId);
-    const senderUser = await this.usersService.findOne(currentUsername);
-    const receiverUser = await this.usersService.findOne(receiver);
+    const sender = await this.usersService.findOne(senderUsername);
+
+    // get the reciver
+    const receiverUsername =
+      sender.username === chat.user1.username
+        ? chat.user2.username
+        : chat.user1.username;
+    const receiverUser = await this.usersService.findOne(receiverUsername);
 
     const message = await this.messagesRepository.createMessage({
       timestamp: new Date(),
       chat,
       text,
-      sender: senderUser,
+      sender: sender,
       receiver: receiverUser,
     });
 

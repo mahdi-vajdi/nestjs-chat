@@ -7,7 +7,10 @@ import {
 } from './models/message.schema';
 import { IORedisKey } from 'src/redis/redis.module';
 import Redis from 'ioredis';
-import { redisUserSocketId } from 'src/redis/redis.keys';
+import {
+  redisSocketChatUserKey,
+  redisUserSocketIdKey,
+} from 'src/redis/redis.keys';
 
 @Injectable()
 export class MessagesRepository {
@@ -19,16 +22,20 @@ export class MessagesRepository {
     @Inject(IORedisKey) private readonly redisClient: Redis,
   ) {}
 
-  async onSocketConnected(username: string, socketId: string) {
-    await this.redisClient.set(redisUserSocketId(username), socketId);
+  async onSocketConnected(chatId: string, username: string, clientId: string) {
+    const res = await this.redisClient.set(
+      redisSocketChatUserKey(chatId, username),
+      clientId,
+    );
+    console.log('saved to redis: ', res);
   }
 
   async onSocketDisconnected(username: string) {
-    await this.redisClient.del(redisUserSocketId(username));
+    await this.redisClient.del(redisUserSocketIdKey(username));
   }
 
-  async getSocket(username: string) {
-    return this.redisClient.get(redisUserSocketId(username));
+  async getSocket(chatId: string, username: string) {
+    return this.redisClient.get(redisSocketChatUserKey(chatId, username));
   }
 
   async createMessage(message: Omit<MessageDocument, '_id'>) {
