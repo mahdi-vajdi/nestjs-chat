@@ -18,8 +18,14 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { WsJwtAuthGuard } from 'src/auth/guards/ws-jwt.guard';
 import { ResponseMessage } from './interfaces/response-message.interface';
+import { MessageSeenDto } from './dto/MessageSeenDto';
 
-@WebSocketGateway({ namespace: 'messages' })
+@WebSocketGateway({
+  namespace: 'messages',
+  cors: {
+    origin: '*',
+  },
+})
 @UseGuards(WsJwtAuthGuard)
 export class MessagesGateway
   implements OnGatewayConnection, OnGatewayDisconnect
@@ -41,6 +47,12 @@ export class MessagesGateway
   }
 
   async handleConnection(client: SocketWithUser) {
+    console.log('socket connected: ', {
+      time: new Date(),
+      socketId: client.id,
+      chatId: client.handshake.query['chatId'],
+      username: client.username,
+    });
     this.messagesService.onSocketConnected(
       client.handshake.query['chatId'] as string,
       client.username,
@@ -49,7 +61,16 @@ export class MessagesGateway
   }
 
   async handleDisconnect(client: SocketWithUser) {
-    this.messagesService.onSocketDisconnected(client.username);
+    console.log('socket disconnected: ', {
+      time: new Date(),
+      socketId: client.id,
+      chatId: client.handshake.query['chatId'],
+      username: client.username,
+    });
+    this.messagesService.onSocketDisconnected(
+      client.handshake.query['chatId'] as string,
+      client.username,
+    );
   }
 
   @SubscribeMessage('createMessage')
@@ -64,6 +85,7 @@ export class MessagesGateway
     );
 
     // See if receiver is connected and get its socket id
+
     const receiverSocket = await this.messagesService.getSocket(
       client.handshake.query['chatId'] as string,
       message.receiver,
@@ -82,5 +104,13 @@ export class MessagesGateway
       client.handshake.query['chatId'] as string,
     );
     return messages;
+  }
+
+  @SubscribeMessage('seenMessage')
+  async seenMessage(
+    @ConnectedSocket() client: SocketWithUser,
+    @MessageBody() { messageId }: MessageSeenDto,
+  ) {
+    this.messagesService.messageSeen(messageId);
   }
 }

@@ -21,13 +21,14 @@ export class AuthService {
     };
   }
 
-  signin(user: UserDocument): { access_token: string } {
+  signin(user: UserDocument): { access_token: string; username: string } {
     const payload = {
       username: user.username,
       sub: user._id,
     };
 
     return {
+      username: user.username,
       access_token: this.jwtService.sign(payload),
     };
   }

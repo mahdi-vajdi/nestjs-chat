@@ -42,6 +42,9 @@ export class MessageDocument {
     ref: USER_COLLECTION_NAME,
   })
   receiver: UserDocument;
+
+  @Prop()
+  seen: boolean;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(MessageDocument);

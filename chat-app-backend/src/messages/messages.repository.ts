@@ -7,10 +7,7 @@ import {
 } from './models/message.schema';
 import { IORedisKey } from 'src/redis/redis.module';
 import Redis from 'ioredis';
-import {
-  redisSocketChatUserKey,
-  redisUserSocketIdKey,
-} from 'src/redis/redis.keys';
+import { redisSocketChatUserKey } from 'src/redis/redis.keys';
 
 @Injectable()
 export class MessagesRepository {
@@ -23,15 +20,11 @@ export class MessagesRepository {
   ) {}
 
   async onSocketConnected(chatId: string, username: string, clientId: string) {
-    const res = await this.redisClient.set(
-      redisSocketChatUserKey(chatId, username),
-      clientId,
-    );
-    console.log('saved to redis: ', res);
+    this.redisClient.set(redisSocketChatUserKey(chatId, username), clientId);
   }
 
-  async onSocketDisconnected(username: string) {
-    await this.redisClient.del(redisUserSocketIdKey(username));
+  async onSocketDisconnected(chatId: string, username: string) {
+    await this.redisClient.del(redisSocketChatUserKey(chatId, username));
   }
 
   async getSocket(chatId: string, username: string) {
@@ -40,8 +33,8 @@ export class MessagesRepository {
 
   async createMessage(message: Omit<MessageDocument, '_id'>) {
     const createdDocument = new this.messageModel({
-      ...message,
       _id: new Types.ObjectId(),
+      ...message,
     });
     return (
       await createdDocument.save()
@@ -59,5 +52,9 @@ export class MessagesRepository {
     return this.messageModel.find({
       $or: [{ sender: userId }, { receiver: userId }],
     });
+  }
+
+  async messageSeen(messageId: string) {
+    this.messageModel.findOneAndUpdate({ _id: messageId }, { seen: true });
   }
 }

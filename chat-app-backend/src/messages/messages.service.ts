@@ -17,8 +17,8 @@ export class MessagesService {
     this.messagesRepository.onSocketConnected(chatId, username, clientId);
   }
 
-  async onSocketDisconnected(username: string) {
-    this.messagesRepository.onSocketDisconnected(username);
+  async onSocketDisconnected(chatId: string, username: string) {
+    this.messagesRepository.onSocketDisconnected(chatId, username);
   }
 
   async getSocket(chatId: string, username: string) {
@@ -46,6 +46,7 @@ export class MessagesService {
       text,
       sender: sender,
       receiver: receiverUser,
+      seen: false,
     });
 
     return this.deserialize(message);
@@ -54,6 +55,10 @@ export class MessagesService {
   async findAllChatMessages(chatId: string) {
     const messages = await this.messagesRepository.findAllChatMessages(chatId);
     return messages.map((message) => this.deserialize(message));
+  }
+
+  async messageSeen(messageId: string) {
+    this.messagesRepository.messageSeen(messageId);
   }
 
   private deserialize(message: MessageDocument): ResponseMessage {

@@ -24,9 +24,14 @@ export class WsJwtAuthGuard implements CanActivate {
 
     const client: Socket = context.switchToWs().getClient();
     // if we use a frontend, it's suggested that we use: 'client.handshake.auth' as a statndard
-    const { authorization } = client.handshake.headers;
+    const { token } = client.handshake.auth;
 
-    Logger.log(`ws-jwt-auth-guard: ${{ authorization }}`);
+    console.log(
+      `ws-jwt-auth-guard: ${{
+        time: new Date(),
+        token: JSON.stringify(token),
+      }}`,
+    );
 
     WsJwtAuthGuard.validateToken(client, this.jwtService);
     // const user = this.authService.getUserByUsername(payload.username);
@@ -40,12 +45,11 @@ export class WsJwtAuthGuard implements CanActivate {
   }
 
   static validateToken(client: Socket, jwtService: JwtService) {
-    const { authorization } = client.handshake.headers;
-    if (!authorization)
+    const { token } = client.handshake.auth;
+    if (!token)
       throw new UnauthorizedException(
         'Could not find any authoriztion credentials',
       );
-    const token: string = authorization.split(' ')[1];
     const payload = jwtService.verify(token);
     return payload;
   }

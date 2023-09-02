@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { ChatsService } from './chats.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
@@ -20,7 +12,6 @@ export class ChatsController {
 
   @Post()
   async create(@Req() req: Request, @Body() createChatDto: CreateChatDto) {
-    console.log('user doc', req.user);
     return this.chatsService.create(createChatDto, req.user as UserDocument);
   }
 
