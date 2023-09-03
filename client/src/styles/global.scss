@@ -1,0 +1,42 @@
+@tailwind components;
+@tailwind utilities;
+
+
+
+@font-face {
+    font-family: nunito;
+    src: url("../assets/font/nunito.ttf");
+}
+
+@font-face {
+    font-family: nunito_bold;
+    src: url("../assets/font/nunito_bold.ttf");
+}
+
+@font-face {
+    font-family: nunito_light;
+    src: url("../assets/font/nunito_light.ttf");
+}
+
+
+@font-face {
+    font-family: nunito_medium;
+    src: url("../assets/font/nunito_medium.ttf");
+}
+
+
+
+*{
+    margin: 0;
+    font-family: nunito_medium;
+    box-sizing: border-box;
+}
+
+
+
+// @media (max-width: 576px) {}
+// @media (min-width: 576px) and (max-width: 767px) {}
+// @media (min-width: 768px) and (max-width: 991px) {}
+// @media (min-width: 992px) and (max-width: 1200px) {}
+// @media (min-width: 1200px) and (max-width: 1600px) {}
+// @media (min-width: 1600px) and (max-width: 2000px) {}
