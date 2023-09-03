@@ -3,6 +3,7 @@ import { SignupDto } from './dto/signup.dto';
 import { UsersService } from 'src/users/users.service';
 import { UserDocument } from 'src/users/models/user.schema';
 import { JwtService } from '@nestjs/jwt';
+import { ResponseSignin } from './interfaces/response-signin.interface';
 
 @Injectable()
 export class AuthService {
@@ -11,7 +12,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async signup(signupDto: SignupDto) {
+  async signup(signupDto: SignupDto): Promise<ResponseSignin> {
     const createdUser = await this.usersService.create(signupDto);
     const signinObject = this.signin(createdUser);
     return {
@@ -21,13 +22,14 @@ export class AuthService {
     };
   }
 
-  signin(user: UserDocument): { access_token: string; username: string } {
+  signin(user: UserDocument): ResponseSignin {
     const payload = {
       username: user.username,
       sub: user._id,
     };
 
     return {
+      message: 'Signin Successfull',
       username: user.username,
       access_token: this.jwtService.sign(payload),
     };

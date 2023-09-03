@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { USER_COLLECTION_NAME, UserDocument } from './models/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model, Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 @Injectable()
 export class UsersRepository {
@@ -13,19 +13,19 @@ export class UsersRepository {
   ) {}
 
   async create(document: Omit<UserDocument, '_id'>): Promise<UserDocument> {
-    const createdDocument = new this.userModel({
+    const createdUser = new this.userModel({
       ...document,
       _id: new Types.ObjectId(),
     });
-    return (await createdDocument.save()).toJSON() as unknown as UserDocument;
+    return (await createdUser.save()).toJSON() as unknown as UserDocument;
   }
 
-  async findOne(filterQuery: FilterQuery<UserDocument>): Promise<UserDocument> {
-    const document = await this.userModel.findOne(filterQuery);
-    if (!document) {
-      this.logger.warn('Document not found with filterQuery: ', filterQuery);
-      throw new NotFoundException('Document not found');
+  async findOne(username: string): Promise<UserDocument> {
+    const user = await this.userModel.findOne({ username });
+    if (!user) {
+      this.logger.warn(`User not found with username: ${username}`);
+      throw new NotFoundException('User not found');
     }
-    return document;
+    return user;
   }
 }
