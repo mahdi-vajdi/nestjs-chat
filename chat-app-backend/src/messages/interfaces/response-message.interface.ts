@@ -5,4 +5,5 @@ export interface ResponseMessage {
   sender: string;
   receiver: string;
   text: string;
+  seen: boolean;
 }

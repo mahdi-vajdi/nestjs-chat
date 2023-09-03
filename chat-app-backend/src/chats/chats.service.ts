@@ -32,25 +32,34 @@ export class ChatsService {
       user2: receiver,
     });
 
-    return this.deserialize(createdChat);
+    return this.deserialize(createdChat, receiver.username);
   }
 
   async findAllChats(user: UserDocument): Promise<ResponseChat[]> {
     const chats = await this.chatsRepository.findAllChats(user._id);
 
-    return chats.map((chat) => this.deserialize(chat));
+    return chats.map((chat) => {
+      const receiver =
+        user.username === chat.user1.username
+          ? chat.user2.username
+          : chat.user1.username;
+
+      return this.deserialize(chat, receiver);
+    });
   }
 
   async findChatById(chatId: string) {
     return await this.chatsRepository.findChatById(chatId);
   }
 
-  private deserialize(document: ChatDocument): ResponseChat {
+  private deserialize(
+    chat: ChatDocument,
+    receiverUsername: string,
+  ): ResponseChat {
     return {
-      chatId: document._id.toHexString(),
-      createdAt: document.createdAt,
-      user1: document.user1.username,
-      user2: document.user2.username,
+      chatId: chat._id.toHexString(),
+      createdAt: chat.createdAt,
+      receiver: receiverUsername,
     };
   }
 }

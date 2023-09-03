@@ -69,6 +69,7 @@ export class MessagesService {
       sender: message.sender.username,
       receiver: message.receiver.username,
       text: message.text,
+      seen: message.seen,
     };
   }
 }

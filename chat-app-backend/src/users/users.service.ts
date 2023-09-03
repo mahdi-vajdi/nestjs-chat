@@ -24,12 +24,12 @@ export class UsersService {
   }
 
   async findOne(username: string) {
-    return this.usersRepository.findOne({ username });
+    return this.usersRepository.findOne(username);
   }
 
   private async validateCreateUserDto(createUserDto: CreateUserDto) {
     try {
-      await this.usersRepository.findOne({ username: createUserDto.username });
+      await this.usersRepository.findOne(createUserDto.username);
     } catch (error) {
       return;
     }
@@ -37,7 +37,7 @@ export class UsersService {
   }
 
   async verifyUser(username: string, password: string) {
-    const user = await this.usersRepository.findOne({ username });
+    const user = await this.usersRepository.findOne(username);
     const passwordValid = await bcrypt.compare(password, user.password);
     if (!passwordValid)
       throw new UnauthorizedException('Credintials are not valid');

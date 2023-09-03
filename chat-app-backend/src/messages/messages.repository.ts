@@ -55,6 +55,9 @@ export class MessagesRepository {
   }
 
   async messageSeen(messageId: string) {
-    this.messageModel.findOneAndUpdate({ _id: messageId }, { seen: true });
+    await this.messageModel.findOneAndUpdate(
+      { _id: messageId },
+      { seen: true },
+    );
   }
 }

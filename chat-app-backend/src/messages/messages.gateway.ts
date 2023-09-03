@@ -106,11 +106,20 @@ export class MessagesGateway
     return messages;
   }
 
-  @SubscribeMessage('seenMessage')
+  @SubscribeMessage('messageSeen')
   async seenMessage(
     @ConnectedSocket() client: SocketWithUser,
-    @MessageBody() { messageId }: MessageSeenDto,
+    @MessageBody()
+    { messageId, senderUsername, chatId }: MessageSeenDto,
   ) {
+    console.log('messageSeen: ', messageId);
     this.messagesService.messageSeen(messageId);
+    const senderSocket = await this.messagesService.getSocket(
+      chatId,
+      senderUsername,
+    );
+
+    if (senderSocket)
+      this.server.to(senderSocket).emit('seenMessage', { chatId, messageId });
   }
 }
