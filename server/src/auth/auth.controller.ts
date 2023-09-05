@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { Request } from 'express';
 import { LocalAuthGuard } from './guards/local.guard';
-import { UserDocument } from 'src/users/models/user.schema';
+import { UserModel } from 'src/users/interfaces/user.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -17,6 +17,6 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('signin')
   async signin(@Req() req: Request) {
-    return this.authService.signin(req.user as UserDocument);
+    return this.authService.signin(req.user as UserModel);
   }
 }

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { SignupDto } from './dto/signup.dto';
 import { UsersService } from 'src/users/users.service';
-import { UserDocument } from 'src/users/models/user.schema';
 import { JwtService } from '@nestjs/jwt';
 import { ResponseSignin } from './interfaces/response-signin.interface';
+import { UserModel } from 'src/users/interfaces/user.interface';
 
 @Injectable()
 export class AuthService {
@@ -22,10 +22,10 @@ export class AuthService {
     };
   }
 
-  signin(user: UserDocument): ResponseSignin {
+  signin(user: UserModel): ResponseSignin {
     const payload = {
       username: user.username,
-      sub: user._id,
+      sub: user.id,
     };
 
     return {
@@ -37,9 +37,5 @@ export class AuthService {
 
   async validate(username: string, password: string) {
     return this.usersService.verifyUser(username, password);
-  }
-
-  async getUserByUsername(username: string) {
-    return this.usersService.findOne(username);
   }
 }

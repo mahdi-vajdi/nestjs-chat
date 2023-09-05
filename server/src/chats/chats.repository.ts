@@ -2,14 +2,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { CHAT_COLLECTION_NAME, ChatDocument } from './models/chat.schema';
 import { Model, Types } from 'mongoose';
 import Redis from 'ioredis';
-import { IORedisKey } from 'src/redis/redis.module';
+import { REDIS_CLIENT } from 'src/redis/redis.module';
 import { Inject } from '@nestjs/common';
 
 export class ChatsRepository {
   constructor(
     @InjectModel(CHAT_COLLECTION_NAME)
     private readonly chatModel: Model<ChatDocument>,
-    @Inject(IORedisKey) private readonly redisClient: Redis,
+    @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
   ) {}
 
   async createChat(chat: Omit<ChatDocument, '_id'>) {

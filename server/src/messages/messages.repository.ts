@@ -5,7 +5,7 @@ import {
   MESSAGE_COLLECTION_NAME,
   MessageDocument,
 } from './models/message.schema';
-import { IORedisKey } from 'src/redis/redis.module';
+import { REDIS_CLIENT } from 'src/redis/redis.module';
 import Redis from 'ioredis';
 import { redisSocketChatUserKey } from 'src/redis/redis.keys';
 
@@ -16,7 +16,7 @@ export class MessagesRepository {
   constructor(
     @InjectModel(MESSAGE_COLLECTION_NAME)
     private readonly messageModel: Model<MessageDocument>,
-    @Inject(IORedisKey) private readonly redisClient: Redis,
+    @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
   ) {}
 
   async onSocketConnected(chatId: string, username: string, clientId: string) {
