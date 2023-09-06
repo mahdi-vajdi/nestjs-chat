@@ -8,6 +8,7 @@ import {
 import { REDIS_CLIENT } from 'src/redis/redis.module';
 import Redis from 'ioredis';
 import { redisSocketChatUserKey } from 'src/redis/redis.keys';
+import { UserDocument } from 'src/users/models/user.schema';
 
 @Injectable()
 export class MessagesRepository {
@@ -36,15 +37,21 @@ export class MessagesRepository {
       _id: new Types.ObjectId(),
       ...message,
     });
-    return (
-      await createdDocument.save()
-    ).toJSON() as unknown as MessageDocument;
+    return createdDocument.save().then((doc) =>
+      doc.populate<{
+        sender: UserDocument;
+        receiver: UserDocument;
+      }>(['sender', 'receiver']),
+    );
   }
 
   async findAllChatMessages(chatId: string) {
     return this.messageModel
-      .find({ chat: chatId }, {}, { lean: true })
-      .populate(['sender', 'receiver'])
+      .find({ chat: chatId })
+      .populate<{
+        sender: UserDocument;
+        receiver: UserDocument;
+      }>(['sender', 'receiver'])
       .exec();
   }
 

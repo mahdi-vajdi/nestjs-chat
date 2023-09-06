@@ -7,6 +7,11 @@ import {
 
 export const CHAT_COLLECTION_NAME = 'chats';
 
+export type PopulatedChatDocument = Omit<ChatDocument, 'user1' | 'user2'> & {
+  user1: UserDocument;
+  user2: UserDocument;
+};
+
 @Schema({ collection: 'chats', versionKey: false })
 export class ChatDocument {
   @Prop({ type: SchemaTypes.ObjectId })
@@ -20,14 +25,14 @@ export class ChatDocument {
     required: true,
     ref: USER_COLLECTION_NAME,
   })
-  user1: UserDocument;
+  user1: Types.ObjectId;
 
   @Prop({
     type: MongooseShcema.Types.ObjectId,
     required: true,
     ref: USER_COLLECTION_NAME,
   })
-  user2: UserDocument;
+  user2: Types.ObjectId;
 }
 
 export const ChatSchema = SchemaFactory.createForClass(ChatDocument);

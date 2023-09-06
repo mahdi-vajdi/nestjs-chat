@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import Redis from 'ioredis';
 import { REDIS_CLIENT } from 'src/redis/redis.module';
 import { Inject } from '@nestjs/common';
+import { UserDocument } from 'src/users/models/user.schema';
 
 export class ChatsRepository {
   constructor(
@@ -17,17 +18,26 @@ export class ChatsRepository {
       ...chat,
       _id: new Types.ObjectId(),
     });
-    return (await createdDocument.save()).toJSON() as unknown as ChatDocument;
+
+    return createdDocument.save().then((doc) =>
+      doc.populate<{
+        user1: UserDocument;
+        user2: UserDocument;
+      }>(['user1', 'user2']),
+    );
   }
 
-  async findAllChats(userId: Types.ObjectId) {
-    return this.chatModel
+  async findAllChats(userId: string) {
+    const chats = await this.chatModel
       .find({ $or: [{ user1: userId }, { user2: userId }] })
-      .populate(['user1', 'user2'])
-      .exec();
+      .populate<{ user1: UserDocument; user2: UserDocument }>([
+        'user1',
+        'user2',
+      ]);
+    return chats;
   }
 
-  async findOneChat(user1: Types.ObjectId, user2: Types.ObjectId) {
+  async findOneChat(user1: string, user2: string) {
     return this.chatModel.findOne({
       $or: [
         { user1, user2 },
@@ -37,6 +47,14 @@ export class ChatsRepository {
   }
 
   async findChatById(chatId: string) {
-    return this.chatModel.findById(chatId).populate(['user1', 'user2']).exec();
+    return this.chatModel
+      .findById(chatId)
+      .populate<{ user1: UserDocument; user2: UserDocument }>([
+        'user1',
+        'user2',
+      ])
+      .exec();
   }
+
+  // private async deserializeChat(chat: ChatDocument)
 }

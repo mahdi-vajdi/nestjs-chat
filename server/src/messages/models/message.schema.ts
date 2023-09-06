@@ -1,13 +1,23 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { SchemaTypes, Types, Schema as MongooseShcema } from 'mongoose';
 import {
-  CHAT_COLLECTION_NAME,
-  ChatDocument,
-} from 'src/chats/models/chat.schema';
+  SchemaTypes,
+  Types,
+  Schema as MongooseShcema,
+  Document,
+} from 'mongoose';
+import { CHAT_COLLECTION_NAME } from 'src/chats/models/chat.schema';
 import {
   USER_COLLECTION_NAME,
   UserDocument,
 } from 'src/users/models/user.schema';
+
+export type PopulatedMessageDocument = Omit<
+  MessageDocument,
+  'sender' | 'receiver'
+> & {
+  sender: UserDocument;
+  receiver: UserDocument;
+};
 
 export const MESSAGE_COLLECTION_NAME = 'messages';
 
@@ -24,7 +34,7 @@ export class MessageDocument {
     required: true,
     ref: CHAT_COLLECTION_NAME,
   })
-  chat: ChatDocument;
+  chat: Types.ObjectId;
 
   @Prop()
   text: string;
@@ -34,14 +44,14 @@ export class MessageDocument {
     required: true,
     ref: USER_COLLECTION_NAME,
   })
-  sender: UserDocument;
+  sender: Types.ObjectId;
 
   @Prop({
     type: MongooseShcema.Types.ObjectId,
     required: true,
     ref: USER_COLLECTION_NAME,
   })
-  receiver: UserDocument;
+  receiver: Types.ObjectId;
 
   @Prop()
   seen: boolean;

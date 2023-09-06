@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { MessagesRepository } from './messages.repository';
 import { UsersService } from 'src/users/users.service';
-import { MessageDocument } from './models/message.schema';
+import { PopulatedMessageDocument } from './models/message.schema';
 import { ResponseMessage } from './interfaces/response-message.interface';
 import { ChatsService } from 'src/chats/chats.service';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class MessagesService {
@@ -31,21 +32,24 @@ export class MessagesService {
     senderUsername: string,
   ): Promise<ResponseMessage> {
     const chat = await this.chatService.findChatById(chatId);
-    const sender = await this.usersService.findOne(senderUsername);
+    const sender = await this.usersService.findOneByUsername(senderUsername);
 
     // get the reciver
     const receiverUsername =
       sender.username === chat.user1.username
         ? chat.user2.username
         : chat.user1.username;
-    const receiverUser = await this.usersService.findOne(receiverUsername);
+
+    const receiverUser = await this.usersService.findOneByUsername(
+      receiverUsername,
+    );
 
     const message = await this.messagesRepository.createMessage({
       timestamp: new Date(),
-      chat,
+      chat: chat._id,
       text,
-      sender: sender,
-      receiver: receiverUser,
+      sender: new Types.ObjectId(sender.id),
+      receiver: new Types.ObjectId(receiverUser.id),
       seen: false,
     });
 
@@ -61,7 +65,7 @@ export class MessagesService {
     this.messagesRepository.messageSeen(messageId);
   }
 
-  private deserialize(message: MessageDocument): ResponseMessage {
+  private deserialize(message: PopulatedMessageDocument): ResponseMessage {
     return {
       messageId: message._id.toHexString(),
       timestamp: message.timestamp,

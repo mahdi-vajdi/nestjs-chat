@@ -2,7 +2,6 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
-  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -23,13 +22,13 @@ export class WsJwtAuthGuard implements CanActivate {
     if (context.getType() !== 'ws') return true;
 
     const client: Socket = context.switchToWs().getClient();
-    // if we use a frontend, it's suggested that we use: 'client.handshake.auth' as a statndard
-    const { token } = client.handshake.auth;
+    const { authorization } = client.handshake.headers; // Used for postman
+    // const { token } = client.handshake.auth; // Used for socket.io-client
 
     console.log(
       `ws-jwt-auth-guard: ${{
         time: new Date(),
-        token: JSON.stringify(token),
+        token: JSON.stringify(authorization),
       }}`,
     );
 
@@ -45,11 +44,12 @@ export class WsJwtAuthGuard implements CanActivate {
   }
 
   static validateToken(client: Socket, jwtService: JwtService) {
-    const { token } = client.handshake.auth;
-    if (!token)
+    const { authorization } = client.handshake.headers;
+    if (!authorization)
       throw new UnauthorizedException(
         'Could not find any authoriztion credentials',
       );
+    const token: string = authorization.split(' ')[1];
     const payload = jwtService.verify(token);
     return payload;
   }

@@ -3,7 +3,7 @@ import { ChatsService } from './chats.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { Request } from 'express';
-import { UserDocument } from 'src/users/models/user.schema';
+import { User } from 'src/users/interfaces/user.interface';
 
 @UseGuards(JwtAuthGuard)
 @Controller('chats')
@@ -12,11 +12,11 @@ export class ChatsController {
 
   @Post()
   async create(@Req() req: Request, @Body() createChatDto: CreateChatDto) {
-    return this.chatsService.create(createChatDto, req.user as UserDocument);
+    return this.chatsService.create(createChatDto, req.user as User);
   }
 
   @Get()
   async findAll(@Req() req: Request) {
-    return this.chatsService.findAllChats(req.user as UserDocument);
+    return this.chatsService.findAllChats(req.user as User);
   }
 }

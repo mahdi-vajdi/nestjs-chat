@@ -1,10 +1,11 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { ChatsRepository } from './chats.repository';
-import { UserDocument } from 'src/users/models/user.schema';
 import { UsersService } from 'src/users/users.service';
 import { ResponseChat } from './interfaces/response-chat.interface';
-import { ChatDocument } from './models/chat.schema';
+import { User } from 'src/users/interfaces/user.interface';
+import { Types } from 'mongoose';
+import { PopulatedChatDocument } from './models/chat.schema';
 
 @Injectable()
 export class ChatsService {
@@ -15,35 +16,36 @@ export class ChatsService {
 
   async create(
     createChatDto: CreateChatDto,
-    currentUser: UserDocument,
+    currentUser: User,
   ): Promise<ResponseChat> {
-    const receiver = await this.usersService.findOne(createChatDto.receiver);
+    const receiver = await this.usersService.findOneByUsername(
+      createChatDto.receiver,
+    );
 
     // check if the chat has not been created yet
     const chatExists = await this.chatsRepository.findOneChat(
-      currentUser._id,
-      receiver._id,
+      currentUser.id,
+      receiver.id,
     );
     if (chatExists) throw new ConflictException('Chat already exists');
 
     const createdChat = await this.chatsRepository.createChat({
       createdAt: new Date(),
-      user1: currentUser,
-      user2: receiver,
+      user1: new Types.ObjectId(currentUser.id),
+      user2: new Types.ObjectId(receiver.id),
     });
 
-    return this.deserialize(createdChat, receiver.username);
+    return this.deserialize(createdChat, createChatDto.receiver);
   }
 
-  async findAllChats(user: UserDocument): Promise<ResponseChat[]> {
-    const chats = await this.chatsRepository.findAllChats(user._id);
+  async findAllChats(user: User): Promise<ResponseChat[]> {
+    const chats = await this.chatsRepository.findAllChats(user.id);
 
     return chats.map((chat) => {
       const receiver =
         user.username === chat.user1.username
           ? chat.user2.username
           : chat.user1.username;
-
       return this.deserialize(chat, receiver);
     });
   }
@@ -53,7 +55,7 @@ export class ChatsService {
   }
 
   private deserialize(
-    chat: ChatDocument,
+    chat: PopulatedChatDocument,
     receiverUsername: string,
   ): ResponseChat {
     return {
