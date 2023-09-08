@@ -5,7 +5,7 @@ import { UsersService } from 'src/users/users.service';
 import { ResponseChat } from './interfaces/response-chat.interface';
 import { User } from 'src/users/interfaces/user.interface';
 import { Types } from 'mongoose';
-import { PopulatedChatDocument } from './models/chat.schema';
+import { Chat } from './interfaces/chat.interface';
 
 @Injectable()
 export class ChatsService {
@@ -23,7 +23,7 @@ export class ChatsService {
     );
 
     // check if the chat has not been created yet
-    const chatExists = await this.chatsRepository.findOneChat(
+    const chatExists = await this.chatsRepository.chatExists(
       currentUser.id,
       receiver.id,
     );
@@ -35,7 +35,11 @@ export class ChatsService {
       user2: new Types.ObjectId(receiver.id),
     });
 
-    return this.deserialize(createdChat, createChatDto.receiver);
+    return {
+      chatId: createdChat.id,
+      createdAt: createdChat.createdAt,
+      receiver: createdChat.user2,
+    };
   }
 
   async findAllChats(user: User): Promise<ResponseChat[]> {
@@ -46,22 +50,16 @@ export class ChatsService {
         user.username === chat.user1.username
           ? chat.user2.username
           : chat.user1.username;
-      return this.deserialize(chat, receiver);
+
+      return {
+        chatId: chat._id.toHexString(),
+        createdAt: chat.createdAt,
+        receiver: receiver,
+      };
     });
   }
 
-  async findChatById(chatId: string) {
-    return await this.chatsRepository.findChatById(chatId);
-  }
-
-  private deserialize(
-    chat: PopulatedChatDocument,
-    receiverUsername: string,
-  ): ResponseChat {
-    return {
-      chatId: chat._id.toHexString(),
-      createdAt: chat.createdAt,
-      receiver: receiverUsername,
-    };
+  async findChatById(chatId: string): Promise<Chat> {
+    return this.chatsRepository.findChatById(chatId);
   }
 }

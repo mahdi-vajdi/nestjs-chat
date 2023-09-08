@@ -5,6 +5,7 @@ import { PopulatedMessageDocument } from './models/message.schema';
 import { ResponseMessage } from './interfaces/response-message.interface';
 import { ChatsService } from 'src/chats/chats.service';
 import { Types } from 'mongoose';
+import { Chat } from 'src/chats/interfaces/chat.interface';
 
 @Injectable()
 export class MessagesService {
@@ -31,14 +32,12 @@ export class MessagesService {
     chatId: string,
     senderUsername: string,
   ): Promise<ResponseMessage> {
-    const chat = await this.chatService.findChatById(chatId);
+    const chat: Chat = await this.chatService.findChatById(chatId);
     const sender = await this.usersService.findOneByUsername(senderUsername);
 
     // get the reciver
     const receiverUsername =
-      sender.username === chat.user1.username
-        ? chat.user2.username
-        : chat.user1.username;
+      sender.username === chat.user1 ? chat.user2 : chat.user1;
 
     const receiverUser = await this.usersService.findOneByUsername(
       receiverUsername,
@@ -46,7 +45,7 @@ export class MessagesService {
 
     const message = await this.messagesRepository.createMessage({
       timestamp: new Date(),
-      chat: chat._id,
+      chat: new Types.ObjectId(chat.id),
       text,
       sender: new Types.ObjectId(sender.id),
       receiver: new Types.ObjectId(receiverUser.id),
