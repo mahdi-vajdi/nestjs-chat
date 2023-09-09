@@ -1,4 +1,4 @@
-export interface ResponseMessage {
+export interface Message {
   messageId: string;
   timestamp: Date;
   chatId: string;

@@ -1,10 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import {
-  SchemaTypes,
-  Types,
-  Schema as MongooseShcema,
-  Document,
-} from 'mongoose';
+import { SchemaTypes, Types, Schema as MongooseShcema } from 'mongoose';
 import { CHAT_COLLECTION_NAME } from 'src/chats/models/chat.schema';
 import {
   USER_COLLECTION_NAME,

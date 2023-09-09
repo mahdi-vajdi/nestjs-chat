@@ -17,8 +17,8 @@ import {
 } from 'src/auth/ws-auth.middleware';
 import { JwtService } from '@nestjs/jwt';
 import { WsJwtAuthGuard } from 'src/auth/guards/ws-jwt.guard';
-import { ResponseMessage } from './interfaces/response-message.interface';
 import { MessageSeenDto } from './dto/MessageSeenDto';
+import { Message } from './interfaces/message.interface';
 
 @WebSocketGateway({
   namespace: 'messages',
@@ -78,7 +78,7 @@ export class MessagesGateway
     @MessageBody() { text }: CreateMessageDto,
     @ConnectedSocket() client: SocketWithUser,
   ) {
-    const message: ResponseMessage = await this.messagesService.createMessage(
+    const message: Message = await this.messagesService.createMessage(
       text,
       client.handshake.query['chatId'] as string,
       client.username,

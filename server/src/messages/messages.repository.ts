@@ -4,11 +4,13 @@ import { Model, Types } from 'mongoose';
 import {
   MESSAGE_COLLECTION_NAME,
   MessageDocument,
+  PopulatedMessageDocument,
 } from './models/message.schema';
 import { REDIS_CLIENT } from 'src/redis/redis.module';
 import Redis from 'ioredis';
 import { redisSocketChatUserKey } from 'src/redis/redis.keys';
 import { UserDocument } from 'src/users/models/user.schema';
+import { Message } from './interfaces/message.interface';
 
 @Injectable()
 export class MessagesRepository {
@@ -33,38 +35,45 @@ export class MessagesRepository {
   }
 
   async createMessage(message: Omit<MessageDocument, '_id'>) {
-    const createdDocument = new this.messageModel({
+    const createdMessage = new this.messageModel({
       _id: new Types.ObjectId(),
       ...message,
     });
-    return createdDocument.save().then((doc) =>
+    const savedMessage = await createdMessage.save().then((doc) =>
       doc.populate<{
         sender: UserDocument;
         receiver: UserDocument;
       }>(['sender', 'receiver']),
     );
+
+    return this.deserialize(savedMessage);
   }
 
   async findAllChatMessages(chatId: string) {
-    return this.messageModel
+    const messages = await this.messageModel
       .find({ chat: chatId })
       .populate<{
         sender: UserDocument;
         receiver: UserDocument;
       }>(['sender', 'receiver'])
       .exec();
-  }
 
-  async findAllUserMessages(userId: string) {
-    return this.messageModel.find({
-      $or: [{ sender: userId }, { receiver: userId }],
-    });
+    return messages.map((message) => this.deserialize(message));
   }
 
   async messageSeen(messageId: string) {
-    await this.messageModel.findOneAndUpdate(
-      { _id: messageId },
-      { seen: true },
-    );
+    await this.messageModel.findByIdAndUpdate(messageId, { seen: true }).exec();
+  }
+
+  private deserialize(message: PopulatedMessageDocument): Message {
+    return {
+      messageId: message._id.toHexString(),
+      timestamp: message.timestamp,
+      chatId: message.chat._id.toHexString(),
+      sender: message.sender.username,
+      receiver: message.receiver.username,
+      text: message.text,
+      seen: message.seen,
+    };
   }
 }
