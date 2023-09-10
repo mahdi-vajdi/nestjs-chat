@@ -13,7 +13,7 @@ import { Server } from 'socket.io';
 import { UseGuards } from '@nestjs/common';
 import {
   SocketAuthMiddleware,
-  SocketWithUser,
+  SocketWithAuth,
 } from 'src/auth/ws-auth.middleware';
 import { JwtService } from '@nestjs/jwt';
 import { WsJwtAuthGuard } from 'src/auth/guards/ws-jwt.guard';
@@ -42,11 +42,11 @@ export class MessagesGateway
   Using WsJwtAuthGuard as a middleware so we
   can authenticate user before any socket connection being stablished. 
   */
-  afterInit(client: SocketWithUser) {
+  afterInit(client: SocketWithAuth) {
     client.use(SocketAuthMiddleware(this.jwtService) as any);
   }
 
-  async handleConnection(client: SocketWithUser) {
+  async handleConnection(client: SocketWithAuth) {
     console.log('socket connected: ', {
       time: new Date(),
       socketId: client.id,
@@ -60,7 +60,7 @@ export class MessagesGateway
     );
   }
 
-  async handleDisconnect(client: SocketWithUser) {
+  async handleDisconnect(client: SocketWithAuth) {
     console.log('socket disconnected: ', {
       time: new Date(),
       socketId: client.id,
@@ -76,7 +76,7 @@ export class MessagesGateway
   @SubscribeMessage('createMessage')
   async createMessage(
     @MessageBody() { text }: CreateMessageDto,
-    @ConnectedSocket() client: SocketWithUser,
+    @ConnectedSocket() client: SocketWithAuth,
   ) {
     const message: Message = await this.messagesService.createMessage(
       text,
@@ -99,7 +99,7 @@ export class MessagesGateway
   }
 
   @SubscribeMessage('getAllMessages')
-  async findAllChatMessages(@ConnectedSocket() client: SocketWithUser) {
+  async findAllChatMessages(@ConnectedSocket() client: SocketWithAuth) {
     const messages = await this.messagesService.findAllChatMessages(
       client.handshake.query['chatId'] as string,
     );
@@ -108,7 +108,7 @@ export class MessagesGateway
 
   @SubscribeMessage('messageSeen')
   async seenMessage(
-    @ConnectedSocket() client: SocketWithUser,
+    @ConnectedSocket() client: SocketWithAuth,
     @MessageBody()
     { messageId, senderUsername, chatId }: MessageSeenDto,
   ) {

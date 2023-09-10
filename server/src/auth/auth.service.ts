@@ -5,6 +5,11 @@ import { JwtService } from '@nestjs/jwt';
 import { ResponseSignin } from './interfaces/response-signin.interface';
 import { User } from 'src/users/interfaces/user.interface';
 
+export type AuthPayload = {
+  username: string;
+  sub: string;
+};
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -23,7 +28,7 @@ export class AuthService {
   }
 
   signin(user: User): ResponseSignin {
-    const payload = {
+    const payload: AuthPayload = {
       username: user.username,
       sub: user.id,
     };
