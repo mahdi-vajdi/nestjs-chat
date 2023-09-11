@@ -10,7 +10,7 @@ import {
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { Server } from 'socket.io';
-import { UseGuards } from '@nestjs/common';
+import { Logger, UseGuards } from '@nestjs/common';
 import {
   SocketAuthMiddleware,
   SocketWithAuth,
@@ -30,6 +30,8 @@ import { Message } from './interfaces/message.interface';
 export class MessagesGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
+  private readonly logger = new Logger(MessagesGateway.name);
+
   @WebSocketServer()
   server: Server;
 
@@ -47,7 +49,7 @@ export class MessagesGateway
   }
 
   async handleConnection(client: SocketWithAuth) {
-    console.log('socket connected: ', {
+    this.logger.log('Socket connected: ', {
       time: new Date(),
       socketId: client.id,
       chatId: client.handshake.query['chatId'],
@@ -61,7 +63,7 @@ export class MessagesGateway
   }
 
   async handleDisconnect(client: SocketWithAuth) {
-    console.log('socket disconnected: ', {
+    this.logger.log('Socket disconnected: ', {
       time: new Date(),
       socketId: client.id,
       chatId: client.handshake.query['chatId'],
@@ -112,7 +114,6 @@ export class MessagesGateway
     @MessageBody()
     { messageId, senderUsername, chatId }: MessageSeenDto,
   ) {
-    console.log('messageSeen: ', messageId);
     this.messagesService.messageSeen(messageId);
     const senderSocket = await this.messagesService.getSocket(
       chatId,

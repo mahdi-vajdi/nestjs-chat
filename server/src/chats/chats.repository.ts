@@ -7,12 +7,14 @@ import {
 import { Model, Types } from 'mongoose';
 import Redis from 'ioredis';
 import { REDIS_CLIENT } from 'src/redis/redis.module';
-import { Inject, NotFoundException } from '@nestjs/common';
+import { Inject, Logger, NotFoundException } from '@nestjs/common';
 import { UserDocument } from 'src/users/models/user.schema';
 import { redisChatKey } from 'src/redis/redis.keys';
 import { Chat } from './interfaces/chat.interface';
 
 export class ChatsRepository {
+  private readonly logger = new Logger(ChatsRepository.name);
+
   constructor(
     @InjectModel(CHAT_COLLECTION_NAME)
     private readonly chatModel: Model<ChatDocument>,
@@ -67,7 +69,8 @@ export class ChatsRepository {
     const redisChat = await this.redis.hgetall(redisChatKey(chatId));
 
     if (Object.keys(redisChat).length === 0) {
-      console.log(`chat: ${chatId} does not exist in redis`);
+      this.logger.log(`chat: ${chatId} does not exist in redis`);
+
       const chat = await this.chatModel
         .findById(chatId)
         .populate<{
@@ -82,7 +85,7 @@ export class ChatsRepository {
         );
       return this.deserialize(chat);
     } else {
-      console.log(`chat: ${chatId} exists in redis`);
+      this.logger.log(`chat: ${chatId} exists in redis`);
       return this.deserializeFromRedis(chatId, redisChat);
     }
   }

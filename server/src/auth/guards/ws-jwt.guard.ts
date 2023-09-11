@@ -25,7 +25,7 @@ export class WsJwtAuthGuard implements CanActivate {
 
       if (payload) return true;
     } catch (error) {
-      throw new WsException('Forbidden guard');
+      throw new WsException('Forbidden');
     }
   }
 }

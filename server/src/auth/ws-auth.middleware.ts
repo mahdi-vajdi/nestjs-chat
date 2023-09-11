@@ -21,7 +21,7 @@ export const SocketAuthMiddleware = (
       client.userId = payload.sub;
       next();
     } catch (error) {
-      next(new Error('Forbidden middleware'));
+      next(new Error('Forbidden'));
     }
   };
 };

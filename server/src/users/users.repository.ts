@@ -37,7 +37,7 @@ export class UsersRepository {
     const redisUser = await this.redis.hgetall(redisUsersKey(username));
 
     if (Object.keys(redisUser).length === 0) {
-      console.log(`user: ${username} does not exist in redis`);
+      this.logger.log(`user: ${username} does not exist in redis`);
       // User does not exist in redis store
       const user = await this.userModel.findOne({ username });
       if (!user) {
@@ -46,7 +46,7 @@ export class UsersRepository {
       }
       return this.deserialize(user);
     } else {
-      console.log(`user: ${username} exists in redis`);
+      this.logger.log(`user: ${username} exists in redis`);
       // User exits in redis store
       return this.deserializeFromRedis(username, redisUser);
     }
