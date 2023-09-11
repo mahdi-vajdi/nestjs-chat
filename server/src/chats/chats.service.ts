@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { ChatsRepository } from './chats.repository';
 import { UsersService } from 'src/users/users.service';
@@ -21,6 +25,10 @@ export class ChatsService {
     const receiver = await this.usersService.findOneByUsername(
       createChatDto.receiver,
     );
+
+    // prevent user from starting chat with themself
+    if (createChatDto.receiver === currentUser.username)
+      throw new BadRequestException("You can't start a chat with yourself!");
 
     // check if the chat has not been created yet
     const chatExists = await this.chatsRepository.chatExists(
