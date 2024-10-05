@@ -1,0 +1,148 @@
+@import "../../../config/scss/tools";
+@import "../../../config/scss/colors";
+@import "../../../config/scss/variables";
+
+
+.loginFormContainer{
+    @include flexBox();
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+
+
+    .loginForm{
+        @include flexBox();
+        border-radius: $radius-2xl;
+        overflow: hidden;
+        width: 70%;
+        height: 75%;
+        position: relative;
+        margin-top: 5%;
+
+
+        .leftSide{
+            width: 50%;
+            height: 100%;
+            background-color: $light-gray-color;
+        }
+
+        .rightSide{
+            width: 50%;
+            height: 100%;
+            background-color: $dark-gray-color;
+        }
+
+        .form{
+            width: 35%;
+            max-width: 350px;
+            height: 80%;
+            max-height: 450px;
+            background-color: white;
+            position: absolute;
+            border-radius: $radius-2xl;
+
+
+            .loginTextContainer{
+                @include flexBox(column);
+                width: 100%;
+                height: 50px;
+                margin-top: 20px;
+
+                span{
+                    padding: 5px 0;
+                    font-size: 20px;
+                }
+
+                .loginUnderline{
+                    width: 25px;
+                    height: 3px;
+                    border-radius: $radius-3xl;
+                    background-color: $black-color;
+                }
+            }
+
+            .formContainer{
+                padding: 10px 20px;
+                margin-top: 20px;
+                margin-top: 40px;
+            }
+
+            .loginFormText{
+                @include flexBox();
+                margin-top: 10px;
+                height: 50px;
+                
+
+                span{
+                    font-size: 12px;
+                    margin: 2px;
+                    color: $light-gray-color;
+
+
+                    &:first-child{
+                        color: $dark-gray-color;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+@media (max-width: 576px) {
+    .loginFormContainer{
+        .loginForm{
+            width: 95%;
+            .leftSide{
+                width: 100%;
+            }
+
+            .rightSide{
+                display: none;
+            }
+
+            .form{
+                width: 90%;
+                max-width: 300px;
+
+
+                .loginFormText{
+                    span{
+                        color: $dark-gray-color !important;
+                    }
+                }
+            }
+        }
+    }
+}
+@media (min-width: 576px) and (max-width: 767px) {
+    .loginFormContainer{
+        .loginForm{
+            width: 80%;
+            
+
+            .form{
+                width: 90%;
+                max-width: 300px;
+            }
+        }
+    }
+}
+@media (min-width: 768px) and (max-width: 991px) {
+    .loginFormContainer{
+        .loginForm{
+            width: 75%;
+            
+
+            .form{
+                width: 90%;
+                max-width: 300px;
+            }
+        }
+    }
+}
+@media (min-width: 992px) and (max-width: 1200px) {}
+@media (min-width: 1200px) and (max-width: 1600px) {}
+@media (min-width: 1600px) and (max-width: 2000px) {}

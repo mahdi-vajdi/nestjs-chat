@@ -1,0 +1,41 @@
+@import "../../config/scss/colors";
+@import "../../config/scss/tools";
+@import "../../config/scss/variables";
+
+
+
+.homeContainer{ 
+    background-color: rgb(248, 248, 248);
+    min-height: 100svh;
+
+    .searchContainer{
+        @include flexBox();
+        height: 60px;
+        width: 100%;
+        background-color: $black-color;
+        color: white;
+    }
+
+    .chatContainer{
+        @include flexBox();
+        width: 80%;
+        height: 80vh;
+        background-color: white;
+        margin: auto;
+        border-radius: $radius-md;
+        margin-top: calc(10vh - 30px);
+        box-shadow: 0px 0px 10px 5px lightgray;
+
+
+        .chatsContainer{
+            width: 20%;
+            height: 100%;
+            border-right: 1px solid $light-gray-color;
+        }
+
+        .messagesContainer{
+            width: 80%;
+            height: 100%;
+        }
+    }
+}

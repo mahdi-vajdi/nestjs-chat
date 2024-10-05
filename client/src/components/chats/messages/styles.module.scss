@@ -1,0 +1,45 @@
+@import "../../../config/scss/variables";
+@import "../../../config/scss/tools";
+@import "../../../config/scss/colors";
+
+.messagesContainer{
+  height: 100%;
+  width: 100%;
+
+
+  .header{
+    @include flexBox(row, flex-start);
+    height: 10%;
+    padding: 5px;
+    border-bottom: 1px solid lightgray;
+  }
+
+  .body{
+    height: 75%;
+    @include flexBox(column, flex-start);
+    overflow: auto;
+
+    .message{
+      width: 100%;
+      margin-top: 10px;
+      min-height: 60px;
+      height: fit-content;
+      padding: 0 5px;
+      
+      .messageSelf{
+        @include flexBox(column, flex-start, flex-end);
+        width: fit-content;
+        max-width: 200px;
+        height: 100%;
+        padding: 5px 10px;
+        border-radius: $radius-md;
+      }
+    }
+  }
+
+  .footer{
+    @include flexBox(row, space-evenly);
+    height: 15%;
+    border-top: 1px solid lightgray;
+  }
+}
