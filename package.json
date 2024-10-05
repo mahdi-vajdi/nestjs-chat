@@ -1,0 +1,40 @@
+{
+  "name": "chatterbox",
+  "version": "0.0.1",
+  "description": "A fast and scalable chat server.",
+  "workspaces": [
+    "socket-gateway"
+  ],
+  "scripts": {
+    "prebuild": "npm run prebuild --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present",
+    "start": "npm run start --workspaces --if-present",
+    "start:dev": "npm run start:dev --workspaces --if-present",
+    "start:debug": "npm run start:debug --workspaces --if-present",
+    "start:prod": "npm run start:prod --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:watch": "npm run test:watch --workspaces --if-present",
+    "test:cov": "npm run test:cov --workspaces --if-present",
+    "test:debug": "npm run test:debug --workspaces --if-present",
+    "test:e2e": "npm run test:e2e --workspaces --if-present"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mahdi-vajdi/Chatterbox.git"
+  },
+  "keywords": [
+    "chat",
+    "node.js",
+    "nestjs",
+    "websockets",
+    "socket.io"
+  ],
+  "author": "Mahdi Vajdi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mahdi-vajdi/Chatterbox/issues"
+  },
+  "homepage": "https://github.com/mahdi-vajdi/Chatterbox#readme"
+}
