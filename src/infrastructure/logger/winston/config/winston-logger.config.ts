@@ -1,4 +1,5 @@
 import { ConfigFactory, registerAs } from '@nestjs/config';
+import Joi from 'joi';
 
 export interface IWinstonLoggerConfig {
   useFile: boolean;
@@ -8,15 +9,35 @@ export interface IWinstonLoggerConfig {
 
 export const WINSTON_LOGGER_CONFIG_TOKEN = 'winston-logger-config-token';
 
+const winstonLoggerConfigSchema = Joi.object<IWinstonLoggerConfig>({
+  useFile: Joi.boolean().default(false),
+  filePath: Joi.string().required(),
+  level: Joi.string()
+    .valid('debug', 'verbose', 'log', 'warn', 'error')
+    .required(),
+});
+
 export const winstonLoggerConfig = registerAs<
   IWinstonLoggerConfig,
   ConfigFactory<IWinstonLoggerConfig>
 >(WINSTON_LOGGER_CONFIG_TOKEN, () => {
-  if (!process.env.LOG_FILE) throw new Error('LOG_FILE not provided.');
+  const { error, value } = winstonLoggerConfigSchema.validate(
+    {
+      useFile: process.env.LOG_USE_FILE,
+      filePath: process.env.LOG_FILE,
+      level: process.env.LOG_LEVEL,
+    },
+    {
+      allowUnknown: false,
+      abortEarly: false,
+    },
+  );
 
-  return {
-    useFile: process.env.LOG_USE_FILE === 'true',
-    filePath: process.env.LOG_FILE,
-    level: process.env.LOG_LEVEL ?? 'warn',
-  };
+  if (error) {
+    throw new Error(
+      `Winston logger config env validation error: ${error.message}`,
+    );
+  }
+
+  return value;
 });
