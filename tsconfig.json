@@ -11,11 +11,23 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "incremental": true,
+    "types": [
+      "node",
+      "jest"
+    ],
     "skipLibCheck": true,
     "strictNullChecks": false,
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "lib": [
+      "ES2021"
+    ],
+    "paths": {
+      "@shared/*": [
+        "./src/shared/*"
+      ]
+    }
   }
 }
