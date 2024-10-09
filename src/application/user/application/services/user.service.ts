@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   IUserDatabaseProvider,
   USER_DATABASE_PROVIDER,
-} from '../../domain/interfaces/user-database.provider';
+} from '@domain/user/interfaces/user-database.provider';
 
 @Injectable()
 export class UserService {
