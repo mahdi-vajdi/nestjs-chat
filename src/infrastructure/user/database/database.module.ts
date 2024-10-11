@@ -8,7 +8,7 @@ import { DatabaseType } from '@shared/database/database-type.enum';
 
 @Module({
   imports: [
-    DatabaseModule,
+    DatabaseModule.register(DatabaseType.POSTGRES),
     TypeOrmModule.forFeature([UserEntity], DatabaseType.POSTGRES),
   ],
   providers: [
