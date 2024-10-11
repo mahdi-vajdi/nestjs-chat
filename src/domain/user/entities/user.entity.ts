@@ -1,6 +1,6 @@
-import { IIdentifiableEntity } from '../../../common/interfaces/identifiable-entity.interface';
-import { IDatatableEntity } from '../../../common/interfaces/datable-entity.interface';
-import { IDeletableEntity } from '../../../common/interfaces/deletable-entity.interface';
+import { IIdentifiableEntity } from '@common/interfaces/identifiable-entity.interface';
+import { IDatatableEntity } from '@common/interfaces/datable-entity.interface';
+import { IDeletableEntity } from '@common/interfaces/deletable-entity.interface';
 
 export class IUser {
   firstName: string;

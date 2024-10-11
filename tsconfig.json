@@ -26,22 +26,22 @@
     ],
     "paths": {
       "@common/*": [
-        "./common/*"
+        "src/common/*"
       ],
       "@shared/*": [
-        "./src/shared/*"
+        "src/shared/*"
       ],
       "@domain/*": [
-        "./src/domain/*"
+        "src/domain/*"
       ],
       "@infrastructure/*": [
-        "./infrastructure/*"
+        "infrastructure/*"
       ],
       "@application/*": [
-        "./application/*"
+        "application/*"
       ],
       "@presentation/*": [
-        "./presentation/*"
+        "presentation/*"
       ]
     }
   }
