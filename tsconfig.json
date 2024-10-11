@@ -25,7 +25,7 @@
       "ES2021"
     ],
     "paths": {
-      "@common": [
+      "@common/*": [
         "./common/*"
       ],
       "@shared/*": [

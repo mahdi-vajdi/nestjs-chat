@@ -2,13 +2,13 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Logger as TypeOrmLogger } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { LoggerModule } from '../../logger/logger.module';
+import { LoggerModule } from '../logger/logger.module';
 import {
   IPostgresConfig,
   POSTGRES_CONFIG_TOKEN,
-} from './config/postgres.config';
-import { DatabaseType } from '../database-type.enum';
-import { LOGGER_PROVIDER } from '../../logger/provider/logger.provider';
+} from './postgres/config/postgres.config';
+import { DatabaseType } from './database-type.enum';
+import { LOGGER_PROVIDER } from '../logger/provider/logger.provider';
 
 @Module({})
 export class DatabaseModule {
