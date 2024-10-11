@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -14,6 +15,7 @@ export class UserEntity {
   id: number;
 
   @Column({ type: 'varchar', length: 150 })
+  @Index('UQ_USERS_EMAIL', { unique: true })
   email: string;
 
   @Column({ type: 'varchar', length: 255 })

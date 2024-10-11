@@ -3,12 +3,12 @@ import { USER_DATABASE_PROVIDER } from '@domain/user/interfaces/user-database.pr
 import { UserPostgresService } from './postgres/services/user-postgres.service';
 import { DatabaseModule } from '@shared/database/database.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserEntity } from './postgres/models/user.entity';
+import { UserEntity } from './postgres/entities/user.entity';
 import { DatabaseType } from '@shared/database/database-type.enum';
 
 @Module({
   imports: [
-    DatabaseModule,
+    DatabaseModule.register(DatabaseType.POSTGRES),
     TypeOrmModule.forFeature([UserEntity], DatabaseType.POSTGRES),
   ],
   providers: [
