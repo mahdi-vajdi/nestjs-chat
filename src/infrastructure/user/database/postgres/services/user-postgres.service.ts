@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { IUserDatabaseProvider } from '../../../domain/interfaces/user-database.provider';
+import { IUserDatabaseProvider } from '@domain/user/interfaces/user-database.provider';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../models/user.entity';
-import { DatabaseType } from '../../../../../shared/database/database-type.enum';
+import { DatabaseType } from '@shared/database/database-type.enum';
 import { Repository } from 'typeorm';
 
 @Injectable()

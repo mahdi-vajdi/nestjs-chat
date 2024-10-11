@@ -25,8 +25,23 @@
       "ES2021"
     ],
     "paths": {
+      "@common/*": [
+        "./common/*"
+      ],
       "@shared/*": [
         "./src/shared/*"
+      ],
+      "@domain/*": [
+        "./src/domain/*"
+      ],
+      "@infrastructure/*": [
+        "./infrastructure/*"
+      ],
+      "@application/*": [
+        "./application/*"
+      ],
+      "@presentation/*": [
+        "./presentation/*"
       ]
     }
   }
