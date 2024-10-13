@@ -1,29 +1,29 @@
+import { Logger } from '@nestjs/common';
 import { Result } from '@common/result/result';
-import { ErrorCode } from '@common/result/error';
+
+const errorLogger = new Logger('TryCatch');
 
 export function TryCatch(
-  _target: any,
-  _propertyKey: string,
+  target: any,
+  propertyKey: string,
   descriptor: PropertyDescriptor,
 ) {
   const originalMethod = descriptor.value;
 
-  descriptor.value = function (...args: any[]) {
+  descriptor.value = async function (...args: any[]) {
     try {
-      const res = originalMethod.apply(this, args);
-
-      if (res instanceof Promise) {
-        return res.then(
-          (value) => Result.ok(value),
-          (error) => Result.error(error, ErrorCode.INTERNAL),
-        );
-      }
-
-      return Result.ok(res);
+      return await originalMethod.apply(this, args);
     } catch (error) {
-      Result.error(error, ErrorCode.INTERNAL);
+      if (typeof error === 'string') {
+        error = new Error(error);
+      }
+      errorLogger.error(
+        `Error in ${propertyKey}@${target.constructor.name}: ${error.name} ${error.message}`,
+        error.stack,
+        target.constructor.name,
+      );
+
+      return Result.error(error);
     }
   };
-
-  return descriptor;
 }
