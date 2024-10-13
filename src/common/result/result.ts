@@ -1,4 +1,4 @@
-import { AppError, ErrCode } from '@common/result/error';
+import { AppError, ErrorCode } from '@common/result/error';
 
 export class Result<T> {
   private constructor(
@@ -16,7 +16,7 @@ export class Result<T> {
 
   get error(): AppError {
     if (this.isOk()) {
-      throw new AppError('Result has value', ErrCode.INTERNAL, {
+      throw new AppError('Result has value', ErrorCode.INTERNAL, {
         value: this._value,
       });
     }
@@ -38,7 +38,7 @@ export class Result<T> {
 
   static error<T = never>(
     error: Error | AppError | string,
-    code: ErrCode,
+    code: ErrorCode,
     data: Record<string, unknown> = {},
   ): Result<T> {
     if (error instanceof AppError) return new Result<T>(null, error);

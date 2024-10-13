@@ -1,4 +1,4 @@
-export enum ErrCode {
+export enum ErrorCode {
   INVALID_ARGUMENT = 400,
   UNAUTHORIZED = 401,
   NOT_FOUND = 404,
@@ -10,7 +10,7 @@ export enum ErrCode {
 export class AppError extends Error {
   constructor(
     message: string,
-    readonly code: ErrCode,
+    readonly code: ErrorCode,
     readonly data: Record<string, unknown> = {},
   ) {
     super(message);

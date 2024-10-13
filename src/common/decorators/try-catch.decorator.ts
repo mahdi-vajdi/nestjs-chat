@@ -1,3 +1,6 @@
+import { Result } from '@common/result/result';
+import { ErrorCode } from '@common/result/error';
+
 export function TryCatch(
   _target: any,
   _propertyKey: string,
@@ -7,17 +10,18 @@ export function TryCatch(
 
   descriptor.value = function (...args: any[]) {
     try {
-      const result = originalMethod.apply(this, args);
+      const res = originalMethod.apply(this, args);
 
-      if (result && result instanceof Promise) {
-        return result.catch((error: any) => {
-          throw error;
-        });
+      if (res instanceof Promise) {
+        return res.then(
+          (value) => Result.ok(value),
+          (error) => Result.error(error, ErrorCode.INTERNAL),
+        );
       }
 
-      return result;
+      return Result.ok(res);
     } catch (error) {
-      throw error;
+      Result.error(error, ErrorCode.INTERNAL);
     }
   };
 
