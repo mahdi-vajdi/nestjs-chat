@@ -1,0 +1,8 @@
+export enum StdStatus {
+  SUCCESS,
+  BAD_REQUEST,
+  UNAUTHORIZED,
+  FORBIDDEN,
+  NOT_FOUND,
+  INTERNAL_ERROR,
+}

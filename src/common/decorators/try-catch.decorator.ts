@@ -1,25 +1,29 @@
+import { Logger } from '@nestjs/common';
+import { Result } from '@common/result/result';
+
+const errorLogger = new Logger('TryCatch');
+
 export function TryCatch(
-  _target: any,
-  _propertyKey: string,
+  target: any,
+  propertyKey: string,
   descriptor: PropertyDescriptor,
 ) {
   const originalMethod = descriptor.value;
 
-  descriptor.value = function (...args: any[]) {
+  descriptor.value = async function (...args: any[]) {
     try {
-      const result = originalMethod.apply(this, args);
-
-      if (result && result instanceof Promise) {
-        return result.catch((error: any) => {
-          throw error;
-        });
-      }
-
-      return result;
+      return await originalMethod.apply(this, args);
     } catch (error) {
-      throw error;
+      if (typeof error === 'string') {
+        error = new Error(error);
+      }
+      errorLogger.error(
+        `Error in ${propertyKey}@${target.constructor.name}: ${error.name} ${error.message}`,
+        error.stack,
+        target.constructor.name,
+      );
+
+      return Result.error(error);
     }
   };
-
-  return descriptor;
 }

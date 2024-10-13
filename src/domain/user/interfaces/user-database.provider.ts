@@ -1,6 +1,11 @@
+import { User } from '@domain/user/entities/user.entity';
+import { Result } from '@common/result/result';
+
 interface IUserDatabaseReader {}
 
-interface IUserDatabaseWriter {}
+interface IUserDatabaseWriter {
+  createUser(user: User): Promise<Result<User>>;
+}
 
 export interface IUserDatabaseProvider
   extends IUserDatabaseReader,
