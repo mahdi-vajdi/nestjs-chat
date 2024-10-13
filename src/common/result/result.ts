@@ -37,8 +37,8 @@ export class Result<T> {
   }
 
   static error<T = never>(
-    error: Error | AppError | string,
-    code: ErrorCode,
+    error: AppError | Error | string,
+    code?: ErrorCode,
     data: Record<string, unknown> = {},
   ): Result<T> {
     if (error instanceof AppError) return new Result<T>(null, error);
