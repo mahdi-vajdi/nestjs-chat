@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from '@domain/user/entities/user.entity';
+import { User } from '@domain/user/entities/user.model';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -58,7 +58,7 @@ export class UserEntity {
 
     const user = new User();
 
-    user.id = String(user.id);
+    user.id = String(userEntity.id);
     user.firstName = userEntity.firstName;
     user.lastName = userEntity.lastName;
     user.email = userEntity.email;

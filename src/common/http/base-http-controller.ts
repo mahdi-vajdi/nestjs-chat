@@ -5,8 +5,8 @@ import { StdStatus } from '@common/std-response/std-status';
 import { HttpStatus } from '@nestjs/common/enums/http-status.enum';
 
 export abstract class BaseHttpController {
-  protected respond<T>(response: Response, result: Result<T>) {
-    const stdResponse = StdResponse.fromResult<T>(result);
+  protected respond(response: Response, result: Result<any>) {
+    const stdResponse = StdResponse.fromResult<any>(result);
 
     response.status(this.fromStdStatus(stdResponse.status)).send(stdResponse);
   }
@@ -23,6 +23,8 @@ export abstract class BaseHttpController {
         return HttpStatus.FORBIDDEN;
       case StdStatus.NOT_FOUND:
         return HttpStatus.NOT_FOUND;
+      case StdStatus.DUPLICATE:
+        return HttpStatus.CONFLICT;
       case StdStatus.INTERNAL_ERROR:
         return HttpStatus.INTERNAL_SERVER_ERROR;
       default:

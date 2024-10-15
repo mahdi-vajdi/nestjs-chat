@@ -31,6 +31,8 @@ export class StdResponse<T> {
         return StdStatus.FORBIDDEN;
       case ErrorCode.UNAUTHORIZED:
         return StdStatus.UNAUTHORIZED;
+      case ErrorCode.DUPLICATE:
+        return StdStatus.DUPLICATE;
       default:
         return StdStatus.INTERNAL_ERROR;
     }

@@ -4,5 +4,6 @@ export enum StdStatus {
   UNAUTHORIZED,
   FORBIDDEN,
   NOT_FOUND,
+  DUPLICATE,
   INTERNAL_ERROR,
 }
