@@ -5,7 +5,7 @@ import { UserEntity } from '../entities/user.entity';
 import { DatabaseType } from '@shared/database/database-type.enum';
 import { Repository } from 'typeorm';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
-import { User } from '@domain/user/entities/user.entity';
+import { User } from '@domain/user/entities/user.model';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
 

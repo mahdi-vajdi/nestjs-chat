@@ -3,9 +3,10 @@ import { IDatatableEntity } from '@common/interfaces/datable-entity.interface';
 import { IDeletableEntity } from '@common/interfaces/deletable-entity.interface';
 
 export class IUser {
+  email: string;
+  password: string;
   firstName: string;
   lastName: string;
-  email: string;
 }
 
 export class User
@@ -22,5 +23,9 @@ export class User
 
   constructor(init?: Partial<User>) {
     Object.assign(this, init);
+  }
+
+  static create(iUser: IUser): User {
+    return new User(iUser);
   }
 }

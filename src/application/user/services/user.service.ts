@@ -4,7 +4,7 @@ import {
   USER_DATABASE_PROVIDER,
 } from '@domain/user/interfaces/user-database.provider';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
-import { User } from '@domain/user/entities/user.entity';
+import { User } from '@domain/user/entities/user.model';
 import { Result } from '@common/result/result';
 
 @Injectable()
@@ -24,7 +24,7 @@ export class UserService {
     if (res.isError()) {
       this.logger.error(
         `Error creating user with email: ${user.email}`,
-        res.error.stack,
+        // res.error.stack,
       );
       return Result.error(res.error);
     }

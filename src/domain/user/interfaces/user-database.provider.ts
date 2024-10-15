@@ -1,4 +1,4 @@
-import { User } from '@domain/user/entities/user.entity';
+import { User } from '@domain/user/entities/user.model';
 import { Result } from '@common/result/result';
 
 interface IUserDatabaseReader {}
