@@ -1,5 +1,4 @@
 import { AppError, ErrorCode } from '@common/result/error';
-import { ValidationFailure } from '../../pipes/validation-failure';
 
 export class Result<T, E = undefined> {
   private constructor(
@@ -39,7 +38,7 @@ export class Result<T, E = undefined> {
   }
 
   static error<E = undefined, T extends never = never>(
-    error: AppError | Error | ValidationFailure[] | string,
+    error: AppError | Error | string,
     code?: ErrorCode,
     data?: E,
   ): Result<T, E> {

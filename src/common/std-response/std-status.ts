@@ -1,6 +1,6 @@
 export enum StdStatus {
   SUCCESS,
-  BAD_REQUEST,
+  INVALID,
   UNAUTHORIZED,
   FORBIDDEN,
   NOT_FOUND,

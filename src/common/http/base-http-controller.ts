@@ -15,7 +15,7 @@ export abstract class BaseHttpController {
     switch (status) {
       case StdStatus.SUCCESS:
         return HttpStatus.OK;
-      case StdStatus.BAD_REQUEST:
+      case StdStatus.INVALID:
         return HttpStatus.BAD_REQUEST;
       case StdStatus.UNAUTHORIZED:
         return HttpStatus.UNAUTHORIZED;

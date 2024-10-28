@@ -4,12 +4,14 @@ import {
   Paramtype,
   PipeTransform,
   Type,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate, ValidationError } from 'class-validator';
 import { StdResponse } from '@common/std-response/std-response';
 import { Result } from '@common/result/result';
 import { ValidationFailure } from './validation-failure';
+import { ErrorCode } from '@common/result/error';
 
 @Injectable()
 export class ValidationPipe implements PipeTransform {
@@ -39,7 +41,17 @@ export class ValidationPipe implements PipeTransform {
 
     if (errors.length > 0) {
       if (this.transport === 'ws' && ack) {
-        ack(StdResponse.fromResult(this.formatErrors(errors)));
+        ack(
+          StdResponse.fromResult<ValidationFailure[]>(
+            this.formatErrors(errors),
+          ),
+        );
+      }
+
+      if (this.transport === 'http') {
+        throw new UnprocessableEntityException(
+          StdResponse.fromResult(this.formatErrors(errors)),
+        );
       }
     }
   }
@@ -49,9 +61,7 @@ export class ValidationPipe implements PipeTransform {
     return !types.includes(metatype as any);
   }
 
-  private formatErrors(
-    validationErrors: ValidationError[],
-  ): Result<never, ValidationFailure[]> {
+  private formatErrors(validationErrors: ValidationError[]): Result<any, any> {
     const errors: ValidationFailure[] = [];
 
     // Transform validation errors into ValidationFailure instances and push them to the array.
@@ -73,6 +83,10 @@ export class ValidationPipe implements PipeTransform {
       return errors;
     });
 
-    return Result.error(errors);
+    return Result.error(
+      'Validation Error',
+      ErrorCode.VALIDATION_FAILURE,
+      errors,
+    );
   }
 }

@@ -51,6 +51,7 @@ import { LOGGER_PROVIDER } from './provider/logger.provider';
             format.colorize({
               all: true,
             }),
+            format.simple(),
           ),
           transports: [
             new transports.Console({
