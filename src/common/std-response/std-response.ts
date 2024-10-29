@@ -12,7 +12,7 @@ export class StdResponse<T> {
   static fromResult<T>(result: Result<T>): StdResponse<T> {
     if (result.isError()) {
       return new StdResponse<T>(
-        result.error.data,
+        result.error.data as T,
         result.error.message,
         StdResponse.toStdStatus(result.error.code),
       );
@@ -26,7 +26,7 @@ export class StdResponse<T> {
       case ErrorCode.NOT_FOUND:
         return StdStatus.NOT_FOUND;
       case ErrorCode.INVALID_ARGUMENT:
-        return StdStatus.BAD_REQUEST;
+        return StdStatus.INVALID;
       case ErrorCode.FORBIDDEN:
         return StdStatus.FORBIDDEN;
       case ErrorCode.UNAUTHORIZED:

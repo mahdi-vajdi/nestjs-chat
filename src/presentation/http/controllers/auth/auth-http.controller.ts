@@ -1,11 +1,12 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Res, UsePipes } from '@nestjs/common';
 import { BaseHttpController } from '@common/http/base-http-controller';
 import { Response } from 'express';
 import { UserService } from '../../../../application/user/services/user.service';
 import { User } from '@domain/user/entities/user.model';
-import { ApiBody, ApiResponse } from '@nestjs/swagger';
-import { SignupRequest, SignupResponse } from './models/signup.model';
+import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { SignupRequestBody, SignupResponse } from './models/signup.model';
 import { Result } from '@common/result/result';
+import { ValidationPipe } from '@common/validation/validation.pipe';
 
 @Controller('v1/auth')
 export class AuthHttpController extends BaseHttpController {
@@ -14,9 +15,14 @@ export class AuthHttpController extends BaseHttpController {
   }
 
   @Post('signup')
-  @ApiBody({ type: SignupRequest })
+  @UsePipes(new ValidationPipe(['body'], 'http'))
+  @ApiOperation({
+    summary: 'Signup',
+    description: 'Sign up and create a new user in the chatterbox',
+  })
+  @ApiBody({ type: SignupRequestBody })
   @ApiResponse({ type: SignupResponse })
-  async signup(@Res() response: Response, @Body() body: SignupRequest) {
+  async signup(@Res() response: Response, @Body() body: SignupRequestBody) {
     const res = await this.userService.createUser(
       User.create({
         email: body.email,
