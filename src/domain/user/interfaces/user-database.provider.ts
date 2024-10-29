@@ -1,7 +1,10 @@
-import { User } from '@domain/user/entities/user.entity';
+import { User } from '@domain/user/entities/user.model';
 import { Result } from '@common/result/result';
+import { UserExists } from '../../../infrastructure/user/database/postgres/services/dto/user-exists.dto';
 
-interface IUserDatabaseReader {}
+interface IUserDatabaseReader {
+  userExists(data: UserExists): Promise<Result<boolean>>;
+}
 
 interface IUserDatabaseWriter {
   createUser(user: User): Promise<Result<User>>;

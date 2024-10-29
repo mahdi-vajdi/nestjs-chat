@@ -1,11 +1,10 @@
-import { StdStatus } from '@common/std-response/std-status';
-
 export enum ErrorCode {
   INVALID_ARGUMENT,
   UNAUTHORIZED,
   NOT_FOUND,
   FORBIDDEN,
   VALIDATION_FAILURE,
+  DUPLICATE,
   INTERNAL,
 }
 

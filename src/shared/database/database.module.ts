@@ -27,6 +27,7 @@ export class DatabaseModule {
         );
 
         return {
+          name: DatabaseType.POSTGRES,
           type: 'postgres',
           host: postgresConfig.host,
           port: postgresConfig.port,
@@ -36,6 +37,7 @@ export class DatabaseModule {
           entities: ['**/dist/**/postgres/**/*.entity{.ts,.js}'],
           migrations: ['**/dist/**/postgres/**/**.migration{.ts,.js}'],
           migrationsRun: true,
+          migrationsTableName: 'typeorm_migrations',
           synchronize: false,
           logging: postgresConfig.log,
           logger: logger,
