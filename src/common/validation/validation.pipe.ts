@@ -16,7 +16,7 @@ import { ErrorCode } from '@common/result/error';
 @Injectable()
 export class ValidationPipe implements PipeTransform {
   constructor(
-    private readonly types: Paramtype,
+    private readonly types: Paramtype[],
     private readonly transport: 'http' | 'ws',
   ) {}
 
@@ -34,6 +34,9 @@ export class ValidationPipe implements PipeTransform {
     if (this.transport === 'ws') {
       oldValue = value.data;
       ack = value.ack;
+    } else if (this.transport === 'http' && metadata.type === 'param') {
+      // For params, I wrap the single param value in an object
+      oldValue = { [metadata.data]: value };
     }
 
     const newValue = plainToInstance(metadata.metatype, oldValue);
@@ -54,6 +57,8 @@ export class ValidationPipe implements PipeTransform {
         );
       }
     }
+
+    return value;
   }
 
   private toValidate(metatype: Type<any>): boolean {
