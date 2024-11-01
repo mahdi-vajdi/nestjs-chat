@@ -1,6 +1,6 @@
-FROM node:22.11-alpine AS builder
+FROM node:22.11-alpine AS build
 
-WORKDIR /chatterbox
+WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci
@@ -11,13 +11,16 @@ RUN npm run build
 
 FROM node:22.11-alpine AS release
 
-WORKDIR /chatterbox
+ARG NODE_ENV=production
+ENV NODE_ENV=${NODE_ENV}
 
-COPY --from=builder /chatterbox/dist ./dist
-COPY --from=builder /chatterbox/package*.json ./
+WORKDIR /app
+
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/package*.json ./
 
 RUN npm ci --omit=dev
 
-#USER node
+USER node
 
 CMD ["node", "dist/main"]
