@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { IUserDatabaseProvider } from '@domain/user/interfaces/user-database.provider';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../entities/user.entity';
-import { DatabaseType } from '@shared/database/database-type.enum';
 import { Repository } from 'typeorm';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
-import { User } from '@domain/user/entities/user.model';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
 import { UserExists } from './dto/user-exists.dto';
+import { IUserDatabaseProvider } from '../../../../domain/interfaces/user-database.provider';
+import { DatabaseType } from '@infrastructure/database/database-type.enum';
+import { User } from '../../../../domain/entities/user.model';
 
 @Injectable()
 export class UserPostgresService implements IUserDatabaseProvider {

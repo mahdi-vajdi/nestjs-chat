@@ -1,12 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+
+import { TryCatch } from '@common/decorators/try-catch.decorator';
+import { Result } from '@common/result/result';
+import { ErrorCode } from '@common/result/error';
 import {
   IUserDatabaseProvider,
   USER_DATABASE_PROVIDER,
-} from '@domain/user/interfaces/user-database.provider';
-import { TryCatch } from '@common/decorators/try-catch.decorator';
-import { User } from '@domain/user/entities/user.model';
-import { Result } from '@common/result/result';
-import { ErrorCode } from '@common/result/error';
+} from '../../domain/interfaces/user-database.provider';
+import { User } from '../../domain/entities/user.model';
 
 @Injectable()
 export class UserService {
