@@ -1,6 +1,6 @@
-import { User } from '@domain/user/entities/user.model';
 import { Result } from '@common/result/result';
-import { UserExists } from '../../../infrastructure/user/database/postgres/services/dto/user-exists.dto';
+import { UserExists } from '../../infrastructure/database/postgres/services/dto/user-exists.dto';
+import { User } from '../entities/user.model';
 
 interface IUserDatabaseReader {
   userExists(data: UserExists): Promise<Result<boolean>>;

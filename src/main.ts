@@ -5,11 +5,11 @@ import {
   HTTP_CONFIG_TOKEN,
   httpConfig,
   IHttpConfig,
-} from './presentation/http/http.config';
+} from '@presentation/http/http.config';
 import { Logger, LoggerService } from '@nestjs/common';
-import { LoggerModule } from '@shared/logger/logger.module';
-import { WinstonLoggerService } from '@shared/logger/winston/winston-logger.service';
-import { LOGGER_PROVIDER } from '@shared/logger/provider/logger.provider';
+import { LoggerModule } from '@infrastructure/logger/logger.module';
+import { WinstonLoggerService } from '@infrastructure/logger/winston/winston-logger.service';
+import { LOGGER_PROVIDER } from '@infrastructure/logger/provider/logger.provider';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function loadConfig(): Promise<ConfigService> {
