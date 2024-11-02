@@ -1,0 +1,14 @@
+services:
+  chatterbox:
+    image: chatterbox
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+      target: build
+    command: npm run start:dev
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ..:/app
