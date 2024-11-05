@@ -14,9 +14,15 @@ const httpConfigSchema = Joi.object<IHttpConfig>({
 export const httpConfig = registerAs<IHttpConfig, ConfigFactory<IHttpConfig>>(
   HTTP_CONFIG_TOKEN,
   () => {
-    const { error, value } = httpConfigSchema.validate({
-      port: process.env.PORT,
-    });
+    const { error, value } = httpConfigSchema.validate(
+      {
+        port: process.env.PORT,
+      },
+      {
+        allowUnknown: false,
+        abortEarly: false,
+      },
+    );
 
     if (error) throw error;
 

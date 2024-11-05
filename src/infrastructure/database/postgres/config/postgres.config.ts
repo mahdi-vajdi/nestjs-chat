@@ -27,17 +27,23 @@ export const postgresConfig = registerAs<
   IPostgresConfig,
   ConfigFactory<IPostgresConfig>
 >(POSTGRES_CONFIG_TOKEN, () => {
-  const { error, value } = postgresConfigSchema.validate({
-    host: process.env.POSTGRES_HOST,
-    port: Number(process.env.POSTGRES_PORT),
-    username: process.env.POSTGRES_USERNAME,
-    password: process.env.POSTGRES_PASSWORD,
-    database: process.env.POSTGRES_DATABASE,
-    log: process.env.POSTGRES_LOG,
-    slowQueryLimit: process.env.POSTGRES_SLOW_QUERY_LIMIT
-      ? parseInt(process.env.POSTGRES_SLOW_QUERY_LIMIT, 10)
-      : undefined,
-  });
+  const { error, value } = postgresConfigSchema.validate(
+    {
+      host: process.env.POSTGRES_HOST,
+      port: Number(process.env.POSTGRES_PORT),
+      username: process.env.POSTGRES_USERNAME,
+      password: process.env.POSTGRES_PASSWORD,
+      database: process.env.POSTGRES_DATABASE,
+      log: process.env.POSTGRES_LOG,
+      slowQueryLimit: process.env.POSTGRES_SLOW_QUERY_LIMIT
+        ? parseInt(process.env.POSTGRES_SLOW_QUERY_LIMIT, 10)
+        : undefined,
+    },
+    {
+      allowUnknown: false,
+      abortEarly: false,
+    },
+  );
 
   if (error) {
     throw new Error(`Postgres config env validation error: ${error.message}`);

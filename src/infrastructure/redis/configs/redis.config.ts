@@ -21,17 +21,20 @@ export const redisConfig = registerAs<
   IRedisConfig,
   ConfigFactory<IRedisConfig>
 >(REDIS_CONFIG_TOKEN, () => {
-  const { error, value } = redisConfigSchema.validate({
-    host: process.env.REDIS_HOST,
-    port: Number(process.env.REDIS_PORT),
-    username: process.env.REDIS_USERNAME,
-    password: process.env.REDIS_PASSWORD,
-  });
+  const { error, value } = redisConfigSchema.validate(
+    {
+      host: process.env.REDIS_HOST,
+      port: Number(process.env.REDIS_PORT),
+      username: process.env.REDIS_USERNAME,
+      password: process.env.REDIS_PASSWORD,
+    },
+    {
+      allowUnknown: false,
+      abortEarly: false,
+    },
+  );
 
-  if (error)
-    throw new Error(
-      `Error validating redis config: ${error.message} | ${error.details}`,
-    );
+  if (error) throw new Error(`Error validating redis config: ${error.message}`);
 
   return value;
 });

@@ -6,12 +6,21 @@ import { winstonLoggerConfig } from '@infrastructure/logger/winston/config/winst
 import { postgresConfig } from '@infrastructure/database/postgres/config/postgres.config';
 import { LoggerModule } from '@infrastructure/logger/logger.module';
 import { PresentationModule } from '@presentation/presentation.module';
+import { redisConfig } from '@infrastructure/redis/configs/redis.config';
+import { websocketConfig } from '@presentation/websocket/websocket.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: ['.env'],
-      load: [appConfig, httpConfig, winstonLoggerConfig, postgresConfig],
+      load: [
+        appConfig,
+        httpConfig,
+        winstonLoggerConfig,
+        postgresConfig,
+        redisConfig,
+        websocketConfig,
+      ],
       cache: true,
     }),
     LoggerModule,
