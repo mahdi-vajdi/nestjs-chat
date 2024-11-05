@@ -17,6 +17,7 @@ import { IORedisClient } from '@infrastructure/redis/ioredis/ioredis-client';
 
         return client;
       },
+      inject: [ConfigService],
     },
     {
       provide: REDIS_DB1_PROVIDER,
@@ -26,6 +27,7 @@ import { IORedisClient } from '@infrastructure/redis/ioredis/ioredis-client';
 
         return client;
       },
+      inject: [ConfigService],
     },
   ],
   exports: [REDIS_DB0_PROVIDER, REDIS_DB1_PROVIDER],

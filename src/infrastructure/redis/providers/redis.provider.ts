@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 
-export interface RedisProvider {
+export interface IRedisProvider {
   connect(): Promise<void>;
 
   disconnect(): Promise<void>;

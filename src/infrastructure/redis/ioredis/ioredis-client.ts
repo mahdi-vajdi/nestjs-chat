@@ -1,4 +1,4 @@
-import { RedisProvider } from '@infrastructure/redis/providers/redis.provider';
+import { IRedisProvider } from '@infrastructure/redis/providers/redis.provider';
 import Redis from 'ioredis';
 import { Logger, OnApplicationShutdown } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -7,7 +7,7 @@ import {
   REDIS_CONFIG_TOKEN,
 } from '@infrastructure/redis/configs/redis.config';
 
-export class IORedisClient implements RedisProvider, OnApplicationShutdown {
+export class IORedisClient implements IRedisProvider, OnApplicationShutdown {
   private readonly client: Redis;
   private readonly logger = new Logger(IORedisClient.name);
 

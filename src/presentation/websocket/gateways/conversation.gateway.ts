@@ -19,15 +19,15 @@ export class ConversationGateway
   server: Server;
 
   afterInit(server: any) {
-    throw new Error('Method not implemented.');
+    // throw new Error('Method not implemented.');
   }
 
   handleConnection(client: any, ...args: any[]) {
-    throw new Error('Method not implemented.');
+    // throw new Error('Method not implemented.');
   }
 
   handleDisconnect(client: any) {
-    throw new Error('Method not implemented.');
+    // throw new Error('Method not implemented.');
   }
 
   @SubscribeMessage('ping')
