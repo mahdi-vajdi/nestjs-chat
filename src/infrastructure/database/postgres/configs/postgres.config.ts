@@ -11,7 +11,7 @@ export interface IPostgresConfig {
   slowQueryLimit?: number;
 }
 
-export const POSTGRES_CONFIG_TOKEN = 'postgres-config-token';
+export const POSTGRES_CONFIG_TOKEN = 'postgres-configs-token';
 
 const postgresConfigSchema = Joi.object<IPostgresConfig>({
   host: Joi.string().required(),

@@ -3,12 +3,12 @@ import { UserService } from '@user/application/services/user.service';
 import {
   SignupUserDto,
   SignupUserResponseDto,
-} from '@application/user-auth/dtos/signup-user.dto';
+} from '@application/auth/dtos/signup-user.dto';
 import { Result } from '@common/result/result';
 import { User } from '@user/domain/entities/user.model';
 
 @Injectable()
-export class UserAuthService {
+export class AuthService {
   constructor(private readonly userService: UserService) {}
 
   async signupUser(

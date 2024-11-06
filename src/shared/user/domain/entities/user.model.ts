@@ -1,6 +1,6 @@
-import { IIdentifiableEntity } from '@common/interfaces/identifiable-entity.interface';
-import { IDatatableEntity } from '@common/interfaces/datable-entity.interface';
-import { IDeletableEntity } from '@common/interfaces/deletable-entity.interface';
+import { IIdentifiableEntity } from '@common/entities/identifiable-entity.interface';
+import { IDatatableEntity } from '@common/entities/datable-entity.interface';
+import { IDeletableEntity } from '@common/entities/deletable-entity.interface';
 
 export class IUser {
   email: string;
@@ -21,7 +21,7 @@ export class User
   updatedAt: Date;
   deletedAt: Date;
 
-  constructor(init?: Partial<User>) {
+  constructor(init: Partial<User>) {
     Object.assign(this, init);
   }
 

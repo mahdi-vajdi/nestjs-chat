@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { appConfig } from './app.config';
 import { httpConfig } from '@presentation/http/http.config';
 import { winstonLoggerConfig } from '@infrastructure/logger/winston/config/winston-logger.config';
-import { postgresConfig } from '@infrastructure/database/postgres/config/postgres.config';
+import { postgresConfig } from '@infrastructure/database/postgres/configs/postgres.config';
 import { LoggerModule } from '@infrastructure/logger/logger.module';
 import { PresentationModule } from '@presentation/presentation.module';
 import { redisConfig } from '@infrastructure/redis/configs/redis.config';

@@ -5,7 +5,7 @@ export interface IHttpConfig {
   port: number;
 }
 
-export const HTTP_CONFIG_TOKEN = 'http-config-token';
+export const HTTP_CONFIG_TOKEN = 'http-configs-token';
 
 const httpConfigSchema = Joi.object<IHttpConfig>({
   port: Joi.number().port().required(),

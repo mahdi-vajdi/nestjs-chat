@@ -11,8 +11,8 @@ import { User } from '@user/domain/entities/user.model';
 
 @Entity({ name: 'users' })
 export class UserEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('increment')
+  id: string;
 
   @Column({ type: 'varchar', length: 150 })
   @Index('UQ_USERS_EMAIL', { unique: true })
@@ -41,7 +41,7 @@ export class UserEntity {
 
     const userEntity = new UserEntity();
 
-    if (user.id) userEntity.id = Number(user.id);
+    userEntity.id = user.id;
     userEntity.email = user.email;
     userEntity.password = user.password;
     userEntity.firstName = user.firstName;
@@ -56,16 +56,14 @@ export class UserEntity {
   static toDomain(userEntity: UserEntity): User {
     if (!userEntity) return null;
 
-    const user = new User();
-
-    user.id = String(userEntity.id);
-    user.firstName = userEntity.firstName;
-    user.lastName = userEntity.lastName;
-    user.email = userEntity.email;
-    user.createdAt = userEntity.createdAt;
-    user.updatedAt = userEntity.updatedAt;
-    user.deletedAt = userEntity.deletedAt;
-
-    return user;
+    return new User({
+      id: userEntity.id,
+      firstName: userEntity.firstName,
+      lastName: userEntity.lastName,
+      email: userEntity.email,
+      createdAt: userEntity.createdAt,
+      updatedAt: userEntity.updatedAt,
+      deletedAt: userEntity.deletedAt,
+    });
   }
 }

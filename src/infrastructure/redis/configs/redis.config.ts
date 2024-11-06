@@ -8,7 +8,7 @@ export interface IRedisConfig {
   password: string;
 }
 
-export const REDIS_CONFIG_TOKEN = 'redis-config-token';
+export const REDIS_CONFIG_TOKEN = 'redis-configs-token';
 
 const redisConfigSchema = Joi.object<IRedisConfig>({
   host: Joi.string().hostname().required(),
