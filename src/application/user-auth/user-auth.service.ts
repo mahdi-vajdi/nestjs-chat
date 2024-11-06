@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { UserService } from '../../user/application/services/user.service';
+import { UserService } from '@user/application/services/user.service';
 import {
   SignupUserDto,
   SignupUserResponseDto,
 } from '@application/user-auth/dtos/signup-user.dto';
 import { Result } from '@common/result/result';
-import { User } from '../../user/domain/entities/user.model';
+import { User } from '@user/domain/entities/user.model';
 
 @Injectable()
 export class UserAuthService {

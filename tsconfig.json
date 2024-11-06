@@ -36,6 +36,9 @@
       ],
       "@presentation/*": [
         "src/presentation/*"
+      ],
+      "@user/*": [
+        "src/shared/user/*"
       ]
     }
   }
