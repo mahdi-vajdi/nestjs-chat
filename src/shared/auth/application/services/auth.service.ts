@@ -1,5 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { IAuthDatabaseProvider } from '../../domain/interfaces/auth-database.provider';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  AUTH_DATABASE_PROVIDER,
+  IAuthDatabaseProvider,
+} from '../../domain/interfaces/auth-database.provider';
 import { JwtService } from '@nestjs/jwt';
 import { AUTH_CONFIG_TOKEN, IAuthConfig } from '../../configs/auth.config';
 import { ConfigService } from '@nestjs/config';
@@ -17,6 +20,7 @@ export class AuthService {
 
   constructor(
     readonly configService: ConfigService,
+    @Inject(AUTH_DATABASE_PROVIDER)
     private readonly authDatabaseProvider: IAuthDatabaseProvider,
     private readonly jwtService: JwtService,
   ) {

@@ -7,11 +7,12 @@ import { RefreshToken } from 'src/shared/auth/domain/entities/refresh-token.mode
 import { Result } from '@common/result/result';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { ErrorCode } from '@common/result/error';
+import { DatabaseType } from '@infrastructure/database/database-type.enum';
 
 @Injectable()
 export class AuthPostgresService implements IAuthDatabaseProvider {
   constructor(
-    @InjectRepository(RefreshTokenEntity)
+    @InjectRepository(RefreshTokenEntity, DatabaseType.POSTGRES)
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
   ) {}
 
@@ -33,8 +34,8 @@ export class AuthPostgresService implements IAuthDatabaseProvider {
   ): Promise<Result<RefreshToken>> {
     const refreshToken = await this.refreshTokenRepository
       .createQueryBuilder('rt')
-      .where('userId = :userId', { userId })
-      .andWhere('token = :token', { token })
+      .where('rt.userId = :userId', { userId })
+      .andWhere('rt.token = :token', { token })
       .getOne();
 
     if (!refreshToken)

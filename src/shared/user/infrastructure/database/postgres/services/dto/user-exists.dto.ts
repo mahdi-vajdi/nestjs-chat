@@ -1,3 +1,4 @@
-export class UserExists {
-  email: string;
+export class UserExistsInput {
+  email?: string;
+  username?: string;
 }

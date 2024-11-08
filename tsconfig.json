@@ -37,8 +37,8 @@
       "@presentation/*": [
         "src/presentation/*"
       ],
-      "@user/*": [
-        "src/shared/user/*"
+      "@shared/*": [
+        "src/shared/*"
       ]
     }
   }

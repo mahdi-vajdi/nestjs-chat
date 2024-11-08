@@ -4,6 +4,7 @@ import { IDeletableEntity } from '@common/entities/deletable-entity.interface';
 
 export class IUser {
   email: string;
+  username: string;
   password: string;
   firstName: string;
   lastName: string;
@@ -14,6 +15,7 @@ export class User
 {
   id: string;
   email: string;
+  username: string;
   password: string;
   firstName: string;
   lastName: string;

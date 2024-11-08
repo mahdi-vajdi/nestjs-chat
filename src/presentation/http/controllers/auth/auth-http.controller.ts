@@ -22,8 +22,9 @@ export class AuthHttpController extends BaseHttpController {
   @ApiBody({ type: SignupRequestBody })
   @ApiResponse({ type: SignupResponse })
   async signup(@Res() response: Response, @Body() body: SignupRequestBody) {
-    const res = await this.userAuthService.signupUser({
+    const res = await this.userAuthService.signup({
       email: body.email,
+      username: null, // FIXME: Get username from the request
       password: body.password,
       firstName: body.firstName,
       lastName: body.lastName,

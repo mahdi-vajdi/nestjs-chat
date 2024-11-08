@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from '@user/domain/entities/user.model';
+import { User } from '@shared/user/domain/entities/user.model';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -18,14 +18,18 @@ export class UserEntity {
   @Index('UQ_USERS_EMAIL', { unique: true })
   email: string;
 
+  @Column({ type: 'varchar', length: 40 })
+  @Index('UQ_USERS_USERNAME', { unique: true })
+  username: string;
+
   @Column({ type: 'varchar', length: 255 })
   password: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  firstName: string;
+  firstName?: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  lastName: string;
+  lastName?: string;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
@@ -43,6 +47,7 @@ export class UserEntity {
 
     userEntity.id = user.id;
     userEntity.email = user.email;
+    userEntity.username = user.username;
     userEntity.password = user.password;
     userEntity.firstName = user.firstName;
     userEntity.lastName = user.lastName;
@@ -58,9 +63,10 @@ export class UserEntity {
 
     return new User({
       id: userEntity.id,
+      email: userEntity.email,
+      username: userEntity.username,
       firstName: userEntity.firstName,
       lastName: userEntity.lastName,
-      email: userEntity.email,
       createdAt: userEntity.createdAt,
       updatedAt: userEntity.updatedAt,
       deletedAt: userEntity.deletedAt,

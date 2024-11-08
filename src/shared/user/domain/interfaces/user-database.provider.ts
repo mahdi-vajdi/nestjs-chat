@@ -1,9 +1,9 @@
 import { Result } from '@common/result/result';
-import { UserExists } from '../../infrastructure/database/postgres/services/dto/user-exists.dto';
+import { UserExistsInput } from '../../infrastructure/database/postgres/services/dto/user-exists.dto';
 import { User } from '../entities/user.model';
 
 interface IUserDatabaseReader {
-  userExists(data: UserExists): Promise<Result<boolean>>;
+  userExists(data: UserExistsInput): Promise<Result<boolean>>;
 }
 
 interface IUserDatabaseWriter {
