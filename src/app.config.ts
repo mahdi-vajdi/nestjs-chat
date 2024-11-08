@@ -5,7 +5,7 @@ export interface IAppConfig {
   debugMode: boolean;
 }
 
-export const APP_CONFIG_TOKEN = 'app-config-token';
+export const APP_CONFIG_TOKEN = 'app-configs-token';
 
 const appConfigSchema = Joi.object<IAppConfig>({
   debugMode: Joi.boolean().default(false),

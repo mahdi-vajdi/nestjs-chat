@@ -5,7 +5,7 @@ export interface IWebsocketConfig {
   port: number;
 }
 
-export const WEBSOCKET_CONFIG_TOKEN = 'websocket-config-token';
+export const WEBSOCKET_CONFIG_TOKEN = 'websocket-configs-token';
 
 const websocketConfigSchema = Joi.object({
   port: Joi.number().port().required(),
@@ -26,9 +26,7 @@ export const websocketConfig = registerAs<
   );
 
   if (error)
-    throw new Error(
-      `Error validating websocket config: ${error.message}`,
-    );
+    throw new Error(`Error validating websocket config: ${error.message}`);
 
   return value;
 });

@@ -18,7 +18,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "typeorm": "typeorm-ts-node-commonjs -d ./src/shared/database/config/typeorm.config.ts",
+    "typeorm": "typeorm-ts-node-commonjs -d ./src/infrastructure/database/postgres/configs/typeorm.config.ts",
     "typeorm:migration:generate": "npm run build && npm run typeorm migration:generate",
     "typeorm:migration:run": "npm run build && npm run typeorm migration:run",
     "typeorm:migration:revert": "npm run typeorm migration:revert"
@@ -27,6 +27,7 @@
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.3",
     "@nestjs/core": "^10.0.0",
+    "@nestjs/jwt": "^10.2.0",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/platform-socket.io": "^10.4.6",
     "@nestjs/swagger": "^7.4.2",

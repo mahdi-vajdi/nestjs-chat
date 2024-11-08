@@ -5,11 +5,11 @@ import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SignupRequestBody, SignupResponse } from './models/signup.model';
 import { Result } from '@common/result/result';
 import { ValidationPipe } from '@common/validation/validation.pipe';
-import { UserAuthService } from '@application/user-auth/user-auth.service';
+import { AuthService } from '@application/auth/auth.service';
 
 @Controller('v1/auth')
 export class AuthHttpController extends BaseHttpController {
-  constructor(private readonly userAuthService: UserAuthService) {
+  constructor(private readonly userAuthService: AuthService) {
     super();
   }
 
@@ -22,8 +22,9 @@ export class AuthHttpController extends BaseHttpController {
   @ApiBody({ type: SignupRequestBody })
   @ApiResponse({ type: SignupResponse })
   async signup(@Res() response: Response, @Body() body: SignupRequestBody) {
-    const res = await this.userAuthService.signupUser({
+    const res = await this.userAuthService.signup({
       email: body.email,
+      username: null, // FIXME: Get username from the request
       password: body.password,
       firstName: body.firstName,
       lastName: body.lastName,

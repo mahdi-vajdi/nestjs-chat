@@ -6,7 +6,7 @@ import { LoggerModule } from '../logger/logger.module';
 import {
   IPostgresConfig,
   POSTGRES_CONFIG_TOKEN,
-} from './postgres/config/postgres.config';
+} from '@infrastructure/database/postgres/configs/postgres.config';
 import { DatabaseType } from './database-type.enum';
 import { LOGGER_PROVIDER } from '../logger/provider/logger.provider';
 
@@ -42,6 +42,8 @@ export class DatabaseModule {
           logging: postgresConfig.log,
           logger: logger,
           maxQueryExecutionTime: postgresConfig.slowQueryLimit,
+          supportBigNumbers: true,
+          bigNumberStrings: true,
         };
       },
       inject: [ConfigService, LOGGER_PROVIDER],
