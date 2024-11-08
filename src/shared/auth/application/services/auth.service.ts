@@ -4,9 +4,11 @@ import { JwtService } from '@nestjs/jwt';
 import { AUTH_CONFIG_TOKEN, IAuthConfig } from '../../configs/auth.config';
 import { ConfigService } from '@nestjs/config';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
-import { CreateTokensDto } from './dtos/create-tokens.dto';
+import { CreateTokensOutput } from './dtos/create-tokens.dto';
 import { Result } from '@common/result/result';
 import { RefreshToken } from '../../domain/entities/refresh-token.model';
+import { AccessTokenPayload } from '../types/access-token-payload.type';
+import { RefreshTokensOutput } from './dtos/refresh-tokens.dto';
 
 @Injectable()
 export class AuthService {
@@ -25,9 +27,9 @@ export class AuthService {
   async createTokens(
     userId: string,
     role: string,
-  ): Promise<Result<CreateTokensDto>> {
-    const accessToken = this.signAccessToken(userId, role);
-    const refreshToken = this.signRefreshToken(userId);
+  ): Promise<Result<CreateTokensOutput>> {
+    const accessToken = await this.signAccessToken(userId, role);
+    const refreshToken = await this.signRefreshToken(userId);
 
     const saveRefreshTokenRes =
       await this.authDatabaseProvider.createRefreshToken(
@@ -49,8 +51,81 @@ export class AuthService {
     });
   }
 
-  private signRefreshToken(userId: string): string {
-    return this.jwtService.sign(
+  @TryCatch
+  async verifyAccessToken(
+    accessToken: string,
+  ): Promise<Result<AccessTokenPayload>> {
+    // Verify the access token
+    const payload = await this.jwtService.verifyAsync<AccessTokenPayload>(
+      accessToken,
+      {
+        publicKey: this.authConfig.accessPublicKey,
+      },
+    );
+
+    return Result.ok(payload);
+  }
+
+  @TryCatch
+  async refreshTokens(
+    refreshToken: string,
+    userRole: string,
+  ): Promise<Result<RefreshTokensOutput>> {
+    // Verify the refresh token
+    const payload = await this.jwtService.verifyAsync<AccessTokenPayload>(
+      refreshToken,
+      {
+        publicKey: this.authConfig.accessPublicKey,
+      },
+    );
+
+    // Check if the refresh token exists in the database
+    const getRefreshTokenRes = await this.authDatabaseProvider.getRefreshToken(
+      refreshToken,
+      payload.userId,
+    );
+    if (getRefreshTokenRes.isError()) {
+      this.logger.error(
+        `error getting the refresh token for the user id ${payload.userId} from database: ${getRefreshTokenRes.error}`,
+      );
+      return Result.error(getRefreshTokenRes.error);
+    }
+
+    // Delete the old refresh token
+    const deleteRefreshTokenRes =
+      await this.authDatabaseProvider.deleteRefreshToken(
+        getRefreshTokenRes.value.id,
+      );
+    if (deleteRefreshTokenRes.isError()) {
+      this.logger.error(
+        `error deleting refresh token for the user id ${payload.userId} in database: ${deleteRefreshTokenRes.error}`,
+      );
+      return Result.error(deleteRefreshTokenRes.error);
+    }
+
+    // Create the new tokens which also saves the refresh token in the database
+    const createTokensRes = await this.createTokens(payload.userId, userRole);
+    if (createTokensRes.isError()) {
+      this.logger.error(
+        `error creating new tokens for the user id ${payload.userId} in database: ${createTokensRes.error}`,
+      );
+
+      // As fallback restore the deleted refresh token
+      await this.authDatabaseProvider.restoreRefreshToken(
+        getRefreshTokenRes.value.id,
+      );
+
+      return Result.error(createTokensRes.error);
+    }
+
+    return Result.ok({
+      accessToken: createTokensRes.value.accessToken,
+      refreshToken: createTokensRes.value.refreshToken,
+    });
+  }
+
+  private async signRefreshToken(userId: string): Promise<string> {
+    return await this.jwtService.signAsync(
       {
         sub: userId,
       },
@@ -62,8 +137,8 @@ export class AuthService {
     );
   }
 
-  private signAccessToken(userId: string, role: string): string {
-    return this.jwtService.sign(
+  private async signAccessToken(userId: string, role: string): Promise<string> {
+    return await this.jwtService.signAsync(
       {
         sub: userId,
         scope: role,

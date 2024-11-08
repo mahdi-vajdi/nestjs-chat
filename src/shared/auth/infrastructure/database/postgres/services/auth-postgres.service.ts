@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { RefreshToken } from 'src/shared/auth/domain/entities/refresh-token.model';
 import { Result } from '@common/result/result';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
+import { ErrorCode } from '@common/result/error';
 
 @Injectable()
 export class AuthPostgresService implements IAuthDatabaseProvider {
@@ -23,5 +24,36 @@ export class AuthPostgresService implements IAuthDatabaseProvider {
     );
 
     return Result.ok(RefreshTokenEntity.toDomain(res));
+  }
+
+  @TryCatch
+  async getRefreshToken(
+    token: string,
+    userId: string,
+  ): Promise<Result<RefreshToken>> {
+    const refreshToken = await this.refreshTokenRepository
+      .createQueryBuilder('rt')
+      .where('userId = :userId', { userId })
+      .andWhere('token = :token', { token })
+      .getOne();
+
+    if (!refreshToken)
+      return Result.error('Could not find refresh token', ErrorCode.NOT_FOUND);
+
+    return Result.ok(RefreshTokenEntity.toDomain(refreshToken));
+  }
+
+  @TryCatch
+  async deleteRefreshToken(id: string): Promise<Result<boolean>> {
+    const res = await this.refreshTokenRepository.delete(id);
+
+    return Result.ok(res.affected === 1);
+  }
+
+  @TryCatch
+  async restoreRefreshToken(id: string): Promise<Result<boolean>> {
+    const res = await this.refreshTokenRepository.restore(id);
+
+    return Result.ok(res.affected === 1);
   }
 }
