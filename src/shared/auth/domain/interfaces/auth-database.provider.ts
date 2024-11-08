@@ -1,6 +1,11 @@
+import { RefreshToken } from '../entities/refresh-token.model';
+import { Result } from '@common/result/result';
+
 interface IAuthDatabaseReader {}
 
-interface IAuthDatabaseWriter {}
+interface IAuthDatabaseWriter {
+  createRefreshToken(refreshToken: RefreshToken): Promise<Result<RefreshToken>>;
+}
 
 export interface IAuthDatabaseProvider
   extends IAuthDatabaseReader,
