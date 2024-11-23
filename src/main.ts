@@ -5,17 +5,28 @@ import {
   HTTP_CONFIG_TOKEN,
   httpConfig,
   IHttpConfig,
-} from './presentation/http/http.config';
+} from '@presentation/http/http.config';
 import { Logger, LoggerService } from '@nestjs/common';
-import { LoggerModule } from '@shared/logger/logger.module';
-import { WinstonLoggerService } from '@shared/logger/winston/winston-logger.service';
-import { LOGGER_PROVIDER } from '@shared/logger/provider/logger.provider';
+import { LoggerModule } from '@infrastructure/logger/logger.module';
+import { WinstonLoggerService } from '@infrastructure/logger/winston/winston-logger.service';
+import { LOGGER_PROVIDER } from '@infrastructure/logger/provider/logger.provider';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import {
+  IRedisProvider,
+  REDIS_DB0_PROVIDER,
+} from '@infrastructure/redis/providers/redis.provider';
+import { RedisIoAdapter } from '@infrastructure/websocket/adapter/redis/redis-io.adapter';
+import {
+  BROADCAST_PROVIDER,
+  IBroadcastProvider,
+} from '@infrastructure/websocket/broadcast/providers/broadcast.provider';
+import { redisConfig } from '@infrastructure/redis/configs/redis.config';
+import { websocketConfig } from '@presentation/websocket/websocket.config';
 
 async function loadConfig(): Promise<ConfigService> {
   const appContext = await NestFactory.createApplicationContext(
     ConfigModule.forRoot({
-      load: [httpConfig],
+      load: [httpConfig, redisConfig, websocketConfig],
     }),
   );
 
@@ -57,11 +68,28 @@ async function bootstrap() {
     },
   });
 
+  // Set up adapter for socket gateway
+  const redisDB0ProviderPub =
+    await app.resolve<IRedisProvider>(REDIS_DB0_PROVIDER);
+  const redisDB0ProviderSub =
+    await app.resolve<IRedisProvider>(REDIS_DB0_PROVIDER);
+  const broadcastProvider =
+    await app.resolve<IBroadcastProvider>(BROADCAST_PROVIDER);
+  const redisIoAdapter = new RedisIoAdapter(
+    configService,
+    app,
+    redisDB0ProviderPub,
+    redisDB0ProviderSub,
+    broadcastProvider,
+  );
+  await redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
+
   await app.init();
 
   const httpConfig = configService.get<IHttpConfig>(HTTP_CONFIG_TOKEN);
-
   bootstrapLogger.log(`App is running on port ${httpConfig.port}`);
+
   await app.listen(httpConfig.port);
 }
 

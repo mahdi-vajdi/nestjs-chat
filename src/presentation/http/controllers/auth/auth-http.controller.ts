@@ -1,16 +1,15 @@
 import { Body, Controller, Post, Res, UsePipes } from '@nestjs/common';
 import { BaseHttpController } from '@common/http/base-http-controller';
 import { Response } from 'express';
-import { UserService } from '../../../../application/user/services/user.service';
-import { User } from '@domain/user/entities/user.model';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SignupRequestBody, SignupResponse } from './models/signup.model';
 import { Result } from '@common/result/result';
 import { ValidationPipe } from '@common/validation/validation.pipe';
+import { AuthService } from '@application/auth/auth.service';
 
 @Controller('v1/auth')
 export class AuthHttpController extends BaseHttpController {
-  constructor(private readonly userService: UserService) {
+  constructor(private readonly userAuthService: AuthService) {
     super();
   }
 
@@ -23,14 +22,13 @@ export class AuthHttpController extends BaseHttpController {
   @ApiBody({ type: SignupRequestBody })
   @ApiResponse({ type: SignupResponse })
   async signup(@Res() response: Response, @Body() body: SignupRequestBody) {
-    const res = await this.userService.createUser(
-      User.create({
-        email: body.email,
-        password: body.password,
-        firstName: body.firstName,
-        lastName: body.lastName,
-      }),
-    );
+    const res = await this.userAuthService.signup({
+      email: body.email,
+      username: null, // FIXME: Get username from the request
+      password: body.password,
+      firstName: body.firstName,
+      lastName: body.lastName,
+    });
     if (res.isError()) {
       this.respond(response, res);
       return;
@@ -40,7 +38,9 @@ export class AuthHttpController extends BaseHttpController {
       response,
       Result.ok<SignupResponse>({
         id: res.value.id,
-        createdAt: res.value.createdAt.toISOString(),
+        accessToken: res.value.accessToken,
+        refreshToken: res.value.refreshToken,
+        createdAt: res.value.createdAt,
       }),
     );
   }

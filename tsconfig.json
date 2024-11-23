@@ -28,20 +28,17 @@
       "@common/*": [
         "src/common/*"
       ],
-      "@shared/*": [
-        "src/shared/*"
-      ],
-      "@domain/*": [
-        "src/domain/*"
-      ],
       "@infrastructure/*": [
-        "infrastructure/*"
+        "src/infrastructure/*"
       ],
       "@application/*": [
-        "application/*"
+        "src/application/*"
       ],
       "@presentation/*": [
-        "presentation/*"
+        "src/presentation/*"
+      ],
+      "@shared/*": [
+        "src/shared/*"
       ]
     }
   }
