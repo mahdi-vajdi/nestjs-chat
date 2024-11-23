@@ -10,6 +10,7 @@ import { redisConfig } from '@infrastructure/redis/configs/redis.config';
 import { websocketConfig } from '@presentation/websocket/websocket.config';
 import { RedisModule } from '@infrastructure/redis/redis.module';
 import { BroadcastModule } from '@infrastructure/websocket/broadcast/broadcast.module';
+import { authConfig } from '@shared/auth/configs/auth.config';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { BroadcastModule } from '@infrastructure/websocket/broadcast/broadcast.m
         postgresConfig,
         redisConfig,
         websocketConfig,
+        authConfig,
       ],
       cache: true,
     }),

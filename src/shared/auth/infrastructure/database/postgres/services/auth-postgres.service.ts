@@ -29,13 +29,13 @@ export class AuthPostgresService implements IAuthDatabaseProvider {
 
   @TryCatch
   async getRefreshToken(
-    token: string,
+    identifier: string,
     userId: string,
   ): Promise<Result<RefreshToken>> {
     const refreshToken = await this.refreshTokenRepository
       .createQueryBuilder('rt')
       .where('rt.userId = :userId', { userId })
-      .andWhere('rt.token = :token', { token })
+      .andWhere('rt.identifier = :identifier', { identifier })
       .getOne();
 
     if (!refreshToken)

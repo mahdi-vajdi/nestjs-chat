@@ -12,11 +12,18 @@ import { Result } from '@common/result/result';
 import { RefreshToken } from '../../domain/entities/refresh-token.model';
 import { AccessTokenPayload } from '../types/access-token-payload.type';
 import { RefreshTokensOutput } from './dtos/refresh-tokens.dto';
+import * as bcrypt from 'bcrypt';
+import { v4 as uuidV4 } from 'uuid';
+import { SignRefreshTokenOutput } from '@shared/auth/application/services/dtos/sign-refresh-token.dto';
+import { RefreshTokenPayload } from '@shared/auth/application/types/refresh-token-payload.type';
+import { ErrorCode } from '@common/result/error';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly authConfig: IAuthConfig;
+
+  private readonly HASH_SALT = 10;
 
   constructor(
     readonly configService: ConfigService,
@@ -35,11 +42,17 @@ export class AuthService {
     const accessToken = await this.signAccessToken(userId, role);
     const refreshToken = await this.signRefreshToken(userId);
 
+    // Save the hashed refresh token in the database
+    const hashedRefreshToken = await bcrypt.hash(
+      refreshToken.token,
+      this.HASH_SALT,
+    );
     const saveRefreshTokenRes =
       await this.authDatabaseProvider.createRefreshToken(
         RefreshToken.create({
-          token: refreshToken,
+          token: hashedRefreshToken,
           userId: userId,
+          identifier: refreshToken.jti,
         }),
       );
     if (saveRefreshTokenRes.isError()) {
@@ -51,7 +64,7 @@ export class AuthService {
 
     return Result.ok({
       accessToken: accessToken,
-      refreshToken: refreshToken,
+      refreshToken: refreshToken.token,
     });
   }
 
@@ -76,16 +89,16 @@ export class AuthService {
     userRole: string,
   ): Promise<Result<RefreshTokensOutput>> {
     // Verify the refresh token
-    const payload = await this.jwtService.verifyAsync<AccessTokenPayload>(
+    const payload = await this.jwtService.verifyAsync<RefreshTokenPayload>(
       refreshToken,
       {
-        publicKey: this.authConfig.accessPublicKey,
+        publicKey: this.authConfig.refreshPublicKey,
       },
     );
 
-    // Check if the refresh token exists in the database
+    // Get the refresh token from database
     const getRefreshTokenRes = await this.authDatabaseProvider.getRefreshToken(
-      refreshToken,
+      payload.jti,
       payload.userId,
     );
     if (getRefreshTokenRes.isError()) {
@@ -93,6 +106,18 @@ export class AuthService {
         `error getting the refresh token for the user id ${payload.userId} from database: ${getRefreshTokenRes.error}`,
       );
       return Result.error(getRefreshTokenRes.error);
+    }
+
+    // Compare the given refresh token with saved hash in the database
+    const isRefreshTokenValid = await bcrypt.compare(
+      refreshToken,
+      getRefreshTokenRes.value.token,
+    );
+    if (!isRefreshTokenValid) {
+      this.logger.error(
+        `invalid refresh token for the user id ${payload.userId}`,
+      );
+      return Result.error('Invalid refresh token', ErrorCode.INVALID_ARGUMENT);
     }
 
     // Delete the old refresh token
@@ -128,17 +153,25 @@ export class AuthService {
     });
   }
 
-  private async signRefreshToken(userId: string): Promise<string> {
-    return await this.jwtService.signAsync(
+  private async signRefreshToken(
+    userId: string,
+  ): Promise<SignRefreshTokenOutput> {
+    const jti = uuidV4(); // Used as identifier for the jwt
+    const token = await this.jwtService.signAsync(
       {
         sub: userId,
       },
       {
         privateKey: this.authConfig.refreshPrivateKey,
         expiresIn: '7d',
-        // jwtid: '' // TODO: utilize jti for blacklisting
+        jwtid: jti,
       },
     );
+
+    return {
+      token: token,
+      jti: jti,
+    };
   }
 
   private async signAccessToken(userId: string, role: string): Promise<string> {

@@ -5,6 +5,7 @@ import { IDeletableEntity } from '@common/entities/deletable-entity.interface';
 export interface IRefreshToken {
   readonly userId: string;
   readonly token: string;
+  readonly identifier: string;
 }
 
 export class RefreshToken
@@ -17,6 +18,7 @@ export class RefreshToken
   id: string;
   userId: string;
   token: string;
+  identifier: string;
   deletedAt: Date;
   createdAt: Date;
   updatedAt: Date;

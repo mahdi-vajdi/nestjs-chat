@@ -16,7 +16,8 @@ export class AuthService {
   ) {}
 
   async signup(data: SignupUserDto): Promise<Result<SignupUserResponseDto>> {
-    const res = await this.userService.createUser(
+    // Create a user
+    const createUserRes = await this.userService.createUser(
       User.create({
         email: data.email,
         username: data.username,
@@ -25,11 +26,21 @@ export class AuthService {
         lastName: data.lastName,
       }),
     );
-    if (res.isError()) return Result.error(res.error);
+    if (createUserRes.isError()) return Result.error(createUserRes.error);
+
+    // Create auth tokens for the user
+    const createAuthTokensRes = await this.authService.createTokens(
+      createUserRes.value.id,
+      'USER',
+    );
+    if (createUserRes.isError()) return Result.error(createUserRes.error);
 
     return Result.ok({
-      id: res.value.id,
-      createdAt: res.value.createdAt.toISOString(),
+      id: createUserRes.value.id,
+      username: createUserRes.value.username,
+      accessToken: createAuthTokensRes.value.accessToken,
+      refreshToken: createAuthTokensRes.value.refreshToken,
+      createdAt: createUserRes.value.createdAt.toISOString(),
     });
   }
 }

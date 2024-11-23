@@ -14,7 +14,7 @@ import { RefreshToken } from '../../../../domain/entities/refresh-token.model';
     'Stores the refresh tokens that are issued to the user for authentication',
 })
 export class RefreshTokenEntity {
-  @PrimaryGeneratedColumn('increment')
+  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;
 
   @Column({
@@ -29,6 +29,13 @@ export class RefreshTokenEntity {
     comment: 'The hashed string of the actual token',
   })
   token: string;
+
+  @Column({
+    type: 'varchar',
+    unique: true,
+    comment: 'A unique id to identify the jwt. usually a uuid',
+  })
+  identifier: string;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
@@ -47,6 +54,7 @@ export class RefreshTokenEntity {
     refreshTokenEntity.id = refreshToken.id;
     refreshTokenEntity.userId = refreshToken.userId;
     refreshTokenEntity.token = refreshToken.token;
+    refreshTokenEntity.identifier = refreshToken.identifier; // Assuming id is unique and can be used as identifier
     refreshTokenEntity.createdAt = refreshToken.createdAt;
     refreshTokenEntity.updatedAt = refreshToken.updatedAt;
     refreshTokenEntity.deletedAt = refreshToken.deletedAt;
@@ -54,16 +62,17 @@ export class RefreshTokenEntity {
     return refreshTokenEntity;
   }
 
-  static toDomain(a: RefreshTokenEntity): RefreshToken {
-    if (!a) return null;
+  static toDomain(refreshTokenEntity: RefreshTokenEntity): RefreshToken {
+    if (!refreshTokenEntity) return null;
 
     return new RefreshToken({
-      id: a.id,
-      userId: a.userId,
-      token: a.token,
-      createdAt: a.createdAt,
-      updatedAt: a.updatedAt,
-      deletedAt: a.deletedAt,
+      id: refreshTokenEntity.id,
+      userId: refreshTokenEntity.userId,
+      token: refreshTokenEntity.token,
+      identifier: refreshTokenEntity.identifier,
+      createdAt: refreshTokenEntity.createdAt,
+      updatedAt: refreshTokenEntity.updatedAt,
+      deletedAt: refreshTokenEntity.deletedAt,
     });
   }
 }

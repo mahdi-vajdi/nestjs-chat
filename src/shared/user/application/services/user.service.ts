@@ -54,11 +54,17 @@ export class UserService {
       }
     } else {
       do {
-        const username = `user_${crypto.randomBytes(10).toString('hex')}`;
+        const username = `user_${crypto.randomBytes(5).toString('hex')}`;
         const usernameExistsRes = await this.userDatabaseProvider.userExists({
           username: username,
         });
-        if (usernameExistsRes.isOk() && !usernameExistsRes.value) {
+        if (usernameExistsRes.isError()) {
+          this.logger.error(
+            `Error when checking existence of generated username(${user.username}): ${usernameExistsRes.error.message}`,
+          );
+          return Result.error('Error generating username', ErrorCode.INTERNAL);
+        }
+        if (usernameExistsRes.value === false) {
           // Set the random username to the user
           user.username = username;
 
@@ -70,6 +76,7 @@ export class UserService {
     this.logger.log(
       `Creating a user with email: ${user.email} and username: ${user.username}`,
     );
+    // TODO: hash the password for the user
     const createUserRes = await this.userDatabaseProvider.createUser(user);
     if (createUserRes.isError()) {
       this.logger.error(
