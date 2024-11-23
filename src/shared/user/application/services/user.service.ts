@@ -9,10 +9,13 @@ import {
 } from '../../domain/interfaces/user-database.provider';
 import { User } from '../../domain/entities/user.model';
 import * as crypto from 'node:crypto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
+
+  private readonly HASH_SALT = 10;
 
   constructor(
     @Inject(USER_DATABASE_PROVIDER)
@@ -76,7 +79,10 @@ export class UserService {
     this.logger.log(
       `Creating a user with email: ${user.email} and username: ${user.username}`,
     );
-    // TODO: hash the password for the user
+    // Hash the password for the user
+    user.password = await bcrypt.hash(user.password, this.HASH_SALT);
+
+    // Save the validated and modified user in the database
     const createUserRes = await this.userDatabaseProvider.createUser(user);
     if (createUserRes.isError()) {
       this.logger.error(
