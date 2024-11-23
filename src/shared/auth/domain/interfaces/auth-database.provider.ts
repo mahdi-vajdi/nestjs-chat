@@ -2,7 +2,10 @@ import { RefreshToken } from '../entities/refresh-token.model';
 import { Result } from '@common/result/result';
 
 interface IAuthDatabaseReader {
-  getRefreshToken(token: string, userId: string): Promise<Result<RefreshToken>>;
+  getRefreshToken(
+    identifier: string,
+    userId: string,
+  ): Promise<Result<RefreshToken>>;
 }
 
 interface IAuthDatabaseWriter {

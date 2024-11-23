@@ -38,6 +38,8 @@ export class AuthHttpController extends BaseHttpController {
       response,
       Result.ok<SignupResponse>({
         id: res.value.id,
+        accessToken: res.value.accessToken,
+        refreshToken: res.value.refreshToken,
         createdAt: res.value.createdAt,
       }),
     );

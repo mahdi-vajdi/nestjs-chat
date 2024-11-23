@@ -25,15 +25,19 @@ export const authConfig = registerAs<IAuthConfig, ConfigFactory<IAuthConfig>>(
       {
         accessPublicKey: fs.readFileSync(
           process.env.AUTH_ACCESS_PUBLIC_KEY_PATH,
+          'utf8',
         ),
         accessPrivateKey: fs.readFileSync(
           process.env.AUTH_ACCESS_PRIVATE_KEY_PATH,
+          'utf8',
         ),
         refreshPublicKey: fs.readFileSync(
           process.env.AUTH_REFRESH_PUBLIC_KEY_PATH,
+          'utf8',
         ),
         refreshPrivateKey: fs.readFileSync(
           process.env.AUTH_REFRESH_PRIVATE_KEY_PATH,
+          'utf8',
         ),
       },
       {

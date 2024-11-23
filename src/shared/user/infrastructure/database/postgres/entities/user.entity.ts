@@ -11,7 +11,7 @@ import { User } from '@shared/user/domain/entities/user.model';
 
 @Entity({ name: 'users' })
 export class UserEntity {
-  @PrimaryGeneratedColumn('increment')
+  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;
 
   @Column({ type: 'varchar', length: 150 })
