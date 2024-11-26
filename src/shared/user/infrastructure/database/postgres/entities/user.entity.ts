@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '@shared/user/domain/entities/user.model';
+import { UserRole } from '@shared/user/domain/enums/user-role.enum';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -31,6 +32,9 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   lastName?: string;
 
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  role: UserRole;
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
@@ -51,6 +55,7 @@ export class UserEntity {
     userEntity.password = user.password;
     userEntity.firstName = user.firstName;
     userEntity.lastName = user.lastName;
+    userEntity.role = user.role;
     userEntity.createdAt = user.createdAt;
     userEntity.updatedAt = user.updatedAt;
     userEntity.deletedAt = user.deletedAt;

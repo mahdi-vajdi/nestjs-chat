@@ -7,6 +7,7 @@ import {
 import { Result } from '@common/result/result';
 import { User } from '@shared/user/domain/entities/user.model';
 import { AuthService as CoreAuthService } from '@shared/auth/application/services/auth.service';
+import { UserRole } from '@shared/user/domain/enums/user-role.enum';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +25,7 @@ export class AuthService {
         password: data.password,
         firstName: data.firstName,
         lastName: data.lastName,
+        role: UserRole.USER,
       }),
     );
     if (createUserRes.isError()) return Result.error(createUserRes.error);
