@@ -1,6 +1,7 @@
 import { IIdentifiableEntity } from '@common/entities/identifiable-entity.interface';
 import { IDatatableEntity } from '@common/entities/datable-entity.interface';
 import { IDeletableEntity } from '@common/entities/deletable-entity.interface';
+import { UserRole } from '@shared/user/domain/enums/user-role.enum';
 
 export class IUser {
   email: string;
@@ -8,6 +9,7 @@ export class IUser {
   password: string;
   firstName: string;
   lastName: string;
+  role: UserRole;
 }
 
 export class User
@@ -19,6 +21,7 @@ export class User
   password: string;
   firstName: string;
   lastName: string;
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date;
