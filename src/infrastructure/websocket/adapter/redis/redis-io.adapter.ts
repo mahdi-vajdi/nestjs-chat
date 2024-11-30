@@ -1,10 +1,7 @@
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { INestApplication, Logger } from '@nestjs/common';
-import {
-  IWebsocketConfig,
-  WEBSOCKET_CONFIG_TOKEN,
-} from '@presentation/websocket/websocket.config';
+import { IWsConfig, WS_CONFIG_TOKEN } from '@presentation/ws/ws.config';
 import { ConfigService } from '@nestjs/config';
 import { IBroadcastProvider } from '@infrastructure/websocket/broadcast/providers/broadcast.provider';
 import { IRedisProvider } from '@infrastructure/redis/providers/redis.provider';
@@ -25,22 +22,20 @@ import { isNil } from '@nestjs/common/utils/shared.utils';
 
 export class RedisIoAdapter extends IoAdapter {
   private readonly logger = new Logger(RedisIoAdapter.name);
-  private readonly socketConfig: IWebsocketConfig;
+  private readonly socketConfig: IWsConfig;
 
   private adapterConstructor: ReturnType<typeof createAdapter>;
 
   constructor(
-    configService: ConfigService,
-    private readonly app: INestApplication,
+    readonly configService: ConfigService,
+    readonly app: INestApplication,
     private readonly redisDB0ProviderPub: IRedisProvider,
     private readonly redisDB0ProviderSub: IRedisProvider,
     private readonly broadcastProvider: IBroadcastProvider,
   ) {
     super(app);
 
-    this.socketConfig = configService.get<IWebsocketConfig>(
-      WEBSOCKET_CONFIG_TOKEN,
-    );
+    this.socketConfig = configService.get<IWsConfig>(WS_CONFIG_TOKEN);
   }
 
   async connectToRedis(): Promise<void> {

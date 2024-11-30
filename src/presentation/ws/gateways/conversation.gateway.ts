@@ -6,9 +6,11 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, UseGuards } from '@nestjs/common';
 import { Server } from 'socket.io';
+import { AuthWsGuard } from '@presentation/auth/guards/auth-ws.guard';
 
+@UseGuards(AuthWsGuard)
 @WebSocketGateway({ cors: '*' })
 export class ConversationGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
@@ -19,15 +21,15 @@ export class ConversationGateway
   server: Server;
 
   afterInit(server: any) {
-    // throw new Error('Method not implemented.');
+    this.logger.debug('Conversation gateway initialized successfully.');
   }
 
   handleConnection(client: any, ...args: any[]) {
-    // throw new Error('Method not implemented.');
+    // TODO: Join user to the conversations
   }
 
   handleDisconnect(client: any) {
-    // throw new Error('Method not implemented.');
+    // TODO: Remove user from the conversations
   }
 
   @SubscribeMessage('ping')

@@ -6,7 +6,7 @@ import {
   httpConfig,
   IHttpConfig,
 } from '@presentation/http/http.config';
-import { Logger, LoggerService } from '@nestjs/common';
+import { INestApplication, Logger, LoggerService } from '@nestjs/common';
 import { LoggerModule } from '@infrastructure/logger/logger.module';
 import { WinstonLoggerService } from '@infrastructure/logger/winston/winston-logger.service';
 import { LOGGER_PROVIDER } from '@infrastructure/logger/provider/logger.provider';
@@ -21,12 +21,12 @@ import {
   IBroadcastProvider,
 } from '@infrastructure/websocket/broadcast/providers/broadcast.provider';
 import { redisConfig } from '@infrastructure/redis/configs/redis.config';
-import { websocketConfig } from '@presentation/websocket/websocket.config';
+import { wsConfig } from '@presentation/ws/ws.config';
 
 async function loadConfig(): Promise<ConfigService> {
   const appContext = await NestFactory.createApplicationContext(
     ConfigModule.forRoot({
-      load: [httpConfig, redisConfig, websocketConfig],
+      load: [httpConfig, redisConfig, wsConfig],
     }),
   );
 
@@ -39,18 +39,7 @@ async function loadLogger(): Promise<LoggerService> {
   return appContext.get<WinstonLoggerService>(LOGGER_PROVIDER);
 }
 
-async function bootstrap() {
-  const configService = await loadConfig();
-  const logger = await loadLogger();
-
-  const app = await NestFactory.create(AppModule, {
-    logger: logger,
-  });
-
-  app.enableCors();
-
-  const bootstrapLogger = new Logger('Bootstrap');
-
+function setUpSwagger(app: INestApplication) {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Chatterbox API Gateway')
     .setVersion('1')
@@ -67,6 +56,20 @@ async function bootstrap() {
       persistAuthorization: true,
     },
   });
+}
+
+async function bootstrap() {
+  const configService = await loadConfig();
+  const appLogger = await loadLogger();
+  const bootstrapLogger = new Logger('Bootstrap');
+
+  const app = await NestFactory.create(AppModule, {
+    logger: appLogger,
+  });
+
+  app.enableCors();
+
+  setUpSwagger(app);
 
   // Set up adapter for socket gateway
   const redisDB0ProviderPub =

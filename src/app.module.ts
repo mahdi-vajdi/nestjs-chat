@@ -7,10 +7,13 @@ import { postgresConfig } from '@infrastructure/database/postgres/configs/postgr
 import { LoggerModule } from '@infrastructure/logger/logger.module';
 import { PresentationModule } from '@presentation/presentation.module';
 import { redisConfig } from '@infrastructure/redis/configs/redis.config';
-import { websocketConfig } from '@presentation/websocket/websocket.config';
+import { wsConfig } from '@presentation/ws/ws.config';
 import { RedisModule } from '@infrastructure/redis/redis.module';
 import { BroadcastModule } from '@infrastructure/websocket/broadcast/broadcast.module';
 import { authConfig } from '@shared/auth/configs/auth.config';
+import { ApplicationModule } from '@application/application.module';
+import { UserModule } from '@shared/user/user.module';
+import { AuthModule } from '@shared/auth/auth.module';
 
 @Module({
   imports: [
@@ -22,15 +25,18 @@ import { authConfig } from '@shared/auth/configs/auth.config';
         winstonLoggerConfig,
         postgresConfig,
         redisConfig,
-        websocketConfig,
+        wsConfig,
         authConfig,
       ],
       cache: true,
     }),
     LoggerModule,
     PresentationModule,
+    ApplicationModule,
     RedisModule,
     BroadcastModule,
+    UserModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
