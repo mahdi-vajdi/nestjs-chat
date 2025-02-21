@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { ChatDatabaseProvider } from '@application/chat/database/providers/chat-database.provider';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ConversationEntity } from '@application/chat/database/postgres/entities/conversation.entity';
 import { Repository } from 'typeorm';
-import { MessageEntity } from '@application/chat/database/postgres/entities/message.entity';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
+import { MessageEntity } from '@chat/database/postgres/entities/message.entity';
+import { ChatDatabaseProvider } from '@chat/database/providers/chat-database.provider';
+import { ConversationEntity } from '@chat/database/postgres/entities/conversation.entity';
 
 @Injectable()
 export class ChatPostgresService implements ChatDatabaseProvider {

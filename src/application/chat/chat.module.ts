@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ChatService } from '@application/chat/services/chat.service';
-import { ChatDatabaseModule } from '@application/chat/database/chat-database.module';
+import { ChatDatabaseModule } from '@chat/database/chat-database.module';
+import { ChatService } from '@chat/services/chat.service';
 
 @Module({
   imports: [ChatDatabaseModule],

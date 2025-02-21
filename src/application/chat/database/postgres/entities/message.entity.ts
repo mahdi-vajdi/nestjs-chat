@@ -7,8 +7,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ChatType } from '@application/chat/enums/chat-type.enum';
-import { ConversationEntity } from '@application/chat/database/postgres/entities/conversation.entity';
+import { ChatType } from '@chat/enums/chat-type.enum';
+import { ConversationEntity } from '@chat/database/postgres/entities/conversation.entity';
 
 @Entity({ name: 'messages' })
 export class MessageEntity {

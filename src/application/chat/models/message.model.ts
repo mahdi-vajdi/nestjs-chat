@@ -1,6 +1,6 @@
 import { IIdentifiableEntity } from '@common/entities/identifiable-entity.interface';
 import { IDatatableEntity } from '@common/entities/datable-entity.interface';
-import { IConversationEntity } from '@application/chat/models/conversation.model';
+import { IConversationEntity } from '@chat/models/conversation.model';
 
 export class IMessage {
   text: string;

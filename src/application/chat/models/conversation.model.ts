@@ -1,7 +1,7 @@
-import { ConversationType } from '@application/chat/enums/conversation-type.enum';
 import { IIdentifiableEntity } from '@common/entities/identifiable-entity.interface';
 import { IDatatableEntity } from '@common/entities/datable-entity.interface';
-import { IMessageEntity } from '@application/chat/models/message.model';
+import { ConversationType } from '@chat/enums/conversation-type.enum';
+import { IMessageEntity } from '@chat/models/message.model';
 
 export interface IConversation {
   title: string;

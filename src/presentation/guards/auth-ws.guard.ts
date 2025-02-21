@@ -9,7 +9,7 @@ import { Socket } from 'socket.io';
 import { StdResponse } from '@common/std-response/std-response';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
-import { AuthService } from '@application/auth/services/auth.service';
+import { AuthService } from '@auth/services/auth.service';
 
 @Injectable()
 export class AuthWsGuard implements CanActivate {

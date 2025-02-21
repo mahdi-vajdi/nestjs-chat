@@ -7,8 +7,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { UserRole } from '@application/user/enums/user-role.enum';
-import { IUser, IUserEntity } from '@application/user/models/user.model';
+import { UserRole } from '@user/enums/user-role.enum';
+import { IUser, IUserEntity } from '@user/models/user.model';
 
 @Entity({ name: 'users' })
 export class UserEntity {

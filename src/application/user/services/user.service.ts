@@ -8,8 +8,8 @@ import * as bcrypt from 'bcrypt';
 import {
   IUserDatabaseProvider,
   USER_DATABASE_PROVIDER,
-} from '@application/user/database/providers/user-database.provider';
-import { IUser, IUserEntity } from '@application/user/models/user.model';
+} from '@user/database/providers/user-database.provider';
+import { IUser, IUserEntity } from '@user/models/user.model';
 
 @Injectable()
 export class UserService {

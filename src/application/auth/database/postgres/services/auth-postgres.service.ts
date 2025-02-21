@@ -6,11 +6,11 @@ import { Result } from '@common/result/result';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { ErrorCode } from '@common/result/error';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
+import { IAuthDatabaseProvider } from '@auth/database/providers/auth-database.provider';
 import {
   IRefreshToken,
   IRefreshTokenEntity,
-} from '@application/auth/models/refresh-token.model';
-import { IAuthDatabaseProvider } from '@application/auth/database/providers/auth-database.provider';
+} from '@auth/models/refresh-token.model';
 
 @Injectable()
 export class AuthPostgresService implements IAuthDatabaseProvider {

@@ -13,13 +13,10 @@ import { ErrorCode } from '@common/result/error';
 import {
   AUTH_DATABASE_PROVIDER,
   IAuthDatabaseProvider,
-} from '@application/auth/database/providers/auth-database.provider';
-import {
-  AUTH_CONFIG_TOKEN,
-  IAuthConfig,
-} from '@application/auth/configs/auth.config';
-import { RefreshTokenPayload } from '@application/auth/types/refresh-token-payload.type';
-import { SignRefreshTokenOutput } from '@application/auth/services/dtos/sign-refresh-token.dto';
+} from '@auth/database/providers/auth-database.provider';
+import { AUTH_CONFIG_TOKEN, IAuthConfig } from '@auth/configs/auth.config';
+import { RefreshTokenPayload } from '@auth/types/refresh-token-payload.type';
+import { SignRefreshTokenOutput } from '@auth/services/dtos/sign-refresh-token.dto';
 
 @Injectable()
 export class AuthService {

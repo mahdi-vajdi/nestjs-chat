@@ -1,6 +1,6 @@
 import { Result } from '@common/result/result';
-import { IUser, IUserEntity } from '@application/user/models/user.model';
-import { UserExistsQueryable } from '@application/user/database/postgres/queryables/user-exists.queryable';
+import { IUser, IUserEntity } from '@user/models/user.model';
+import { UserExistsQueryable } from '@user/database/postgres/queryables/user-exists.queryable';
 
 interface IUserDatabaseReader {
   userExists(data: UserExistsQueryable): Promise<Result<boolean>>;

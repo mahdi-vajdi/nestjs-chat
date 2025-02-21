@@ -6,9 +6,9 @@ import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
-import { IUserDatabaseProvider } from '@application/user/database/providers/user-database.provider';
-import { IUser, IUserEntity } from '@application/user/models/user.model';
-import { UserExistsQueryable } from '@application/user/database/postgres/queryables/user-exists.queryable';
+import { IUserDatabaseProvider } from '@user/database/providers/user-database.provider';
+import { IUser, IUserEntity } from '@user/models/user.model';
+import { UserExistsQueryable } from '@user/database/postgres/queryables/user-exists.queryable';
 
 @Injectable()
 export class UserPostgresService implements IUserDatabaseProvider {

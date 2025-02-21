@@ -4,7 +4,7 @@ import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RefreshTokenEntity } from './postgres/entities/refresh-token.entity';
 import { AuthPostgresService } from './postgres/services/auth-postgres.service';
-import { AUTH_DATABASE_PROVIDER } from '@application/auth/database/providers/auth-database.provider';
+import { AUTH_DATABASE_PROVIDER } from '@auth/database/providers/auth-database.provider';
 
 @Module({
   imports: [

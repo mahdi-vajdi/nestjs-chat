@@ -9,7 +9,7 @@ import {
 import {
   IRefreshToken,
   IRefreshTokenEntity,
-} from '@application/auth/models/refresh-token.model';
+} from '@auth/models/refresh-token.model';
 
 @Entity({
   name: 'refresh_tokens',
