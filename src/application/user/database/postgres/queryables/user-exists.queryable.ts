@@ -1,4 +1,4 @@
-export class UserExistsInput {
+export class UserExistsQueryable {
   email?: string;
   username?: string;
 }

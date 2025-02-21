@@ -5,9 +5,10 @@ import { AuthModule } from '@application/auth/auth.module';
 import { AuthHttpGuard } from '@presentation/guards/auth-http.guard';
 import { AuthWsGuard } from '@presentation/guards/auth-ws.guard';
 import { UserModule } from '@application/user/user.module';
+import { ChatModule } from '@application/chat/chat.module';
 
 @Module({
-  imports: [AuthModule, UserModule],
+  imports: [AuthModule, UserModule, ChatModule],
   controllers: [AuthHttpController],
   providers: [
     // Websocket gateways
