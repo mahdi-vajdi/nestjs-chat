@@ -37,9 +37,6 @@
       "@presentation/*": [
         "src/presentation/*"
       ],
-      "@shared/*": [
-        "src/shared/*"
-      ]
     }
   }
 }

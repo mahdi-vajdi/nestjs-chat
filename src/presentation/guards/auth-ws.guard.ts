@@ -27,7 +27,7 @@ export class AuthWsGuard implements CanActivate {
     if (accessToken) {
       data.ack(
         StdResponse.fromResult(
-          Result.error('No token provided.', ErrorCode.UNAUTHORIZED),
+          Result.error('No token provided.', ErrorCode.UNAUTHENTICATED),
         ),
       );
       return false;

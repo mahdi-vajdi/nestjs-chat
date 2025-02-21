@@ -1,11 +1,11 @@
 export enum ErrorCode {
-  INVALID_ARGUMENT,
-  UNAUTHORIZED,
-  NOT_FOUND,
-  FORBIDDEN,
-  VALIDATION_FAILURE,
-  DUPLICATE,
-  INTERNAL,
+  INVALID_ARGUMENT = 1,
+  UNAUTHENTICATED = 2,
+  NOT_FOUND = 3,
+  PERMISSION_DENIED = 4,
+  VALIDATION_FAILURE = 5,
+  ALREADY_EXISTS = 6,
+  INTERNAL = 7,
 }
 
 export class AppError<T = undefined> extends Error {
