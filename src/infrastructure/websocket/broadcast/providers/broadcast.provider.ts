@@ -4,4 +4,4 @@ export interface IBroadcastProvider {
   getServer(): any;
 }
 
-export const BROADCAST_PROVIDER = 'broadcast-provider';
+export const BROADCAST_PROVIDER = 'broadcast-providers';

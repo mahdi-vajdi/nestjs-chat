@@ -10,10 +10,9 @@ import { redisConfig } from '@infrastructure/redis/configs/redis.config';
 import { wsConfig } from '@presentation/ws/ws.config';
 import { RedisModule } from '@infrastructure/redis/redis.module';
 import { BroadcastModule } from '@infrastructure/websocket/broadcast/broadcast.module';
-import { authConfig } from '@shared/auth/configs/auth.config';
-import { ApplicationModule } from '@application/application.module';
-import { UserModule } from '@shared/user/user.module';
-import { AuthModule } from '@shared/auth/auth.module';
+import { UserModule } from '@application/user/user.module';
+import { AuthModule } from '@application/auth/auth.module';
+import { authConfig } from '@application/auth/configs/auth.config';
 
 @Module({
   imports: [
@@ -32,7 +31,6 @@ import { AuthModule } from '@shared/auth/auth.module';
     }),
     LoggerModule,
     PresentationModule,
-    ApplicationModule,
     RedisModule,
     BroadcastModule,
     UserModule,
