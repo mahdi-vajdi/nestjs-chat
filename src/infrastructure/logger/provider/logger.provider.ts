@@ -1,1 +1,1 @@
-export const LOGGER_PROVIDER = 'logger-provider';
+export const LOGGER_PROVIDER = 'logger-providers';
