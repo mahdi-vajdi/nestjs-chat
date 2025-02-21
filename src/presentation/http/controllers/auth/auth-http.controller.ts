@@ -5,11 +5,16 @@ import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SignupRequestBody, SignupResponse } from './models/signup.model';
 import { Result } from '@common/result/result';
 import { ValidationPipe } from '@common/validation/validation.pipe';
-import { AuthService } from '@application/auth/auth.service';
+import { AuthService } from '@application/auth/services/auth.service';
+import { UserService } from '@application/user/services/user.service';
+import { UserRole } from '@application/user/enums/user-role.enum';
 
 @Controller('v1/auth')
 export class AuthHttpController extends BaseHttpController {
-  constructor(private readonly userAuthService: AuthService) {
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+  ) {
     super();
   }
 
@@ -22,25 +27,31 @@ export class AuthHttpController extends BaseHttpController {
   @ApiBody({ type: SignupRequestBody })
   @ApiResponse({ type: SignupResponse })
   async signup(@Res() response: Response, @Body() body: SignupRequestBody) {
-    const res = await this.userAuthService.signup({
+    // Create a user
+    const createUserRes = await this.userService.createUser({
       email: body.email,
       username: null, // FIXME: Get username from the request
       password: body.password,
       firstName: body.firstName,
       lastName: body.lastName,
+      role: UserRole.USER,
     });
-    if (res.isError()) {
-      this.respond(response, res);
-      return;
-    }
+    if (createUserRes.isError()) return Result.error(createUserRes.error);
+
+    // Create auth tokens for the user
+    const createAuthTokensRes = await this.authService.createTokens(
+      createUserRes.value.id,
+      'USER',
+    );
+    if (createUserRes.isError()) return Result.error(createUserRes.error);
 
     this.respond(
       response,
       Result.ok<SignupResponse>({
-        id: res.value.id,
-        accessToken: res.value.accessToken,
-        refreshToken: res.value.refreshToken,
-        createdAt: res.value.createdAt,
+        id: createUserRes.value.id,
+        accessToken: createAuthTokensRes.value.accessToken,
+        refreshToken: createAuthTokensRes.value.refreshToken,
+        createdAt: createUserRes.value.createdAt.toISOString(),
       }),
     );
   }

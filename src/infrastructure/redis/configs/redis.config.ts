@@ -13,8 +13,8 @@ export const REDIS_CONFIG_TOKEN = 'redis-configs-token';
 const redisConfigSchema = Joi.object<IRedisConfig>({
   host: Joi.string().hostname().required(),
   port: Joi.number().port().required(),
-  username: Joi.string().optional(),
-  password: Joi.string().optional(),
+  username: Joi.string().allow('').required(),
+  password: Joi.string().allow('').required(),
 });
 
 export const redisConfig = registerAs<
