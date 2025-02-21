@@ -10,9 +10,9 @@ import { redisConfig } from '@infrastructure/redis/configs/redis.config';
 import { wsConfig } from '@presentation/ws/ws.config';
 import { RedisModule } from '@infrastructure/redis/redis.module';
 import { BroadcastModule } from '@infrastructure/websocket/broadcast/broadcast.module';
-import { UserModule } from '@application/user/user.module';
-import { AuthModule } from '@application/auth/auth.module';
-import { authConfig } from '@application/auth/configs/auth.config';
+import { authConfig } from '@auth/configs/auth.config';
+import { UserModule } from '@user/user.module';
+import { AuthModule } from '@auth/auth.module';
 
 @Module({
   imports: [

@@ -8,8 +8,8 @@ import * as bcrypt from 'bcrypt';
 import {
   IUserDatabaseProvider,
   USER_DATABASE_PROVIDER,
-} from '@application/user/database/providers/user-database.provider';
-import { IUser, IUserEntity } from '@application/user/models/user.model';
+} from '@user/database/providers/user-database.provider';
+import { IUser, IUserEntity } from '@user/models/user.model';
 
 @Injectable()
 export class UserService {
@@ -37,7 +37,7 @@ export class UserService {
     }
     if (emailExists.value === true) {
       this.logger.log('User already exists; returning error');
-      return Result.error('You info is Duplicate', ErrorCode.DUPLICATE);
+      return Result.error('You info is Duplicate', ErrorCode.ALREADY_EXISTS);
     }
 
     // If user provided a username check for its existence
@@ -53,7 +53,7 @@ export class UserService {
       }
       if (usernameExistsRes.value === true) {
         this.logger.log('User already exists; returning error');
-        return Result.error('You info is Duplicate', ErrorCode.DUPLICATE);
+        return Result.error('You info is Duplicate', ErrorCode.ALREADY_EXISTS);
       }
     } else {
       do {

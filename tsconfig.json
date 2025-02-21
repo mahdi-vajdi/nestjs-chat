@@ -31,14 +31,17 @@
       "@infrastructure/*": [
         "src/infrastructure/*"
       ],
-      "@application/*": [
-        "src/application/*"
-      ],
       "@presentation/*": [
         "src/presentation/*"
       ],
-      "@shared/*": [
-        "src/shared/*"
+      "@user/*": [
+        "src/application/user/*"
+      ],
+      "@auth/*": [
+        "src/application/auth/*"
+      ],
+      "@chat/*": [
+        "src/application/chat/*"
       ]
     }
   }

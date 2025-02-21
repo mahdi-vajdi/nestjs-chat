@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
-import { AuthService } from '@application/auth/services/auth.service';
-import { AuthDatabaseModule } from '@application/auth/database/auth-database.module';
+import { AuthService } from '@auth/services/auth.service';
+import { AuthDatabaseModule } from '@auth/database/auth-database.module';
 
 @Module({
   imports: [
     ConfigModule,
+    AuthDatabaseModule,
     AuthDatabaseModule,
     JwtModule.register({
       signOptions: {

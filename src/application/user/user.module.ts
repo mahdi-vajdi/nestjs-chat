@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { UserService } from '@application/user/services/user.service';
-import { UserDatabaseModule } from '@application/user/database/user-database.module';
+import { UserDatabaseModule } from '@user/database/user-database.module';
+import { UserService } from '@user/services/user.service';
 
 @Module({
   imports: [UserDatabaseModule],

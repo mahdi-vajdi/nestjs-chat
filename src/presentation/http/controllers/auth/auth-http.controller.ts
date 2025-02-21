@@ -5,9 +5,9 @@ import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SignupRequestBody, SignupResponse } from './models/signup.model';
 import { Result } from '@common/result/result';
 import { ValidationPipe } from '@common/validation/validation.pipe';
-import { AuthService } from '@application/auth/services/auth.service';
-import { UserService } from '@application/user/services/user.service';
-import { UserRole } from '@application/user/enums/user-role.enum';
+import { UserService } from '@user/services/user.service';
+import { AuthService } from '@auth/services/auth.service';
+import { UserRole } from '@user/enums/user-role.enum';
 
 @Controller('v1/auth')
 export class AuthHttpController extends BaseHttpController {

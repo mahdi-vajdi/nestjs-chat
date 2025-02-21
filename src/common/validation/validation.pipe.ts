@@ -88,10 +88,6 @@ export class ValidationPipe implements PipeTransform {
       return errors;
     });
 
-    return Result.error(
-      'Validation Error',
-      ErrorCode.VALIDATION_FAILURE,
-      errors,
-    );
+    return Result.error('Validation Error', ErrorCode.INVALID_ARGUMENT, errors);
   }
 }

@@ -2,7 +2,7 @@ import { Result } from '@common/result/result';
 import {
   IRefreshToken,
   IRefreshTokenEntity,
-} from '@application/auth/models/refresh-token.model';
+} from '@auth/models/refresh-token.model';
 
 interface IAuthDatabaseReader {
   getRefreshToken(

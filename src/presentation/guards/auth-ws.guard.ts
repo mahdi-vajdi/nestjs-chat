@@ -9,7 +9,7 @@ import { Socket } from 'socket.io';
 import { StdResponse } from '@common/std-response/std-response';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
-import { AuthService } from '@application/auth/services/auth.service';
+import { AuthService } from '@auth/services/auth.service';
 
 @Injectable()
 export class AuthWsGuard implements CanActivate {
@@ -27,7 +27,7 @@ export class AuthWsGuard implements CanActivate {
     if (accessToken) {
       data.ack(
         StdResponse.fromResult(
-          Result.error('No token provided.', ErrorCode.UNAUTHORIZED),
+          Result.error('No token provided.', ErrorCode.UNAUTHENTICATED),
         ),
       );
       return false;

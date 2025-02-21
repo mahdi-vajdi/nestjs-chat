@@ -1,6 +1,6 @@
-import { StdStatus } from '@common/std-response/std-status';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
+import { StdStatus } from '@common/std-response/std-status';
 
 export class StdResponse<T> {
   constructor(
@@ -23,18 +23,23 @@ export class StdResponse<T> {
 
   static toStdStatus(code: ErrorCode): StdStatus {
     switch (code) {
+      case ErrorCode.INVALID_ARGUMENT:
+        return StdStatus.INVALID_ARGUMENT;
+      case ErrorCode.UNAUTHENTICATED:
+        return StdStatus.UNAUTHENTICATED;
       case ErrorCode.NOT_FOUND:
         return StdStatus.NOT_FOUND;
-      case ErrorCode.INVALID_ARGUMENT:
-        return StdStatus.INVALID;
-      case ErrorCode.FORBIDDEN:
-        return StdStatus.FORBIDDEN;
-      case ErrorCode.UNAUTHORIZED:
-        return StdStatus.UNAUTHORIZED;
-      case ErrorCode.DUPLICATE:
-        return StdStatus.DUPLICATE;
-      default:
+      case ErrorCode.PERMISSION_DENIED:
+        return StdStatus.PERMISSION_DENIED;
+      case ErrorCode.VALIDATION_FAILURE:
+        return StdStatus.VALIDATION_FAILURE;
+      case ErrorCode.ALREADY_EXISTS:
+        return StdStatus.ALREADY_EXISTS;
+      case ErrorCode.INTERNAL:
         return StdStatus.INTERNAL_ERROR;
+      default:
+        // This will throw a compile time error ig any case isn't handled
+        return code;
     }
   }
 }
