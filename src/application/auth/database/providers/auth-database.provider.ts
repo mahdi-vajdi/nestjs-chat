@@ -1,20 +1,15 @@
 import { Result } from '@common/result/result';
-import {
-  IRefreshToken,
-  IRefreshTokenEntity,
-} from '@auth/models/refresh-token.model';
+import { RefreshToken } from '@auth/models/refresh-token.model';
 
 interface IAuthDatabaseReader {
   getRefreshToken(
     identifier: string,
     userId: string,
-  ): Promise<Result<IRefreshTokenEntity>>;
+  ): Promise<Result<RefreshToken>>;
 }
 
 interface IAuthDatabaseWriter {
-  createRefreshToken(
-    refreshToken: IRefreshToken,
-  ): Promise<Result<IRefreshTokenEntity>>;
+  createRefreshToken(refreshToken: RefreshToken): Promise<Result<RefreshToken>>;
 
   deleteRefreshToken(id: string): Promise<Result<boolean>>;
 

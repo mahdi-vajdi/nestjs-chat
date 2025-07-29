@@ -17,6 +17,7 @@ import {
 import { AUTH_CONFIG_TOKEN, IAuthConfig } from '@auth/configs/auth.config';
 import { RefreshTokenPayload } from '@auth/types/refresh-token-payload.type';
 import { SignRefreshTokenOutput } from '@auth/services/dtos/sign-refresh-token.dto';
+import { RefreshToken } from '@auth/models/refresh-token.model';
 
 @Injectable()
 export class AuthService {
@@ -48,11 +49,9 @@ export class AuthService {
       this.HASH_SALT,
     );
     const saveRefreshTokenRes =
-      await this.authDatabaseProvider.createRefreshToken({
-        token: hashedRefreshToken,
-        userId: userId,
-        identifier: refreshToken.jti,
-      });
+      await this.authDatabaseProvider.createRefreshToken(
+        RefreshToken.create(refreshToken.jti, hashedRefreshToken, userId),
+      );
     if (saveRefreshTokenRes.isError()) {
       this.logger.error(
         `error creating refresh token for the user id ${userId} in database: ${saveRefreshTokenRes.error}`,

@@ -8,6 +8,7 @@ import { ValidationPipe } from '@common/validation/validation.pipe';
 import { UserService } from '@user/services/user.service';
 import { AuthService } from '@auth/services/auth.service';
 import { UserRole } from '@user/enums/user-role.enum';
+import { User } from '@user/models/user.entity';
 
 @Controller('v1/auth')
 export class AuthHttpController extends BaseHttpController {
@@ -28,14 +29,16 @@ export class AuthHttpController extends BaseHttpController {
   @ApiResponse({ type: SignupResponse })
   async signup(@Res() response: Response, @Body() body: SignupRequestBody) {
     // Create a user
-    const createUserRes = await this.userService.createUser({
-      email: body.email,
-      username: null, // FIXME: Get username from the request
-      password: body.password,
-      firstName: body.firstName,
-      lastName: body.lastName,
-      role: UserRole.USER,
-    });
+    const createUserRes = await this.userService.createUser(
+      User.create(
+        body.email,
+        null,
+        body.password,
+        body.firstName,
+        body.lastName,
+        UserRole.USER,
+      ),
+    );
     if (createUserRes.isError()) return Result.error(createUserRes.error);
 
     // Create auth tokens for the user

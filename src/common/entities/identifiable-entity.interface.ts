@@ -1,3 +1,3 @@
-export interface IIdentifiableEntity {
+export interface IdentifiableEntity {
   id: string;
 }

@@ -6,10 +6,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import {
-  IRefreshToken,
-  IRefreshTokenEntity,
-} from '@auth/models/refresh-token.model';
+import { RefreshToken } from '@auth/models/refresh-token.model';
 
 @Entity({
   name: 'refresh_tokens',
@@ -49,7 +46,7 @@ export class RefreshTokenEntity {
   @DeleteDateColumn({ type: 'timestamp' })
   deletedAt: Date;
 
-  static fromDomain(refreshToken: IRefreshToken): RefreshTokenEntity {
+  static fromDomain(refreshToken: RefreshToken): RefreshTokenEntity {
     if (!refreshToken) return null;
 
     const refreshTokenEntity = new RefreshTokenEntity();
@@ -61,7 +58,7 @@ export class RefreshTokenEntity {
     return refreshTokenEntity;
   }
 
-  static toDomain(refreshTokenEntity: RefreshTokenEntity): IRefreshTokenEntity {
+  static toDomain(refreshTokenEntity: RefreshTokenEntity): RefreshToken {
     if (!refreshTokenEntity) return null;
 
     return {

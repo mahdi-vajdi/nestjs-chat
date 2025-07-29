@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { UserRole } from '@user/enums/user-role.enum';
-import { IUser, IUserEntity } from '@user/models/user.model';
+import { User } from '@user/models/user.entity';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -44,7 +44,7 @@ export class UserEntity {
   @DeleteDateColumn({ type: 'timestamp' })
   deletedAt: Date;
 
-  static fromDomain(user: IUser): UserEntity {
+  static fromDomain(user: User): UserEntity {
     if (!user) return null;
 
     const userEntity = new UserEntity();
@@ -59,7 +59,7 @@ export class UserEntity {
     return userEntity;
   }
 
-  static toDomain(userEntity: UserEntity): IUserEntity {
+  static toDomain(userEntity: UserEntity): User {
     if (!userEntity) return null;
 
     return {

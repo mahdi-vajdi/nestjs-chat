@@ -7,10 +7,7 @@ import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { ErrorCode } from '@common/result/error';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { IAuthDatabaseProvider } from '@auth/database/providers/auth-database.provider';
-import {
-  IRefreshToken,
-  IRefreshTokenEntity,
-} from '@auth/models/refresh-token.model';
+import { RefreshToken } from '@auth/models/refresh-token.model';
 
 @Injectable()
 export class AuthPostgresService implements IAuthDatabaseProvider {
@@ -21,8 +18,8 @@ export class AuthPostgresService implements IAuthDatabaseProvider {
 
   @TryCatch
   async createRefreshToken(
-    refreshToken: IRefreshToken,
-  ): Promise<Result<IRefreshTokenEntity>> {
+    refreshToken: RefreshToken,
+  ): Promise<Result<RefreshToken>> {
     const res = await this.refreshTokenRepository.save(
       RefreshTokenEntity.fromDomain(refreshToken),
     );
@@ -34,7 +31,7 @@ export class AuthPostgresService implements IAuthDatabaseProvider {
   async getRefreshToken(
     identifier: string,
     userId: string,
-  ): Promise<Result<IRefreshTokenEntity>> {
+  ): Promise<Result<RefreshToken>> {
     const refreshToken = await this.refreshTokenRepository
       .createQueryBuilder('rt')
       .where('rt.userId = :userId', { userId })

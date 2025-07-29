@@ -1,15 +1,32 @@
-import { IIdentifiableEntity } from '@common/entities/identifiable-entity.interface';
-import { IDatatableEntity } from '@common/entities/datable-entity.interface';
-import { IDeletableEntity } from '@common/entities/deletable-entity.interface';
+import { IdentifiableEntity } from '@common/entities/identifiable-entity.interface';
+import { TimestampedEntity } from '@common/entities/timestamped-entity.interface';
+import { SoftDeletableEntity } from '@common/entities/soft-deletable-entity.interface';
 
-export interface IRefreshToken {
-  readonly userId: string;
-  readonly token: string;
-  readonly identifier: string;
+export class RefreshToken
+  implements IdentifiableEntity, TimestampedEntity, SoftDeletableEntity
+{
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
+
+  identifier: string;
+  token: string;
+  userId: string;
+
+  private constructor(parameters: Partial<RefreshToken>) {
+    Object.assign(this, parameters);
+  }
+
+  static create(
+    identifier: string,
+    token: string,
+    userId: string,
+  ): RefreshToken {
+    return new RefreshToken({
+      identifier,
+      token,
+      userId,
+    });
+  }
 }
-
-export interface IRefreshTokenEntity
-  extends IRefreshToken,
-    IIdentifiableEntity,
-    IDatatableEntity,
-    IDeletableEntity {}

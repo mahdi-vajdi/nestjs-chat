@@ -1,4 +1,4 @@
-export interface IDatatableEntity {
+export interface TimestampedEntity {
   createdAt: Date;
   updatedAt: Date;
 }

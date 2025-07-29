@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { ConversationType } from '@chat/enums/conversation-type.enum';
 import { MessageEntity } from '@chat/database/postgres/entities/message.entity';
+import { Conversation } from '@chat/models/conversation.entity';
 
 @Entity({ name: 'conversations' })
 export class ConversationEntity {
@@ -35,7 +36,7 @@ export class ConversationEntity {
   createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamp' })
-  updateAt: Date;
+  updatedAt: Date;
 
   @DeleteDateColumn({ type: 'timestamp' })
   deletedAt: Date;
@@ -45,4 +46,35 @@ export class ConversationEntity {
     onUpdate: 'CASCADE',
   })
   messages: MessageEntity[];
+
+  static fromDomain(conversation: Conversation): ConversationEntity {
+    if (!conversation) return null;
+
+    const conversationEntity = new ConversationEntity();
+
+    conversationEntity.title = conversation.title;
+    conversationEntity.picture = conversation.picture;
+    conversationEntity.identifier = conversation.identifier;
+    conversationEntity.type = conversation.type;
+
+    return conversationEntity;
+  }
+
+  static toDomain(conversationEntity: ConversationEntity): Conversation {
+    if (!conversationEntity) return null;
+
+    return {
+      id: conversationEntity.id,
+      title: conversationEntity.title,
+      picture: conversationEntity.picture,
+      identifier: conversationEntity.identifier,
+      type: conversationEntity.type,
+      messages: conversationEntity.messages
+        ? conversationEntity.messages.map((m) => MessageEntity.toDomain(m))
+        : [],
+      createdAt: conversationEntity.createdAt,
+      updatedAt: conversationEntity.updatedAt,
+      deletedAt: conversationEntity.deletedAt,
+    };
+  }
 }
