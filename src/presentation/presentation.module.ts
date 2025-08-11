@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AuthHttpController } from './http/controllers/auth/auth-http.controller';
 import { ConversationGateway } from '@presentation/ws/gateways/conversation.gateway';
-import { AuthHttpGuard } from '@presentation/guards/auth-http.guard';
-import { AuthWsGuard } from '@presentation/guards/auth-ws.guard';
+import { AuthHttpGuard } from '@presentation/http/guards/auth-http.guard';
+import { AuthWsGuard } from '@presentation/ws/guards/auth-ws.guard';
 import { AuthModule } from '@auth/auth.module';
 import { UserModule } from '@user/user.module';
 import { ChatModule } from '@chat/chat.module';
