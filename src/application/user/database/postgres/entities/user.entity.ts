@@ -8,10 +8,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { UserRole } from '@user/enums/user-role.enum';
-import { User } from '@user/models/user.entity';
+import { UserEntity, UserProps } from '@user/models/user.model';
 
 @Entity({ name: 'users' })
-export class UserEntity {
+export class User {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;
 
@@ -27,39 +27,39 @@ export class UserEntity {
   password: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  firstName?: string;
+  first_name?: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  lastName?: string;
+  last_name?: string;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  createdAt: Date;
+  @CreateDateColumn()
+  created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
-  updatedAt: Date;
+  @UpdateDateColumn()
+  updated_at: Date;
 
-  @DeleteDateColumn({ type: 'timestamp' })
-  deletedAt: Date;
+  @DeleteDateColumn()
+  deleted_at: Date;
 
-  static fromDomain(user: User): UserEntity {
-    if (!user) return null;
+  static fromProps(props: UserProps): User {
+    if (!props) return null;
 
-    const userEntity = new UserEntity();
+    const userEntity = new User();
 
-    userEntity.email = user.email;
-    userEntity.username = user.username;
-    userEntity.password = user.password;
-    userEntity.firstName = user.firstName;
-    userEntity.lastName = user.lastName;
-    userEntity.role = user.role;
+    userEntity.email = props.email;
+    userEntity.username = props.username;
+    userEntity.password = props.password;
+    userEntity.first_name = props.firstName;
+    userEntity.last_name = props.lastName;
+    userEntity.role = props.role;
 
     return userEntity;
   }
 
-  static toDomain(userEntity: UserEntity): User {
+  static toEntity(userEntity: User): UserEntity {
     if (!userEntity) return null;
 
     return {
@@ -67,12 +67,12 @@ export class UserEntity {
       role: userEntity.role,
       email: userEntity.email,
       username: userEntity.username,
-      firstName: userEntity.firstName,
-      lastName: userEntity.lastName,
+      firstName: userEntity.first_name,
+      lastName: userEntity.last_name,
       password: userEntity.password,
-      createdAt: userEntity.createdAt,
-      updatedAt: userEntity.updatedAt,
-      deletedAt: userEntity.deletedAt,
+      createdAt: userEntity.created_at,
+      updatedAt: userEntity.updated_at,
+      deletedAt: userEntity.deleted_at,
     };
   }
 }

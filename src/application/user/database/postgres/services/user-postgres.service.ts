@@ -1,29 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserEntity } from '../entities/user.entity';
+import { User } from '../entities/user.entity';
 import { Repository } from 'typeorm';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { IUserDatabaseProvider } from '@user/database/providers/user-database.provider';
-import { User } from '@user/models/user.entity';
+import { UserEntity, UserProps } from '@user/models/user.model';
 import { UserExistsQueryable } from '@user/database/postgres/queryables/user-exists.queryable';
 
 @Injectable()
 export class UserPostgresService implements IUserDatabaseProvider {
   constructor(
-    @InjectRepository(UserEntity, DatabaseType.POSTGRES)
-    private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(User, DatabaseType.POSTGRES)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   @TryCatch
-  async createUser(user: User): Promise<Result<User>> {
-    const res = await this.userRepository.save(UserEntity.fromDomain(user));
+  async createUser(user: UserProps): Promise<Result<UserEntity>> {
+    const res = await this.userRepository.save(User.fromProps(user));
 
     if (!res) Result.error('Could not create user', ErrorCode.INTERNAL);
 
-    return Result.ok(UserEntity.toDomain(res));
+    return Result.ok(User.toEntity(res));
   }
 
   @TryCatch

@@ -1,5 +1,5 @@
 import { Result } from '@common/result/result';
-import { User } from '@user/models/user.entity';
+import { UserEntity, UserProps } from '@user/models/user.model';
 import { UserExistsQueryable } from '@user/database/postgres/queryables/user-exists.queryable';
 
 interface IUserDatabaseReader {
@@ -7,7 +7,7 @@ interface IUserDatabaseReader {
 }
 
 interface IUserDatabaseWriter {
-  createUser(user: User): Promise<Result<User>>;
+  createUser(user: UserProps): Promise<Result<UserEntity>>;
 }
 
 export interface IUserDatabaseProvider

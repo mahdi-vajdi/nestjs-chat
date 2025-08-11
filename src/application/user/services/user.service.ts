@@ -9,7 +9,7 @@ import {
   IUserDatabaseProvider,
   USER_DATABASE_PROVIDER,
 } from '@user/database/providers/user-database.provider';
-import { User } from '@user/models/user.entity';
+import { UserEntity, UserProps } from '@user/models/user.model';
 
 @Injectable()
 export class UserService {
@@ -23,7 +23,7 @@ export class UserService {
   ) {}
 
   @TryCatch
-  async createUser(user: User): Promise<Result<User>> {
+  async createUser(user: UserProps): Promise<Result<UserEntity>> {
     this.logger.log('Checking if user exists before creating one.');
     // Checking the email
     const emailExists = await this.userDatabaseProvider.userExists({
