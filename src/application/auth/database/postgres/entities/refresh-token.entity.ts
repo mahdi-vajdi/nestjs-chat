@@ -6,14 +6,17 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { RefreshToken } from '@auth/models/refresh-token.model';
+import {
+  RefreshTokenEntity,
+  RefreshTokenProps,
+} from '@auth/models/refresh-token.props';
 
 @Entity({
   name: 'refresh_tokens',
   comment:
     'Stores the refresh tokens that are issued to the user for authentication',
 })
-export class RefreshTokenEntity {
+export class RefreshToken {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;
 
@@ -46,10 +49,10 @@ export class RefreshTokenEntity {
   @DeleteDateColumn({ type: 'timestamp' })
   deletedAt: Date;
 
-  static fromDomain(refreshToken: RefreshToken): RefreshTokenEntity {
+  static fromProps(refreshToken: RefreshTokenProps): RefreshToken {
     if (!refreshToken) return null;
 
-    const refreshTokenEntity = new RefreshTokenEntity();
+    const refreshTokenEntity = new RefreshToken();
 
     refreshTokenEntity.userId = refreshToken.userId;
     refreshTokenEntity.token = refreshToken.token;
@@ -58,17 +61,17 @@ export class RefreshTokenEntity {
     return refreshTokenEntity;
   }
 
-  static toDomain(refreshTokenEntity: RefreshTokenEntity): RefreshToken {
-    if (!refreshTokenEntity) return null;
+  static toEntity(refreshToken: RefreshToken): RefreshTokenEntity {
+    if (!refreshToken) return null;
 
     return {
-      id: refreshTokenEntity.id,
-      userId: refreshTokenEntity.userId,
-      token: refreshTokenEntity.token,
-      identifier: refreshTokenEntity.identifier,
-      createdAt: refreshTokenEntity.createdAt,
-      updatedAt: refreshTokenEntity.updatedAt,
-      deletedAt: refreshTokenEntity.deletedAt,
+      id: refreshToken.id,
+      userId: refreshToken.userId,
+      token: refreshToken.token,
+      identifier: refreshToken.identifier,
+      createdAt: refreshToken.createdAt,
+      updatedAt: refreshToken.updatedAt,
+      deletedAt: refreshToken.deletedAt,
     };
   }
 }
