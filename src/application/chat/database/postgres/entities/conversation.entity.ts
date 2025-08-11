@@ -8,22 +8,25 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ConversationType } from '@chat/enums/conversation-type.enum';
-import { MessageEntity } from '@chat/database/postgres/entities/message.entity';
-import { Conversation } from '@chat/models/conversation.entity';
+import { Message } from '@chat/database/postgres/entities/message.entity';
+import {
+  ConversationEntity,
+  ConversationProps,
+} from '@chat/models/conversation.model';
 
 @Entity({ name: 'conversations' })
-export class ConversationEntity {
+export class Conversation {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;
 
   @Column({ type: 'varchar', nullable: true })
-  title?: string;
+  title: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  picture?: string;
+  picture: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  identifier?: string;
+  identifier: string | null;
 
   @Column({
     type: 'enum',
@@ -32,49 +35,49 @@ export class ConversationEntity {
   })
   type: ConversationType;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  createdAt: Date;
+  @CreateDateColumn()
+  created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
-  updatedAt: Date;
+  @UpdateDateColumn()
+  updated_at: Date;
 
-  @DeleteDateColumn({ type: 'timestamp' })
-  deletedAt: Date;
+  @DeleteDateColumn()
+  deleted_at: Date | null;
 
-  @OneToMany(() => MessageEntity, (m) => m.conversation, {
+  @OneToMany(() => Message, (m) => m.conversation, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
   })
-  messages: MessageEntity[];
+  messages: Message[];
 
-  static fromDomain(conversation: Conversation): ConversationEntity {
-    if (!conversation) return null;
+  static fromProps(props: ConversationProps): Conversation {
+    if (!props) return null;
 
-    const conversationEntity = new ConversationEntity();
+    const conversation = new Conversation();
 
-    conversationEntity.title = conversation.title;
-    conversationEntity.picture = conversation.picture;
-    conversationEntity.identifier = conversation.identifier;
-    conversationEntity.type = conversation.type;
+    conversation.title = props.title;
+    conversation.picture = props.picture;
+    conversation.identifier = props.identifier;
+    conversation.type = props.type;
 
-    return conversationEntity;
+    return conversation;
   }
 
-  static toDomain(conversationEntity: ConversationEntity): Conversation {
-    if (!conversationEntity) return null;
+  static toEntity(conversation: Conversation): ConversationEntity {
+    if (!conversation) return null;
 
     return {
-      id: conversationEntity.id,
-      title: conversationEntity.title,
-      picture: conversationEntity.picture,
-      identifier: conversationEntity.identifier,
-      type: conversationEntity.type,
-      messages: conversationEntity.messages
-        ? conversationEntity.messages.map((m) => MessageEntity.toDomain(m))
+      id: conversation.id,
+      title: conversation.title,
+      picture: conversation.picture,
+      identifier: conversation.identifier,
+      type: conversation.type,
+      messages: conversation.messages
+        ? conversation.messages.map((m) => Message.toEntity(m))
         : [],
-      createdAt: conversationEntity.createdAt,
-      updatedAt: conversationEntity.updatedAt,
-      deletedAt: conversationEntity.deletedAt,
+      createdAt: conversation.created_at,
+      updatedAt: conversation.updated_at,
+      deletedAt: conversation.deleted_at,
     };
   }
 }

@@ -5,7 +5,7 @@ import { Result } from '@common/result/result';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { ErrorCode } from '@common/result/error';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
-import { IAuthDatabaseProvider } from '@auth/database/providers/auth-database.provider';
+import { AuthDatabaseProvider } from '@auth/database/providers/auth-database.provider';
 import {
   RefreshTokenEntity,
   RefreshTokenProps,
@@ -13,7 +13,7 @@ import {
 import { RefreshToken } from '@auth/database/postgres/entities/refresh-token.entity';
 
 @Injectable()
-export class AuthPostgresService implements IAuthDatabaseProvider {
+export class AuthPostgresService implements AuthDatabaseProvider {
   constructor(
     @InjectRepository(RefreshToken, DatabaseType.POSTGRES)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
@@ -22,7 +22,7 @@ export class AuthPostgresService implements IAuthDatabaseProvider {
   @TryCatch
   async createRefreshToken(
     props: RefreshTokenProps,
-  ): Promise<Result<RefreshToken>> {
+  ): Promise<Result<RefreshTokenEntity>> {
     const res = await this.refreshTokenRepository.save(
       RefreshToken.fromProps(props),
     );

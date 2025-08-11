@@ -4,14 +4,14 @@ import {
   RefreshTokenProps,
 } from '@auth/models/refresh-token.props';
 
-interface IAuthDatabaseReader {
+interface AuthDatabaseReader {
   getRefreshToken(
     identifier: string,
     userId: string,
   ): Promise<Result<RefreshTokenEntity>>;
 }
 
-interface IAuthDatabaseWriter {
+interface AuthDatabaseWriter {
   createRefreshToken(
     props: RefreshTokenProps,
   ): Promise<Result<RefreshTokenEntity>>;
@@ -21,8 +21,8 @@ interface IAuthDatabaseWriter {
   restoreRefreshToken(id: string): Promise<Result<boolean>>;
 }
 
-export interface IAuthDatabaseProvider
-  extends IAuthDatabaseReader,
-    IAuthDatabaseWriter {}
+export interface AuthDatabaseProvider
+  extends AuthDatabaseReader,
+    AuthDatabaseWriter {}
 
 export const AUTH_DATABASE_PROVIDER = 'auth-database-providers';

@@ -8,11 +8,11 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ChatType } from '@chat/enums/chat-type.enum';
-import { ConversationEntity } from '@chat/database/postgres/entities/conversation.entity';
-import { Message } from '@chat/models/message.entity';
+import { Conversation } from '@chat/database/postgres/entities/conversation.entity';
+import { MessageEntity, MessageProps } from '@chat/models/message.entity';
 
 @Entity({ name: 'messages' })
-export class MessageEntity {
+export class Message {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;
 
@@ -23,55 +23,55 @@ export class MessageEntity {
   type: ChatType;
 
   @Column({ type: 'bigint' })
-  senderId: string;
+  sender_id: string;
 
   @Column({ type: 'bigint' })
-  conversationId: string;
+  conversation_id: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  createdAt: Date;
+  @CreateDateColumn()
+  created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
-  updatedAt: Date;
+  @UpdateDateColumn()
+  updated_at: Date;
 
-  @DeleteDateColumn({ type: 'timestamp' })
-  deletedAt: Date;
+  @DeleteDateColumn()
+  deleted_at: Date | null;
 
-  @ManyToOne(() => ConversationEntity, (c) => c.messages, {
+  @ManyToOne(() => Conversation, (c) => c.messages, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
   })
-  conversation: ConversationEntity;
+  conversation: Conversation;
 
-  static fromDomain(message: Message): MessageEntity {
-    if (!message) return null;
+  static fromProps(props: MessageProps): Message {
+    if (!props) return null;
 
-    const messageEntity = new MessageEntity();
+    const message = new Message();
 
-    messageEntity.text = message.text;
-    messageEntity.type = message.type;
-    messageEntity.senderId = message.senderId;
-    messageEntity.conversationId = message.conversation.id;
+    message.text = props.text;
+    message.type = props.type;
+    message.sender_id = props.senderId;
+    message.conversation_id = props.conversation.id;
 
-    return messageEntity;
+    return message;
   }
 
-  static toDomain(messageEntity: MessageEntity): Message {
-    if (!messageEntity) return null;
+  static toEntity(message: Message): MessageEntity {
+    if (!message) return null;
 
     return {
-      id: messageEntity.id,
-      text: messageEntity.text,
-      type: messageEntity.type,
-      senderId: messageEntity.senderId,
-      conversation: messageEntity.conversation
-        ? ConversationEntity.toDomain(messageEntity.conversation)
+      id: message.id,
+      text: message.text,
+      type: message.type,
+      senderId: message.sender_id,
+      conversation: message.conversation
+        ? Conversation.toEntity(message.conversation)
         : {
-            id: messageEntity.conversationId,
+            id: message.conversation_id,
           },
-      createdAt: messageEntity.createdAt,
-      updatedAt: messageEntity.updatedAt,
-      deletedAt: messageEntity.deletedAt,
+      createdAt: message.created_at,
+      updatedAt: message.updated_at,
+      deletedAt: message.deleted_at,
     };
   }
 }

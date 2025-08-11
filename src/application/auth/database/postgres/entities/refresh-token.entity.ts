@@ -40,14 +40,14 @@ export class RefreshToken {
   })
   identifier: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn()
   updated_at: Date;
 
-  @DeleteDateColumn({ type: 'timestamp' })
-  deleted_at: Date;
+  @DeleteDateColumn()
+  deleted_at: Date | null;
 
   static fromProps(refreshToken: RefreshTokenProps): RefreshToken {
     if (!refreshToken) return null;

@@ -4,16 +4,13 @@ import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CHAT_DATABASE_PROVIDER } from '@chat/database/providers/chat-database.provider';
 import { ChatPostgresService } from '@chat/database/postgres/services/chat-postgres.service';
-import { MessageEntity } from '@chat/database/postgres/entities/message.entity';
-import { ConversationEntity } from '@chat/database/postgres/entities/conversation.entity';
+import { Message } from '@chat/database/postgres/entities/message.entity';
+import { Conversation } from '@chat/database/postgres/entities/conversation.entity';
 
 @Module({
   imports: [
     DatabaseModule.register(DatabaseType.POSTGRES),
-    TypeOrmModule.forFeature(
-      [ConversationEntity, MessageEntity],
-      DatabaseType.POSTGRES,
-    ),
+    TypeOrmModule.forFeature([Conversation, Message], DatabaseType.POSTGRES),
   ],
   providers: [
     {

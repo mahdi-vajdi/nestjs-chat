@@ -12,7 +12,7 @@ import { v4 as uuidV4 } from 'uuid';
 import { ErrorCode } from '@common/result/error';
 import {
   AUTH_DATABASE_PROVIDER,
-  IAuthDatabaseProvider,
+  AuthDatabaseProvider,
 } from '@auth/database/providers/auth-database.provider';
 import { AUTH_CONFIG_TOKEN, IAuthConfig } from '@auth/configs/auth.config';
 import { RefreshTokenPayload } from '@auth/types/refresh-token-payload.type';
@@ -28,7 +28,7 @@ export class AuthService {
   constructor(
     readonly configService: ConfigService,
     @Inject(AUTH_DATABASE_PROVIDER)
-    private readonly authDatabaseProvider: IAuthDatabaseProvider,
+    private readonly authDatabaseProvider: AuthDatabaseProvider,
     private readonly jwtService: JwtService,
   ) {
     this.authConfig = configService.get<IAuthConfig>(AUTH_CONFIG_TOKEN);
