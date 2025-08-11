@@ -24,7 +24,7 @@ export class RefreshToken {
     type: 'bigint',
     comment: 'The user id which this refresh token belongs to',
   })
-  userId: string;
+  user_id: string;
 
   @Column({
     type: 'varchar',
@@ -41,20 +41,20 @@ export class RefreshToken {
   identifier: string;
 
   @CreateDateColumn({ type: 'timestamp' })
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn({ type: 'timestamp' })
-  updatedAt: Date;
+  updated_at: Date;
 
   @DeleteDateColumn({ type: 'timestamp' })
-  deletedAt: Date;
+  deleted_at: Date;
 
   static fromProps(refreshToken: RefreshTokenProps): RefreshToken {
     if (!refreshToken) return null;
 
     const refreshTokenEntity = new RefreshToken();
 
-    refreshTokenEntity.userId = refreshToken.userId;
+    refreshTokenEntity.user_id = refreshToken.userId;
     refreshTokenEntity.token = refreshToken.token;
     refreshTokenEntity.identifier = refreshToken.identifier; // Assuming id is unique and can be used as identifier
 
@@ -66,12 +66,12 @@ export class RefreshToken {
 
     return {
       id: refreshToken.id,
-      userId: refreshToken.userId,
+      userId: refreshToken.user_id,
       token: refreshToken.token,
       identifier: refreshToken.identifier,
-      createdAt: refreshToken.createdAt,
-      updatedAt: refreshToken.updatedAt,
-      deletedAt: refreshToken.deletedAt,
+      createdAt: refreshToken.created_at,
+      updatedAt: refreshToken.updated_at,
+      deletedAt: refreshToken.deleted_at,
     };
   }
 }
