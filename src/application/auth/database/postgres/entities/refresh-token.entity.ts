@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -24,6 +25,7 @@ export class RefreshToken {
     type: 'bigint',
     comment: 'The user id which this refresh token belongs to',
   })
+  @Index('refresh_tokens_user_id_idx')
   user_id: string;
 
   @Column({
@@ -38,6 +40,7 @@ export class RefreshToken {
     unique: true,
     comment: 'A unique id to identify the jwt. usually a uuid',
   })
+  @Index('refresh_tokens_identifier_idx')
   identifier: string;
 
   @CreateDateColumn()

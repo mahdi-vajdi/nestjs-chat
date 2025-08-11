@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -26,6 +27,7 @@ export class Conversation {
   picture: string | null;
 
   @Column({ type: 'varchar', nullable: true })
+  @Index('conversations_identifier_uniq', { unique: true })
   identifier: string | null;
 
   @Column({

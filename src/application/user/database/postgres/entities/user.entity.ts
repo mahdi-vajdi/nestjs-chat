@@ -16,11 +16,11 @@ export class User {
   id: string;
 
   @Column({ type: 'varchar', length: 150 })
-  @Index('UQ_USERS_EMAIL', { unique: true })
+  @Index('users_email_uniq', { unique: true })
   email: string;
 
   @Column({ type: 'varchar', length: 40 })
-  @Index('UQ_USERS_USERNAME', { unique: true })
+  @Index('users_username_uniq', { unique: true })
   username: string;
 
   @Column({ type: 'varchar', length: 255 })

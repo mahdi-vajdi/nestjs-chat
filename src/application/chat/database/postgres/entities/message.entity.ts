@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -23,6 +24,7 @@ export class Message {
   type: ChatType;
 
   @Column({ type: 'bigint' })
+  @Index('messages_sender_id_idx')
   sender_id: string;
 
   @Column({ type: 'bigint' })
