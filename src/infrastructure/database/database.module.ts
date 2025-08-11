@@ -13,11 +13,25 @@ import { LOGGER_PROVIDER } from '../logger/provider/logger.provider';
 @Module({})
 export class DatabaseModule {
   static register(...dbs: DatabaseType[]): DynamicModule {
-    const imports: any[] = [ConfigModule];
+    const databaseImports = dbs.map((dbType) => {
+      switch (dbType) {
+        case DatabaseType.POSTGRES:
+          return DatabaseModule.getPostgresConnection();
+        default:
+          throw new Error(`Unsupported database type: ${dbType}`);
+      }
+    });
 
-    const postgresImport = TypeOrmModule.forRootAsync({
-      imports: [ConfigModule, LoggerModule],
+    return {
+      module: DatabaseModule,
+      imports: databaseImports,
+    };
+  }
+
+  private static getPostgresConnection(): DynamicModule {
+    return TypeOrmModule.forRootAsync({
       name: DatabaseType.POSTGRES,
+      imports: [ConfigModule, LoggerModule],
       useFactory: async (
         configService: ConfigService,
         logger: TypeOrmLogger,
@@ -27,36 +41,23 @@ export class DatabaseModule {
         );
 
         return {
-          name: DatabaseType.POSTGRES,
           type: 'postgres',
           host: postgresConfig.host,
           port: postgresConfig.port,
           username: postgresConfig.username,
           password: postgresConfig.password,
           database: postgresConfig.database,
-          entities: ['**/dist/**/postgres/**/*.entity{.ts,.js}'],
-          migrations: ['**/dist/**/postgres/**/**.migration{.ts,.js}'],
-          migrationsRun: true,
+          autoLoadEntities: true,
+          migrations: ['dist/**/postgres/migrations/**/*.js'],
+          migrationsRun: false,
           migrationsTableName: 'typeorm_migrations',
           synchronize: false,
           logging: postgresConfig.log,
           logger: logger,
           maxQueryExecutionTime: postgresConfig.slowQueryLimit,
-          supportBigNumbers: true,
-          bigNumberStrings: true,
         };
       },
       inject: [ConfigService, LOGGER_PROVIDER],
     });
-
-    if (dbs.includes(DatabaseType.POSTGRES)) imports.push(postgresImport);
-
-    // If no db type is specified, we push all the created connections into the imports array
-    if (dbs.length === 0) imports.push(postgresImport);
-
-    return {
-      module: DatabaseModule,
-      imports: imports,
-    };
   }
 }
