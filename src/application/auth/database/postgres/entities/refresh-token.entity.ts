@@ -6,14 +6,17 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { RefreshToken } from '@auth/models/refresh-token.model';
+import {
+  RefreshTokenEntity,
+  RefreshTokenProps,
+} from '@auth/models/refresh-token.props';
 
 @Entity({
   name: 'refresh_tokens',
   comment:
     'Stores the refresh tokens that are issued to the user for authentication',
 })
-export class RefreshTokenEntity {
+export class RefreshToken {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;
 
@@ -21,7 +24,7 @@ export class RefreshTokenEntity {
     type: 'bigint',
     comment: 'The user id which this refresh token belongs to',
   })
-  userId: string;
+  user_id: string;
 
   @Column({
     type: 'varchar',
@@ -38,37 +41,37 @@ export class RefreshTokenEntity {
   identifier: string;
 
   @CreateDateColumn({ type: 'timestamp' })
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn({ type: 'timestamp' })
-  updatedAt: Date;
+  updated_at: Date;
 
   @DeleteDateColumn({ type: 'timestamp' })
-  deletedAt: Date;
+  deleted_at: Date;
 
-  static fromDomain(refreshToken: RefreshToken): RefreshTokenEntity {
+  static fromProps(refreshToken: RefreshTokenProps): RefreshToken {
     if (!refreshToken) return null;
 
-    const refreshTokenEntity = new RefreshTokenEntity();
+    const refreshTokenEntity = new RefreshToken();
 
-    refreshTokenEntity.userId = refreshToken.userId;
+    refreshTokenEntity.user_id = refreshToken.userId;
     refreshTokenEntity.token = refreshToken.token;
     refreshTokenEntity.identifier = refreshToken.identifier; // Assuming id is unique and can be used as identifier
 
     return refreshTokenEntity;
   }
 
-  static toDomain(refreshTokenEntity: RefreshTokenEntity): RefreshToken {
-    if (!refreshTokenEntity) return null;
+  static toEntity(refreshToken: RefreshToken): RefreshTokenEntity {
+    if (!refreshToken) return null;
 
     return {
-      id: refreshTokenEntity.id,
-      userId: refreshTokenEntity.userId,
-      token: refreshTokenEntity.token,
-      identifier: refreshTokenEntity.identifier,
-      createdAt: refreshTokenEntity.createdAt,
-      updatedAt: refreshTokenEntity.updatedAt,
-      deletedAt: refreshTokenEntity.deletedAt,
+      id: refreshToken.id,
+      userId: refreshToken.user_id,
+      token: refreshToken.token,
+      identifier: refreshToken.identifier,
+      createdAt: refreshToken.created_at,
+      updatedAt: refreshToken.updated_at,
+      deletedAt: refreshToken.deleted_at,
     };
   }
 }
