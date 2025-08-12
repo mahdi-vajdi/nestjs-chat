@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthHttpController } from './http/controllers/auth/auth-http.controller';
-import { ConversationGateway } from '@presentation/ws/gateways/conversation.gateway';
+import { ChatWsGateway } from '@presentation/ws/gateways/chat-ws.gateway';
 import { AuthHttpGuard } from '@presentation/http/guards/auth-http.guard';
 import { AuthWsGuard } from '@presentation/ws/guards/auth-ws.guard';
 import { AuthModule } from '@auth/auth.module';
@@ -12,7 +12,7 @@ import { ChatModule } from '@chat/chat.module';
   controllers: [AuthHttpController],
   providers: [
     // Websocket gateways
-    ConversationGateway,
+    ChatWsGateway,
     // Guards
     AuthHttpGuard,
     AuthWsGuard,

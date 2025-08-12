@@ -14,6 +14,7 @@ import {
   ConversationEntity,
   ConversationProps,
 } from '@chat/models/conversation.model';
+import { ConversationMember } from '@chat/database/postgres/entities/conversation-member.entity';
 
 @Entity({ name: 'conversations' })
 export class Conversation {
@@ -51,6 +52,9 @@ export class Conversation {
     onUpdate: 'CASCADE',
   })
   messages: Message[];
+
+  @OneToMany(() => ConversationMember, (cm) => cm.conversation)
+  conversationMembers: ConversationMember[];
 
   static fromProps(props: ConversationProps): Conversation {
     if (!props) return null;
