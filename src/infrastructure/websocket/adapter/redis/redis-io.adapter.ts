@@ -47,7 +47,7 @@ export class RedisIoAdapter extends IoAdapter {
   override createIOServer(port: number, options?: any): any {
     this.logger.log(`Socket is running on port ${this.socketConfig.port}`);
 
-    const server = super.createIOServer(port, options);
+    const server = super.createIOServer(this.socketConfig.port, options);
     server.adapter(this.adapterConstructor);
     const setServer = this.broadcastProvider.setServer(server);
     if (!setServer)

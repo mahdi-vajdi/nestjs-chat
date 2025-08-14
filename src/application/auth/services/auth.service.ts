@@ -71,12 +71,9 @@ export class AuthService {
     accessToken: string,
   ): Promise<Result<AccessTokenPayload>> {
     // Verify the access token
-    const payload = await this.jwtService.verifyAsync<AccessTokenPayload>(
-      accessToken,
-      {
-        publicKey: this.authConfig.accessPublicKey,
-      },
-    );
+    const payload = await this.jwtService.verifyAsync(accessToken, {
+      publicKey: this.authConfig.accessPublicKey,
+    });
 
     return Result.ok(payload);
   }
@@ -97,11 +94,11 @@ export class AuthService {
     // Get the refresh token from database
     const getRefreshTokenRes = await this.authDatabaseProvider.getRefreshToken(
       payload.jti,
-      payload.userId,
+      payload.sub,
     );
     if (getRefreshTokenRes.isError()) {
       this.logger.error(
-        `error getting the refresh token for the user id ${payload.userId} from database: ${getRefreshTokenRes.error}`,
+        `error getting the refresh token for the user id ${payload.sub} from database: ${getRefreshTokenRes.error}`,
       );
       return Result.error(getRefreshTokenRes.error);
     }
@@ -112,9 +109,7 @@ export class AuthService {
       getRefreshTokenRes.value.token,
     );
     if (!isRefreshTokenValid) {
-      this.logger.error(
-        `invalid refresh token for the user id ${payload.userId}`,
-      );
+      this.logger.error(`invalid refresh token for the user id ${payload.sub}`);
       return Result.error('Invalid refresh token', ErrorCode.INVALID_ARGUMENT);
     }
 
@@ -125,16 +120,16 @@ export class AuthService {
       );
     if (deleteRefreshTokenRes.isError()) {
       this.logger.error(
-        `error deleting refresh token for the user id ${payload.userId} in database: ${deleteRefreshTokenRes.error}`,
+        `error deleting refresh token for the user id ${payload.sub} in database: ${deleteRefreshTokenRes.error}`,
       );
       return Result.error(deleteRefreshTokenRes.error);
     }
 
     // Create the new tokens which also saves the refresh token in the database
-    const createTokensRes = await this.createTokens(payload.userId, userRole);
+    const createTokensRes = await this.createTokens(payload.sub, userRole);
     if (createTokensRes.isError()) {
       this.logger.error(
-        `error creating new tokens for the user id ${payload.userId} in database: ${createTokensRes.error}`,
+        `error creating new tokens for the user id ${payload.sub} in database: ${createTokensRes.error}`,
       );
 
       // As fallback restore the deleted refresh token
@@ -176,7 +171,7 @@ export class AuthService {
     return await this.jwtService.signAsync(
       {
         sub: userId,
-        scope: role,
+        role: role,
       },
       {
         privateKey: this.authConfig.accessPrivateKey,

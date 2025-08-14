@@ -32,32 +32,29 @@ export class ChatWsGateway
   }
 
   async handleConnection(client: Socket, ...args: any[]) {
-    this.logger.verbose('New client connected.');
-    client.data = {
-      data: {},
-    };
+    this.logger.verbose(`New client connected. id ${client.id}`);
 
-    if (!client.data.data['authPromise']) {
-      client.data.data['authPromise'] =
-        this.authWsGuard.authenticateUser(client);
+    if (!client.data['authPromise']) {
+      client.data['authPromise'] = this.authWsGuard.authenticateUser(client);
     }
 
-    const authRes: Result<AccessTokenPayload> = client.data.data['authPromise'];
+    const authRes: Result<AccessTokenPayload> =
+      await client.data['authPromise'];
     if (authRes.isError()) {
       this.logger.debug(
         `Error from authentication: ${authRes.error.message}. disconnecting...`,
       );
-      client.emit('error.auth', authRes.error);
+      client.emit('appError', authRes.error.message);
       client.disconnect(true);
       return;
     }
 
     const conversationIdsRes = await this.chatService.getUserConversationIds(
-      authRes.value.userId,
+      authRes.value.sub,
     );
     if (conversationIdsRes.isError()) {
       this.logger.error(
-        `Error fetching conversation IDs for user ${authRes.value.userId}. disconnecting...`,
+        `Error fetching conversation IDs for user ${authRes.value.sub}. disconnecting...`,
       );
       client.emit('error.internal', authRes.error);
       client.disconnect(true);
@@ -65,17 +62,17 @@ export class ChatWsGateway
     }
 
     this.logger.debug(
-      `Joining user ${authRes.value.userId} to conversations: ${conversationIdsRes.value}`,
+      `Joining user ${authRes.value.sub} to conversations: ${conversationIdsRes.value}`,
     );
     client.join(conversationIdsRes.value);
 
-    const userEventsRoom = `user-${authRes.value.userId}`;
+    const userEventsRoom = `user-${authRes.value.sub}`;
     this.logger.debug(
-      `Joining user ${authRes.value.userId} to room ${userEventsRoom}`,
+      `Joining user ${authRes.value.sub} to room ${userEventsRoom}`,
     );
     client.join(userEventsRoom);
 
-    this.logger.log(`Client authorized: ${authRes.value.userId}`);
+    this.logger.log(`Client authorized: ${authRes.value.sub}`);
 
     if (client.disconnected) {
       this.handleDisconnect(client);
@@ -83,7 +80,7 @@ export class ChatWsGateway
   }
 
   handleDisconnect(client: Socket): void {
-    const authUser = client.data?.data?.user;
+    const authUser = client.data?.user;
     if (authUser) {
       this.logger.log(`Client disconnected: ${authUser}`);
 
@@ -99,5 +96,7 @@ export class ChatWsGateway
   }
 
   @SubscribeMessage('ping')
-  async ping() {}
+  async ping() {
+    this.logger.log('Pong');
+  }
 }

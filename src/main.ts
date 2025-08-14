@@ -41,7 +41,7 @@ async function loadLogger(): Promise<LoggerService> {
 
 function setUpSwagger(app: INestApplication) {
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Chatterbox API Gateway')
+    .setTitle('NestJS Chat API')
     .setVersion('1')
     .addBearerAuth({ 'x-tokenName': 'Authorization', type: 'http' }, 'Token')
     .build();

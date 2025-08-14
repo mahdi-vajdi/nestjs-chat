@@ -1,7 +1,7 @@
 import { Body, Controller, Post, Res, UsePipes } from '@nestjs/common';
 import { BaseHttpController } from '@common/http/base-http-controller';
 import { Response } from 'express';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SignupRequestBody, SignupResponse } from './models/signup.model';
 import { Result } from '@common/result/result';
 import { ValidationPipe } from '@common/validation/validation.pipe';
@@ -10,6 +10,7 @@ import { AuthService } from '@auth/services/auth.service';
 import { UserRole } from '@user/enums/user-role.enum';
 
 @Controller('v1/auth')
+@ApiTags('Auth')
 export class AuthHttpController extends BaseHttpController {
   constructor(
     private readonly authService: AuthService,
@@ -36,14 +37,20 @@ export class AuthHttpController extends BaseHttpController {
       lastName: body.lastName,
       role: UserRole.USER,
     });
-    if (createUserRes.isError()) return Result.error(createUserRes.error);
+    if (createUserRes.isError()) {
+      this.respond(response, createUserRes);
+      return;
+    }
 
     // Create auth tokens for the user
     const createAuthTokensRes = await this.authService.createTokens(
       createUserRes.value.id,
       'USER',
     );
-    if (createUserRes.isError()) return Result.error(createUserRes.error);
+    if (createAuthTokensRes.isError()) {
+      this.respond(response, createAuthTokensRes);
+      return;
+    }
 
     this.respond(
       response,

@@ -4,7 +4,6 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { IncomingMessage } from 'http';
 import { Socket } from 'socket.io';
 import { StdResponse } from '@common/std-response/std-response';
 import { Result } from '@common/result/result';
@@ -28,15 +27,20 @@ export class AuthWsGuard implements CanActivate {
     const data = wsContext.getData();
 
     if (client.data.authUser) {
-      if (client.data.tokenExp && new Date().getTime() > client.data.tokenExp) {
+      if (
+        client.data.authUser.exp &&
+        new Date().getTime() > client.data.authUser.exp * 1000
+      ) {
         this.logger.warn(
-          `Token expired for user: ${client.data.authUser.userId}.`,
+          `Token expired for user: ${client.data.authUser.sub}.`,
         );
         this.handleExpiredSession(client, data);
         return false;
       }
 
-      this.logger.verbose('user already authenticated');
+      this.logger.verbose(
+        `user already authenticated: ${client.data.authUser.sub}`,
+      );
       return true;
     }
 
@@ -55,7 +59,7 @@ export class AuthWsGuard implements CanActivate {
       return false;
     }
 
-    this.logger.debug(`User authenticated: ${authRes.value.userId}`);
+    this.logger.debug(`User authenticated: ${authRes.value.sub}`);
     return true;
   }
 
@@ -68,7 +72,7 @@ export class AuthWsGuard implements CanActivate {
       return Result.ok(client.data.authUser);
     }
 
-    const accessToken = this.extractToken(client.request);
+    const accessToken = this.extractToken(client);
     if (!accessToken) {
       this.logger.debug('token not provided');
       return Result.error('Unauthorized', ErrorCode.UNAUTHENTICATED);
@@ -85,15 +89,25 @@ export class AuthWsGuard implements CanActivate {
     Object.assign(client.data, {
       authUser: verifyRes.value,
       accessToken: accessToken,
-      tokenExp: verifyRes.value.exp * 1000, // Convert to milliseconds,
     });
+    client.data.authPromise = null;
 
     return Result.ok(verifyRes.value);
   }
 
-  private extractToken(request: IncomingMessage): string {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : null;
+  private extractToken(client: Socket): string {
+    const token =
+      client.request.headers.authorization ?? client.handshake.auth?.token;
+    if (!token) {
+      return null;
+    }
+
+    const splitToken = token.split(' ');
+    if (splitToken.length !== 2 || splitToken[0] !== 'Bearer') {
+      return null;
+    }
+
+    return splitToken[1];
   }
 
   private handleExpiredSession(

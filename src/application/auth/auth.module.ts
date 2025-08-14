@@ -13,13 +13,13 @@ import { AuthDatabaseModule } from '@auth/database/auth-database.module';
       signOptions: {
         algorithm: 'RS256',
         expiresIn: '1h',
-        issuer: 'chatterbox',
-        audience: 'chatterbox-client',
+        issuer: 'nestjs-chat',
+        audience: 'nestjs-chat-client',
       },
       verifyOptions: {
         algorithms: ['RS256'],
-        issuer: 'chatterbox',
-        audience: 'chatterbox-client',
+        issuer: 'nestjs-chat',
+        audience: 'nestjs-chat-client',
         clockTolerance: 15,
       },
     }),

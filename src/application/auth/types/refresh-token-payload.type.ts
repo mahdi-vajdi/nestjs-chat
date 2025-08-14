@@ -1,4 +1,8 @@
 export type RefreshTokenPayload = {
-  userId: string;
+  sub: string;
+  iat: number;
+  exp: number;
+  aud: string;
+  iss: string;
   jti: string;
 };

@@ -1,5 +1,8 @@
 export type AccessTokenPayload = {
-  userId: string;
+  sub: string;
   role: string;
+  iat: number;
   exp: number;
+  aud: string;
+  iss: string;
 };

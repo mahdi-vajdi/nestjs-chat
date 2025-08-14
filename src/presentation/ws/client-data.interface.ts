@@ -5,5 +5,4 @@ export interface ClientData {
   authUser?: AccessTokenPayload;
   accessToken?: string;
   authPromise?: Promise<Result<AccessTokenPayload>> | null;
-  tokenExp?: number;
 }
