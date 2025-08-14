@@ -12,35 +12,28 @@ import {
   RefreshTokenProps,
 } from '@auth/models/refresh-token.props';
 
-@Entity({
-  name: 'refresh_tokens',
-  comment:
-    'Stores the refresh tokens that are issued to the user for authentication',
-})
+@Entity({ name: 'auth_refresh_tokens' })
 export class RefreshToken {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('increment')
   id: string;
 
   @Column({
     type: 'bigint',
-    comment: 'The user id which this refresh token belongs to',
   })
   @Index('refresh_tokens_user_id_idx')
   user_id: string;
 
   @Column({
-    type: 'varchar',
-    length: 255,
+    type: 'text',
     comment: 'The hashed string of the actual token',
   })
   token: string;
 
   @Column({
     type: 'varchar',
-    unique: true,
     comment: 'A unique id to identify the jwt. usually a uuid',
   })
-  @Index('refresh_tokens_identifier_idx')
+  @Index('refresh_tokens_identifier_uniq', { unique: true })
   identifier: string;
 
   @CreateDateColumn()
@@ -59,7 +52,7 @@ export class RefreshToken {
 
     refreshTokenEntity.user_id = refreshToken.userId;
     refreshTokenEntity.token = refreshToken.token;
-    refreshTokenEntity.identifier = refreshToken.identifier; // Assuming id is unique and can be used as identifier
+    refreshTokenEntity.identifier = refreshToken.identifier;
 
     return refreshTokenEntity;
   }

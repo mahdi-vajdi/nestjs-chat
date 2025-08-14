@@ -34,7 +34,6 @@ export class RedisIoAdapter extends IoAdapter {
     private readonly broadcastProvider: IBroadcastProvider,
   ) {
     super(app);
-
     this.socketConfig = configService.get<IWsConfig>(WS_CONFIG_TOKEN);
   }
 
@@ -49,8 +48,7 @@ export class RedisIoAdapter extends IoAdapter {
     this.logger.log(`Socket is running on port ${this.socketConfig.port}`);
 
     const server = super.createIOServer(port, options);
-    server.adapter = this.adapterConstructor;
-
+    server.adapter(this.adapterConstructor);
     const setServer = this.broadcastProvider.setServer(server);
     if (!setServer)
       throw Error(

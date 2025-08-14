@@ -16,7 +16,7 @@ import {
   ConversationMemberProps,
 } from '@chat/models/conversation-member.entity';
 
-@Entity()
+@Entity({ name: 'conversation_members' })
 export class ConversationMember {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;
@@ -60,7 +60,7 @@ export class ConversationMember {
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'last_seen_message_id', referencedColumnName: 'id' })
+  @JoinColumn({ name: 'last_message', referencedColumnName: 'id' })
   lastMessage: Message;
 
   static fromProps(props: ConversationMemberProps): ConversationMember {
