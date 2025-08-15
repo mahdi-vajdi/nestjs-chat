@@ -9,16 +9,19 @@ export class StdResponse<T> {
     readonly status: StdStatus,
   ) {}
 
-  static fromResult<T>(result: Result<T>): StdResponse<T> {
+  static fromResult<T, E>(
+    result: Result<T, E>,
+    successMessage: string = 'Success',
+  ): StdResponse<T | E> {
     if (result.isError()) {
-      return new StdResponse<T>(
-        result.error.data as T,
+      return new StdResponse(
+        result.error.data as E,
         result.error.message,
         StdResponse.toStdStatus(result.error.code),
       );
     }
 
-    return new StdResponse<T>(result.value, 'Success', StdStatus.SUCCESS);
+    return new StdResponse<T>(result.value, successMessage, StdStatus.SUCCESS);
   }
 
   static toStdStatus(code: ErrorCode): StdStatus {

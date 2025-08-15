@@ -20,7 +20,7 @@ export class AuthWsGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    this.logger.verbose('authenticating user...');
+    this.logger.debug('authenticating user...');
 
     const wsContext = context.switchToWs();
     const client = wsContext.getClient<Socket<any, any, any, ClientData>>();

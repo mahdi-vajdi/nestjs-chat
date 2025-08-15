@@ -175,7 +175,7 @@ export class AuthService {
       },
       {
         privateKey: this.authConfig.accessPrivateKey,
-        expiresIn: '1h',
+        expiresIn: '1d',
       },
     );
   }

@@ -2,7 +2,10 @@ import { Body, Controller, Post, Res, UsePipes } from '@nestjs/common';
 import { BaseHttpController } from '@common/http/base-http-controller';
 import { Response } from 'express';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { SignupRequestBody, SignupResponse } from './models/signup.model';
+import {
+  SignupRequestBody,
+  SignupResponse,
+} from '@presentation/http/controllers/auth/dtos/signup.dto';
 import { Result } from '@common/result/result';
 import { ValidationPipe } from '@common/validation/validation.pipe';
 import { UserService } from '@user/services/user.service';
@@ -20,7 +23,7 @@ export class AuthHttpController extends BaseHttpController {
   }
 
   @Post('signup')
-  @UsePipes(new ValidationPipe(['body'], 'http'))
+  @UsePipes(new ValidationPipe(SignupRequestBody, ['body'], 'http'))
   @ApiOperation({
     summary: 'Signup',
     description: 'Sign up and create a new user in the chatterbox',

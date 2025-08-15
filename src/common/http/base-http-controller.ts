@@ -6,7 +6,7 @@ import { StdStatus } from '@common/std-response/std-status';
 
 export abstract class BaseHttpController {
   protected respond(response: Response, result: Result<any>) {
-    const stdResponse = StdResponse.fromResult<any>(result);
+    const stdResponse = StdResponse.fromResult<any, any>(result);
 
     response.status(this.fromStdStatus(stdResponse.status)).send(stdResponse);
   }

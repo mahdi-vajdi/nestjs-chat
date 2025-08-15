@@ -12,7 +12,6 @@ import { AuthDatabaseModule } from '@auth/database/auth-database.module';
     JwtModule.register({
       signOptions: {
         algorithm: 'RS256',
-        expiresIn: '1h',
         issuer: 'nestjs-chat',
         audience: 'nestjs-chat-client',
       },
