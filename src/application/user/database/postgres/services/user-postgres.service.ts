@@ -8,7 +8,7 @@ import { ErrorCode } from '@common/result/error';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { IUserDatabaseProvider } from '@user/database/providers/user-database.provider';
 import { UserEntity, UserProps } from '@user/models/user.model';
-import { UserExistsQueryable } from '@user/database/postgres/queryables/user-exists.queryable';
+import { UserExistsOptions } from '@user/database/options/user-exists.options';
 
 @Injectable()
 export class UserPostgresService implements IUserDatabaseProvider {
@@ -27,18 +27,46 @@ export class UserPostgresService implements IUserDatabaseProvider {
   }
 
   @TryCatch
-  async userExists(queryable: UserExistsQueryable): Promise<Result<boolean>> {
+  async userExists(options: UserExistsOptions): Promise<Result<boolean>> {
     const query = this.userRepository.createQueryBuilder('user');
 
-    if (queryable.email)
-      query.where('user.email = :email', { email: queryable.email });
-    if (queryable.username)
+    if (options.email)
+      query.where('user.email = :email', { email: options.email });
+    if (options.username)
       query.orWhere('user.username = :username', {
-        username: queryable.username,
+        username: options.username,
       });
 
     const res = await query.getExists();
 
     return Result.ok(res);
+  }
+
+  @TryCatch
+  async getUserIdsByNameOrUsername(
+    nameOrUsernameFilter: string,
+  ): Promise<Result<string[]>> {
+    const res = await this.userRepository
+      .createQueryBuilder('u')
+      .select('u.id', 'id')
+      .where('u.first_name ILIKE :filter')
+      .orWhere('u.last_name ILIKE :filter')
+      .orWhere('u.username ILIKE :filter')
+      .setParameters({
+        filter: `%${nameOrUsernameFilter}%`,
+      })
+      .getRawMany();
+
+    return Result.ok(res.map((row) => row.id));
+  }
+
+  @TryCatch
+  async getUsersByIds(userIds: string[]): Promise<Result<UserEntity[]>> {
+    const res = await this.userRepository
+      .createQueryBuilder('u')
+      .where('u.id IN (:...userIds)', { userIds })
+      .getMany();
+
+    return Result.ok(res.map((u) => User.toEntity(u)));
   }
 }

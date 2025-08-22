@@ -10,6 +10,7 @@ export class UserProps {
   firstName: string;
   lastName: string;
   role: UserRole;
+  avatar: string | null;
 }
 
 export interface UserEntity

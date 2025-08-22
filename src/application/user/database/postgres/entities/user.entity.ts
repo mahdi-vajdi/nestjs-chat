@@ -27,52 +27,57 @@ export class User {
   password: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  first_name?: string;
+  first_name: string | null;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  last_name?: string;
+  last_name: string | null;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
-  @CreateDateColumn()
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  avatar: string | null;
+
+  @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 
-  @DeleteDateColumn()
-  deleted_at: Date;
+  @DeleteDateColumn({ type: 'timestamp' })
+  deleted_at: Date | null;
 
   static fromProps(props: UserProps): User {
     if (!props) return null;
 
-    const userEntity = new User();
+    const user = new User();
 
-    userEntity.email = props.email;
-    userEntity.username = props.username;
-    userEntity.password = props.password;
-    userEntity.first_name = props.firstName;
-    userEntity.last_name = props.lastName;
-    userEntity.role = props.role;
+    user.email = props.email;
+    user.username = props.username;
+    user.password = props.password;
+    user.first_name = props.firstName;
+    user.last_name = props.lastName;
+    user.role = props.role;
+    user.avatar = props.avatar;
 
-    return userEntity;
+    return user;
   }
 
-  static toEntity(userEntity: User): UserEntity {
-    if (!userEntity) return null;
+  static toEntity(user: User): UserEntity {
+    if (!user) return null;
 
     return {
-      id: userEntity.id,
-      role: userEntity.role,
-      email: userEntity.email,
-      username: userEntity.username,
-      firstName: userEntity.first_name,
-      lastName: userEntity.last_name,
-      password: userEntity.password,
-      createdAt: userEntity.created_at,
-      updatedAt: userEntity.updated_at,
-      deletedAt: userEntity.deleted_at,
+      id: user.id,
+      role: user.role,
+      email: user.email,
+      username: user.username,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      avatar: user.avatar,
+      password: user.password,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+      deletedAt: user.deleted_at,
     };
   }
 }

@@ -9,6 +9,7 @@ import {
 } from '@infrastructure/database/postgres/configs/postgres.config';
 import { DatabaseType } from './database-type.enum';
 import { LOGGER_PROVIDER } from '../logger/provider/logger.provider';
+import { env } from 'node:process';
 
 @Module({})
 export class DatabaseModule {
@@ -51,7 +52,7 @@ export class DatabaseModule {
           migrations: ['dist/**/postgres/migrations/**/*.js'],
           migrationsRun: false,
           migrationsTableName: 'typeorm_migrations',
-          synchronize: true, // FIXME: change to false after development
+          synchronize: env.NODE_ENV === 'development',
           logging: postgresConfig.log,
           logger: logger,
           maxQueryExecutionTime: postgresConfig.slowQueryLimit,

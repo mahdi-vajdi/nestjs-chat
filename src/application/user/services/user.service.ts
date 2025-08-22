@@ -24,19 +24,18 @@ export class UserService {
 
   @TryCatch
   async createUser(user: UserProps): Promise<Result<UserEntity>> {
-    this.logger.log('Checking if user exists before creating one.');
+    this.logger.debug('Checking if user exists before creating one.');
     // Checking the email
     const emailExists = await this.userDatabaseProvider.userExists({
       email: user.email,
     });
     if (emailExists.isError()) {
-      this.logger.error(
-        `Error when checking existence of email(${user.email}): ${emailExists.error.message}`,
-      );
       return Result.error(emailExists.error);
     }
     if (emailExists.value === true) {
-      this.logger.log('User already exists; returning error');
+      this.logger.log(
+        `User with email ${user.email} already exists; returning error`,
+      );
       return Result.error('You info is Duplicate', ErrorCode.ALREADY_EXISTS);
     }
 
@@ -46,13 +45,12 @@ export class UserService {
         username: user.username,
       });
       if (usernameExistsRes.isError()) {
-        this.logger.error(
-          `Error when checking existence of username(${user.username}): ${usernameExistsRes.error.message}`,
-        );
         return Result.error(usernameExistsRes.error);
       }
       if (usernameExistsRes.value === true) {
-        this.logger.log('User already exists; returning error');
+        this.logger.log(
+          `User with username ${user.username} already exists; returning error`,
+        );
         return Result.error('You info is Duplicate', ErrorCode.ALREADY_EXISTS);
       }
     } else {
@@ -62,9 +60,6 @@ export class UserService {
           username: username,
         });
         if (usernameExistsRes.isError()) {
-          this.logger.error(
-            `Error when checking existence of generated username(${user.username}): ${usernameExistsRes.error.message}`,
-          );
           return Result.error('Error generating username', ErrorCode.INTERNAL);
         }
         if (usernameExistsRes.value === false) {
@@ -76,7 +71,7 @@ export class UserService {
       } while (true);
     }
 
-    this.logger.log(
+    this.logger.debug(
       `Creating a user with email: ${user.email} and username: ${user.username}`,
     );
     // Hash the password for the user
@@ -85,9 +80,6 @@ export class UserService {
     // Save the validated and modified user in the database
     const createUserRes = await this.userDatabaseProvider.createUser(user);
     if (createUserRes.isError()) {
-      this.logger.error(
-        `Error creating user with email: ${user.email}: ${createUserRes.error.message}`,
-      );
       return Result.error(createUserRes.error);
     }
 
@@ -95,5 +87,33 @@ export class UserService {
       `Created user successfully with email: ${user.email} and username: ${user.username}`,
     );
     return Result.ok(createUserRes.value);
+  }
+
+  @TryCatch
+  async getUserIdsByNameOrUsername(
+    nameOrUsernameFilter: string,
+  ): Promise<Result<string[]>> {
+    const res =
+      await this.userDatabaseProvider.getUserIdsByNameOrUsername(
+        nameOrUsernameFilter,
+      );
+    if (res.isError()) {
+      return Result.error(res.error);
+    }
+
+    this.logger.debug(
+      `fetched ${res.value.length} ids from users with filter: ${nameOrUsernameFilter}`,
+    );
+    return Result.ok(res.value);
+  }
+
+  @TryCatch
+  async getUsersByIds(userIds: string[]): Promise<Result<UserEntity[]>> {
+    const res = await this.userDatabaseProvider.getUsersByIds(userIds);
+    if (res.isError()) {
+      return Result.error(res.error);
+    }
+
+    return Result.ok(res.value);
   }
 }

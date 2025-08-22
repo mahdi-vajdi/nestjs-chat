@@ -34,7 +34,7 @@ export class Conversation {
   @Column({
     type: 'enum',
     enum: ConversationType,
-    default: ConversationType.PRIVATE,
+    default: ConversationType.DIRECT,
   })
   type: ConversationType;
 
@@ -80,6 +80,11 @@ export class Conversation {
       type: conversation.type,
       messages: conversation.messages
         ? conversation.messages.map((m) => Message.toEntity(m))
+        : [],
+      members: conversation.conversationMembers
+        ? conversation.conversationMembers.map((cm) =>
+            ConversationMember.toEntity(cm),
+          )
         : [],
       createdAt: conversation.created_at,
       updatedAt: conversation.updated_at,

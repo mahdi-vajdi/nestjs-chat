@@ -1,3 +1,3 @@
 export enum ConversationType {
-  PRIVATE = 'private',
+  DIRECT = 'DIRECT',
 }

@@ -1,3 +1,3 @@
-export enum ChatType {
-  TEXT = 'text',
+export enum MessageType {
+  TEXT = 'TEXT',
 }

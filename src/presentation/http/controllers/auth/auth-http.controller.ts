@@ -38,6 +38,7 @@ export class AuthHttpController extends BaseHttpController {
       password: body.password,
       firstName: body.firstName,
       lastName: body.lastName,
+      avatar: null, // FIXME
       role: UserRole.USER,
     });
     if (createUserRes.isError()) {

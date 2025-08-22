@@ -15,4 +15,6 @@ export interface ConversationMemberEntity
   extends ConversationMemberProps,
     IdentifiableEntity,
     TimestampedEntity,
-    SoftDeletableEntity {}
+    SoftDeletableEntity {
+  notSeenCount?: number;
+}

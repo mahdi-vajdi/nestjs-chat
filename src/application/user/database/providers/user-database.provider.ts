@@ -1,9 +1,15 @@
 import { Result } from '@common/result/result';
 import { UserEntity, UserProps } from '@user/models/user.model';
-import { UserExistsQueryable } from '@user/database/postgres/queryables/user-exists.queryable';
+import { UserExistsOptions } from '@user/database/options/user-exists.options';
 
 interface IUserDatabaseReader {
-  userExists(data: UserExistsQueryable): Promise<Result<boolean>>;
+  userExists(data: UserExistsOptions): Promise<Result<boolean>>;
+
+  getUsersByIds(userIds: string[]): Promise<Result<UserEntity[]>>;
+
+  getUserIdsByNameOrUsername(
+    nameOrUsernameFilter: string,
+  ): Promise<Result<string[]>>;
 }
 
 interface IUserDatabaseWriter {

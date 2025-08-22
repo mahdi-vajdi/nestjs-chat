@@ -14,7 +14,7 @@ import { Message } from '@chat/database/postgres/entities/message.entity';
 import {
   ConversationMemberEntity,
   ConversationMemberProps,
-} from '@chat/models/conversation-member.entity';
+} from '@chat/models/conversation-member.model';
 
 @Entity({ name: 'conversation_members' })
 export class ConversationMember {

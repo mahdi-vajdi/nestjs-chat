@@ -4,13 +4,15 @@ import {
   DeleteDateColumn,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ChatType } from '@chat/enums/chat-type.enum';
+import { MessageType } from '@chat/enums/chat-type.enum';
 import { Conversation } from '@chat/database/postgres/entities/conversation.entity';
 import { MessageEntity, MessageProps } from '@chat/models/message.entity';
+import { ConversationMember } from '@chat/database/postgres/entities/conversation-member.entity';
 
 @Entity({ name: 'messages' })
 export class Message {
@@ -20,8 +22,8 @@ export class Message {
   @Column({ type: 'text' })
   text: string;
 
-  @Column({ type: 'enum', enum: ChatType, default: ChatType.TEXT })
-  type: ChatType;
+  @Column({ type: 'enum', enum: MessageType, default: MessageType.TEXT })
+  type: MessageType;
 
   @Column({ type: 'bigint' })
   @Index('messages_sender_id_idx')
@@ -45,6 +47,17 @@ export class Message {
   })
   conversation: Conversation;
 
+  @ManyToOne(() => ConversationMember, {
+    onUpdate: 'CASCADE',
+    onDelete: 'NO ACTION',
+  })
+  @JoinColumn({
+    name: 'sender_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'messages_sender_id_fk',
+  })
+  sender: ConversationMember;
+
   static fromProps(props: MessageProps): Message {
     if (!props) return null;
 
@@ -52,7 +65,7 @@ export class Message {
 
     message.text = props.text;
     message.type = props.type;
-    message.sender_id = props.senderId;
+    message.sender_id = props.sender.id;
     message.conversation_id = props.conversation.id;
 
     return message;
@@ -65,7 +78,11 @@ export class Message {
       id: message.id,
       text: message.text,
       type: message.type,
-      senderId: message.sender_id,
+      sender: message.sender
+        ? ConversationMember.toEntity(message.sender)
+        : {
+            id: message.sender_id,
+          },
       conversation: message.conversation
         ? Conversation.toEntity(message.conversation)
         : {
