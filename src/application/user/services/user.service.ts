@@ -1,5 +1,4 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-
 import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
@@ -10,6 +9,7 @@ import {
   USER_DATABASE_PROVIDER,
 } from '@user/database/providers/user-database.provider';
 import { UserEntity, UserProps } from '@user/models/user.model';
+import validator from 'validator';
 
 @Injectable()
 export class UserService {
@@ -115,5 +115,44 @@ export class UserService {
     }
 
     return Result.ok(res.value);
+  }
+
+  /**
+   * @param property email or username
+   * @param password The user's input password
+   * @returns {UserEntity} if the password is valid
+   */
+  @TryCatch
+  async validatePassword(
+    property: string,
+    password: string,
+  ): Promise<Result<UserEntity>> {
+    let userRes: Result<UserEntity>;
+
+    const isEmail = validator.isEmail(property);
+    if (isEmail) {
+      userRes = await this.userDatabaseProvider.getUserByEmail(property);
+    } else {
+      userRes = await this.userDatabaseProvider.getUserByUsername(property);
+    }
+    if (userRes.isError()) {
+      this.logger.error(
+        `Failed to get user by property ${property}: ${userRes.error.message}`,
+      );
+      return Result.error(userRes.error);
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      password,
+      userRes.value.password,
+    );
+    if (!passwordMatches) {
+      return Result.error(
+        'Username or password is combination is invalid',
+        ErrorCode.VALIDATION_FAILURE,
+      );
+    }
+
+    return Result.ok(userRes.value);
   }
 }

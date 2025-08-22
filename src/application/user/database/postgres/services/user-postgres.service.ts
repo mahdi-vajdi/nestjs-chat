@@ -27,6 +27,34 @@ export class UserPostgresService implements IUserDatabaseProvider {
   }
 
   @TryCatch
+  async getUserByEmail(email: string): Promise<Result<UserEntity>> {
+    const res = await this.userRepository
+      .createQueryBuilder('u')
+      .where('u.email = :email', { email })
+      .getOne();
+
+    if (!res) {
+      return Result.error('User not found', ErrorCode.NOT_FOUND);
+    }
+
+    return Result.ok(User.toEntity(res));
+  }
+
+  @TryCatch
+  async getUserByUsername(username: string): Promise<Result<UserEntity>> {
+    const res = await this.userRepository
+      .createQueryBuilder('u')
+      .where('u.username = :username', { username })
+      .getOne();
+
+    if (!res) {
+      return Result.error('User not found', ErrorCode.NOT_FOUND);
+    }
+
+    return Result.ok(User.toEntity(res));
+  }
+
+  @TryCatch
   async userExists(options: UserExistsOptions): Promise<Result<boolean>> {
     const query = this.userRepository.createQueryBuilder('user');
 

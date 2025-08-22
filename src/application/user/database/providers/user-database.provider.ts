@@ -10,6 +10,10 @@ interface IUserDatabaseReader {
   getUserIdsByNameOrUsername(
     nameOrUsernameFilter: string,
   ): Promise<Result<string[]>>;
+
+  getUserByEmail(email: string): Promise<Result<UserEntity>>;
+
+  getUserByUsername(username: string): Promise<Result<UserEntity>>;
 }
 
 interface IUserDatabaseWriter {
