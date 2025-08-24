@@ -4,8 +4,14 @@ import { GetUserConversationListOptions } from '@chat/database/options/get-user-
 import { ConversationEntity } from '@chat/models/conversation.model';
 import { ConversationMemberEntity } from '@chat/models/conversation-member.model';
 import { GetConversationMembersOptions } from '@chat/database/options/get-conversation-members.options';
+import { MessageEntity, MessageProps } from '@chat/models/message.entity';
 
 export interface ChatDatabaseReader {
+  conversationExists(
+    userId: string,
+    targetUserId: string,
+  ): Promise<Result<boolean>>;
+
   getUserConversationList(
     userId: string,
     options: GetUserConversationListOptions,
@@ -27,7 +33,16 @@ export interface ChatDatabaseReader {
   ): Promise<Result<ConversationMemberEntity[]>>;
 }
 
-export interface ChatDatabaseWriter {}
+export interface ChatDatabaseWriter {
+  createDirectConversation(
+    userId: string,
+    targetUserId: string,
+  ): Promise<Result<ConversationEntity>>;
+
+  deleteConversation(id: string): Promise<Result<boolean>>;
+
+  createMessage(props: MessageProps): Promise<Result<MessageEntity>>;
+}
 
 export interface ChatDatabaseProvider
   extends ChatDatabaseReader,

@@ -18,7 +18,7 @@ import {
 import { RedisIoAdapter } from '@infrastructure/websocket/adapter/redis/redis-io.adapter';
 import {
   BROADCAST_PROVIDER,
-  IBroadcastProvider,
+  BroadcastProvider,
 } from '@infrastructure/websocket/broadcast/providers/broadcast.provider';
 import { redisConfig } from '@infrastructure/redis/configs/redis.config';
 import { wsConfig } from '@presentation/ws/ws.config';
@@ -77,7 +77,7 @@ async function bootstrap() {
   const redisDB0ProviderSub =
     await app.resolve<IRedisProvider>(REDIS_DB0_PROVIDER);
   const broadcastProvider =
-    await app.resolve<IBroadcastProvider>(BROADCAST_PROVIDER);
+    await app.resolve<BroadcastProvider>(BROADCAST_PROVIDER);
   const redisIoAdapter = new RedisIoAdapter(
     configService,
     app,

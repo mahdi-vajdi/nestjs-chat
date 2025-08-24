@@ -41,6 +41,20 @@ export class UserPostgresService implements IUserDatabaseProvider {
   }
 
   @TryCatch
+  async getUserById(id: string): Promise<Result<UserEntity>> {
+    const res = await this.userRepository
+      .createQueryBuilder('u')
+      .where('u.id = :id', { id })
+      .getOne();
+
+    if (!res) {
+      return Result.error('User not found', ErrorCode.NOT_FOUND);
+    }
+
+    return Result.ok(User.toEntity(res));
+  }
+
+  @TryCatch
   async getUserByUsername(username: string): Promise<Result<UserEntity>> {
     const res = await this.userRepository
       .createQueryBuilder('u')

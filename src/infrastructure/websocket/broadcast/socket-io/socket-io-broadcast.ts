@@ -1,9 +1,9 @@
-import { IBroadcastProvider } from '@infrastructure/websocket/broadcast/providers/broadcast.provider';
+import { BroadcastProvider } from '@infrastructure/websocket/broadcast/providers/broadcast.provider';
 import { Injectable, Logger } from '@nestjs/common';
 import { Server } from 'socket.io';
 
 @Injectable()
-export class SocketIoBroadcast implements IBroadcastProvider {
+export class SocketIoBroadcast implements BroadcastProvider {
   private readonly logger = new Logger(SocketIoBroadcast.name);
 
   private server: Server;

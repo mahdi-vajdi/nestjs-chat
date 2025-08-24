@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { Message } from '@chat/database/postgres/entities/message.entity';
 import { ChatDatabaseProvider } from '@chat/database/providers/chat-database.provider';
@@ -13,6 +13,9 @@ import { ConversationEntity } from '@chat/models/conversation.model';
 import { ConversationMember } from '@chat/database/postgres/entities/conversation-member.entity';
 import { ConversationMemberEntity } from '@chat/models/conversation-member.model';
 import { GetConversationMembersOptions } from '@chat/database/options/get-conversation-members.options';
+import { ConversationType } from '@chat/enums/conversation-type.enum';
+import { randomUUID } from 'crypto';
+import { MessageEntity, MessageProps } from '@chat/models/message.entity';
 
 @Injectable()
 export class ChatPostgresService implements ChatDatabaseProvider {
@@ -23,7 +26,124 @@ export class ChatPostgresService implements ChatDatabaseProvider {
     private readonly messageRepository: Repository<Message>,
     @InjectRepository(ConversationMember, DatabaseType.POSTGRES)
     private readonly conversationMemberRepository: Repository<ConversationMember>,
+    @InjectDataSource(DatabaseType.POSTGRES)
+    private readonly datasource: DataSource,
   ) {}
+
+  @TryCatch
+  async conversationExists(
+    userId: string,
+    targetUserId: string,
+  ): Promise<Result<boolean>> {
+    const res = await this.conversationRepository
+      .createQueryBuilder('c')
+      .innerJoin('c.conversationMembers', 'cm', 'cm.user_id = :userId', {
+        userId,
+      })
+      .where('c.type = :type', { type: ConversationType.DIRECT })
+      .andWhereExists(
+        this.conversationMemberRepository
+          .createQueryBuilder('target_cm')
+          .where('target_cm.conversation_id = c.id')
+          .andWhere('target_cm.user_id = :targetUserId', { targetUserId }),
+      )
+      .getExists();
+
+    return Result.ok(res);
+  }
+
+  @TryCatch
+  async createDirectConversation(
+    userId: string,
+    targetUserId: string,
+  ): Promise<Result<ConversationEntity>> {
+    const res = await this.datasource.transaction(async (entityManager) => {
+      const conversation = await entityManager.save(
+        Conversation.fromProps({
+          type: ConversationType.DIRECT,
+          members: [],
+          identifier: randomUUID(),
+          title: null,
+          picture: null,
+          messages: [],
+        }),
+      );
+
+      conversation.conversationMembers = await entityManager.save([
+        ConversationMember.fromProps({
+          userId: userId,
+          conversation: { id: conversation.id },
+          lastSeenMessage: null,
+          lastMessage: null,
+        }),
+        ConversationMember.fromProps({
+          userId: targetUserId,
+          conversation: { id: conversation.id },
+          lastSeenMessage: null,
+          lastMessage: null,
+        }),
+      ]);
+
+      return conversation;
+    });
+
+    return Result.ok(Conversation.toEntity(res));
+  }
+
+  @TryCatch
+  async deleteConversation(id: string): Promise<Result<boolean>> {
+    const res = await this.datasource.transaction(async (entityManager) => {
+      const [, deleteConversation] = await Promise.all([
+        entityManager
+          .createQueryBuilder()
+          .softDelete()
+          .from(ConversationMember)
+          .where('conversation_id = :conversationId', { conversationId: id })
+          .execute(),
+        entityManager
+          .createQueryBuilder()
+          .softDelete()
+          .from(Conversation)
+          .where('id = :id', { id: id })
+          .execute(),
+      ]);
+
+      return deleteConversation.affected == 1;
+    });
+
+    return Result.ok(res);
+  }
+
+  @TryCatch
+  async createMessage(props: MessageProps): Promise<Result<MessageEntity>> {
+    const res = await this.datasource.transaction(async (entityManager) => {
+      const message = await entityManager.save(Message.fromProps(props));
+
+      // TODO Implement deleted chat logic
+
+      await Promise.all([
+        entityManager.update(
+          ConversationMember,
+          { id: message.sender_id },
+          {
+            last_message_id: message.id,
+            last_seen_message_id: message.id,
+          },
+        ),
+        entityManager.update(
+          ConversationMember,
+          { conversation_id: message.conversation_id },
+          {
+            last_message_id: message.id,
+          },
+        ),
+      ]);
+
+      return message;
+    });
+
+    return Result.ok(Message.toEntity(res));
+  }
 
   @TryCatch
   async getUserConversationList(

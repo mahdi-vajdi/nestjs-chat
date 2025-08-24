@@ -3,7 +3,7 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import { INestApplication, Logger } from '@nestjs/common';
 import { IWsConfig, WS_CONFIG_TOKEN } from '@presentation/ws/ws.config';
 import { ConfigService } from '@nestjs/config';
-import { IBroadcastProvider } from '@infrastructure/websocket/broadcast/providers/broadcast.provider';
+import { BroadcastProvider } from '@infrastructure/websocket/broadcast/providers/broadcast.provider';
 import { IRedisProvider } from '@infrastructure/redis/providers/redis.provider';
 import { Socket } from 'socket.io';
 import { MessageMappingProperties } from '@nestjs/websockets';
@@ -31,7 +31,7 @@ export class RedisIoAdapter extends IoAdapter {
     readonly app: INestApplication,
     private readonly redisDB0ProviderPub: IRedisProvider,
     private readonly redisDB0ProviderSub: IRedisProvider,
-    private readonly broadcastProvider: IBroadcastProvider,
+    private readonly broadcastProvider: BroadcastProvider,
   ) {
     super(app);
     this.socketConfig = configService.get<IWsConfig>(WS_CONFIG_TOKEN);

@@ -1,4 +1,5 @@
 import {
+  ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -26,10 +27,15 @@ import { StdResponse } from '@common/std-response/std-response';
 import { CurrentWsUser } from '@presentation/ws/decorators/current-ws-user.decorator';
 import { UserEntity } from '@user/models/user.model';
 import { ConversationType } from '@chat/enums/conversation-type.enum';
+import { CreateConversationRequest } from '@presentation/ws/gateways/dtos/create-conversation.dto';
+import { MessageType } from '@chat/enums/chat-type.enum';
+import { BaseWsGateway } from '@common/websocket/base-ws.gateway';
+import { ConversationCreatedEvent } from '@presentation/ws/events/conversation-created.event';
 
 @UseGuards(AuthWsGuard)
 @WebSocketGateway({ namespace: 'chat', cors: '*' })
 export class ChatWsGateway
+  extends BaseWsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
@@ -40,9 +46,15 @@ export class ChatWsGateway
     private readonly authWsGuard: AuthWsGuard,
     private readonly chatService: ChatService,
     private readonly userService: UserService,
-  ) {}
+  ) {
+    super();
+  }
 
-  afterInit(server: Server) {
+  getLogger(): Logger {
+    return this.logger;
+  }
+
+  afterInit(_server: Server) {
     this.logger.debug('Conversation gateway initialized successfully.');
   }
 
@@ -110,9 +122,74 @@ export class ChatWsGateway
     }
   }
 
-  @SubscribeMessage('ping')
-  async ping(@MessageBody() msg: SocketMessage<string>) {
-    msg.ack('pong');
+  @SubscribeMessage('user.conversation.create')
+  async createConversation(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() msg: SocketMessage<CreateConversationRequest>,
+    @CurrentWsUser() currentUser: UserEntity,
+  ) {
+    const targetUserRes = await this.userService.getUserById(
+      msg.data.targetUserId,
+    );
+    if (targetUserRes.isError()) {
+      msg.ack(StdResponse.fromResult(targetUserRes));
+      return;
+    }
+
+    // TODO check the blocked status
+
+    const createConversationRes =
+      await this.chatService.createDirectConversation(
+        currentUser.id,
+        msg.data.targetUserId,
+      );
+    if (createConversationRes.isError()) {
+      msg.ack(StdResponse.fromResult(createConversationRes));
+    }
+
+    const createMessageRes = await this.chatService.createMessage({
+      type: MessageType.TEXT, // FIXME: make the type dynamic
+      sender: createConversationRes.value.members.find(
+        (m) => m.userId == currentUser.id,
+      ),
+      text: msg.data.content,
+      conversation: createConversationRes.value,
+    });
+    if (createMessageRes.isError()) {
+      await this.chatService.deleteConversation(createConversationRes.value.id);
+      msg.ack(StdResponse.fromResult(createMessageRes));
+      return;
+    }
+
+    const rooms = [`user-${targetUserRes.value.id}`];
+    this.logger.debug(
+      `broadcasting 'UserChatCreated' event to the rooms: ${rooms}`,
+    );
+    client.join(rooms);
+    this.logger.log(
+      `user ${currentUser.id} joined to room ${createMessageRes.value.conversation.id}`,
+    );
+    await this.broadcast(
+      client,
+      rooms,
+      new ConversationCreatedEvent({
+        id: createMessageRes.value.conversation.id,
+        name: `${targetUserRes.value.firstName} ${targetUserRes.value.lastName}`,
+        avatar: targetUserRes.value.avatar,
+        username: targetUserRes.value.username,
+        notSeenCount: 1,
+        lastMessage: {
+          id: createMessageRes.value.id,
+          content: createMessageRes.value.text,
+          createdAt: createMessageRes.value.createdAt.toISOString(),
+          seen: false,
+          user: {
+            id: currentUser.id,
+            name: `${currentUser.firstName} ${currentUser.lastName}`,
+          },
+        },
+      }),
+    );
   }
 
   @SubscribeMessage('user.conversation.list')

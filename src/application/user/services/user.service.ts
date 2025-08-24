@@ -102,8 +102,19 @@ export class UserService {
     }
 
     this.logger.debug(
-      `fetched ${res.value.length} ids from users with filter: ${nameOrUsernameFilter}`,
+      `Fetched ${res.value.length} ids from users with filter: ${nameOrUsernameFilter}`,
     );
+    return Result.ok(res.value);
+  }
+
+  @TryCatch
+  async getUserById(id: string): Promise<Result<UserEntity>> {
+    const res = await this.userDatabaseProvider.getUserById(id);
+    if (res.isError()) {
+      this.logger.error(`Failed to get user by id ${id}: ${res.error.message}`);
+      return Result.error(res.error);
+    }
+
     return Result.ok(res.value);
   }
 

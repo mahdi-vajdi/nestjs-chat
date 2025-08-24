@@ -1,4 +1,4 @@
-export interface IBroadcastProvider {
+export interface BroadcastProvider {
   setServer(server: any): boolean;
 
   getServer(): any;

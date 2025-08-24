@@ -11,6 +11,8 @@ interface IUserDatabaseReader {
     nameOrUsernameFilter: string,
   ): Promise<Result<string[]>>;
 
+  getUserById(id: string): Promise<Result<UserEntity>>;
+
   getUserByEmail(email: string): Promise<Result<UserEntity>>;
 
   getUserByUsername(username: string): Promise<Result<UserEntity>>;

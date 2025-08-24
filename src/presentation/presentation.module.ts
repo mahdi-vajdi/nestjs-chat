@@ -10,12 +10,6 @@ import { ChatModule } from '@chat/chat.module';
 @Module({
   imports: [AuthModule, UserModule, ChatModule],
   controllers: [AuthHttpController],
-  providers: [
-    // Websocket gateways
-    ChatWsGateway,
-    // Guards
-    AuthHttpGuard,
-    AuthWsGuard,
-  ],
+  providers: [ChatWsGateway, AuthHttpGuard, AuthWsGuard],
 })
 export class PresentationModule {}

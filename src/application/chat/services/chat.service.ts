@@ -13,6 +13,8 @@ import { inspect } from 'node:util';
 import { ConversationEntity } from '@chat/models/conversation.model';
 import { PaginationHelper } from '@common/pagination/pagination.helper';
 import { ConversationType } from '@chat/enums/conversation-type.enum';
+import { ErrorCode } from '@common/result/error';
+import { MessageEntity, MessageProps } from '@chat/models/message.entity';
 
 @Injectable()
 export class ChatService {
@@ -22,6 +24,67 @@ export class ChatService {
     @Inject(CHAT_DATABASE_PROVIDER)
     private readonly chatDatabaseProvider: ChatDatabaseProvider,
   ) {}
+
+  @TryCatch
+  async createDirectConversation(
+    userId: string,
+    targetUserId: string,
+  ): Promise<Result<ConversationEntity>> {
+    const conversationExistsRes =
+      await this.chatDatabaseProvider.conversationExists(userId, targetUserId);
+    if (conversationExistsRes.isError()) {
+      return Result.error(conversationExistsRes.error);
+    }
+    if (conversationExistsRes.value) {
+      this.logger.log(
+        `User ${userId} already has a direct conversation with ${targetUserId}. returning error.`,
+      );
+      return Result.error(
+        'Conversation already exists.',
+        ErrorCode.VALIDATION_FAILURE,
+      );
+    }
+
+    this.logger.debug(
+      `Creating direct conversation for users ${userId} and ${targetUserId}`,
+    );
+    const createConversationRes =
+      await this.chatDatabaseProvider.createDirectConversation(
+        userId,
+        targetUserId,
+      );
+    if (createConversationRes.isError()) {
+      return Result.error(createConversationRes.error);
+    }
+
+    this.logger.log(
+      `Created direct conversation: ${createConversationRes.value.id}`,
+    );
+
+    return Result.ok(createConversationRes.value);
+  }
+
+  @TryCatch
+  async deleteConversation(id: string): Promise<Result<boolean>> {
+    const res = await this.chatDatabaseProvider.deleteConversation(id);
+    if (res.isError()) {
+      return Result.error(res.error);
+    }
+
+    return Result.ok(res.value);
+  }
+
+  @TryCatch
+  async createMessage(props: MessageProps): Promise<Result<MessageEntity>> {
+    this.logger.error(`Creating message: ${inspect(props)}`);
+    const res = await this.chatDatabaseProvider.createMessage(props);
+    if (res.isError()) {
+      return Result.error(res.error);
+    }
+
+    this.logger.log(`Created message: ${res.value.id}`);
+    return Result.ok(res.value);
+  }
 
   @TryCatch
   async getUserConversationList(
