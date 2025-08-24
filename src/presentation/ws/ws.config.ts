@@ -1,7 +1,7 @@
 import * as Joi from 'joi';
 import { ConfigFactory, registerAs } from '@nestjs/config';
 
-export interface IWsConfig {
+export interface WsConfig {
   port: number;
 }
 
@@ -11,7 +11,7 @@ const wsConfigSchema = Joi.object({
   port: Joi.number().port().required(),
 });
 
-export const wsConfig = registerAs<IWsConfig, ConfigFactory<IWsConfig>>(
+export const wsConfig = registerAs<WsConfig, ConfigFactory<WsConfig>>(
   WS_CONFIG_TOKEN,
   () => {
     const { error, value } = wsConfigSchema.validate(

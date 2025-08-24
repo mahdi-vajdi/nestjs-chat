@@ -1,14 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import {
-  HTTP_CONFIG_TOKEN,
-  httpConfig,
-  IHttpConfig,
-} from '@presentation/http/http.config';
+import { ConfigService } from '@nestjs/config';
+import { HTTP_CONFIG_TOKEN, IHttpConfig } from '@presentation/http/http.config';
 import { INestApplication, Logger, LoggerService } from '@nestjs/common';
-import { LoggerModule } from '@infrastructure/logger/logger.module';
-import { WinstonLoggerService } from '@infrastructure/logger/winston/winston-logger.service';
 import { LOGGER_PROVIDER } from '@infrastructure/logger/provider/logger.provider';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import {
@@ -20,24 +14,6 @@ import {
   BROADCAST_PROVIDER,
   BroadcastProvider,
 } from '@infrastructure/websocket/broadcast/providers/broadcast.provider';
-import { redisConfig } from '@infrastructure/redis/configs/redis.config';
-import { wsConfig } from '@presentation/ws/ws.config';
-
-async function loadConfig(): Promise<ConfigService> {
-  const appContext = await NestFactory.createApplicationContext(
-    ConfigModule.forRoot({
-      load: [httpConfig, redisConfig, wsConfig],
-    }),
-  );
-
-  return appContext.get<ConfigService>(ConfigService);
-}
-
-async function loadLogger(): Promise<LoggerService> {
-  const appContext = await NestFactory.createApplicationContext(LoggerModule);
-
-  return appContext.get<WinstonLoggerService>(LOGGER_PROVIDER);
-}
 
 function setUpSwagger(app: INestApplication) {
   const swaggerConfig = new DocumentBuilder()
@@ -59,39 +35,37 @@ function setUpSwagger(app: INestApplication) {
 }
 
 async function bootstrap() {
-  const configService = await loadConfig();
-  const appLogger = await loadLogger();
-  const bootstrapLogger = new Logger('Bootstrap');
-
   const app = await NestFactory.create(AppModule, {
-    logger: appLogger,
+    bufferLogs: true,
   });
 
-  app.enableCors();
+  const configService = app.get(ConfigService);
+  const logger = app.get<LoggerService>(LOGGER_PROVIDER);
+  const bootstrapLogger = new Logger('Bootstrap');
 
+  app.useLogger(logger);
+  app.enableCors();
   setUpSwagger(app);
 
   // Set up adapter for socket gateway
-  const redisDB0ProviderPub =
-    await app.resolve<IRedisProvider>(REDIS_DB0_PROVIDER);
-  const redisDB0ProviderSub =
+  const redisDB0Provider =
     await app.resolve<IRedisProvider>(REDIS_DB0_PROVIDER);
   const broadcastProvider =
     await app.resolve<BroadcastProvider>(BROADCAST_PROVIDER);
   const redisIoAdapter = new RedisIoAdapter(
     configService,
     app,
-    redisDB0ProviderPub,
-    redisDB0ProviderSub,
+    redisDB0Provider,
+    redisDB0Provider,
     broadcastProvider,
   );
   await redisIoAdapter.connectToRedis();
   app.useWebSocketAdapter(redisIoAdapter);
 
-  await app.init();
+  app.enableShutdownHooks(['SIGINT', 'SIGTERM']);
 
   const httpConfig = configService.get<IHttpConfig>(HTTP_CONFIG_TOKEN);
-  bootstrapLogger.log(`App is running on port ${httpConfig.port}`);
+  bootstrapLogger.log(`Starting app on port ${httpConfig.port}`);
 
   await app.listen(httpConfig.port);
 }

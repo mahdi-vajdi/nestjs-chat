@@ -27,7 +27,7 @@ export class ChatPostgresService implements ChatDatabaseProvider {
     @InjectRepository(ConversationMember, DatabaseType.POSTGRES)
     private readonly conversationMemberRepository: Repository<ConversationMember>,
     @InjectDataSource(DatabaseType.POSTGRES)
-    private readonly datasource: DataSource,
+    private readonly dataSource: DataSource,
   ) {}
 
   @TryCatch
@@ -57,7 +57,7 @@ export class ChatPostgresService implements ChatDatabaseProvider {
     userId: string,
     targetUserId: string,
   ): Promise<Result<ConversationEntity>> {
-    const res = await this.datasource.transaction(async (entityManager) => {
+    const res = await this.dataSource.transaction(async (entityManager) => {
       const conversation = await entityManager.save(
         Conversation.fromProps({
           type: ConversationType.DIRECT,
@@ -92,7 +92,7 @@ export class ChatPostgresService implements ChatDatabaseProvider {
 
   @TryCatch
   async deleteConversation(id: string): Promise<Result<boolean>> {
-    const res = await this.datasource.transaction(async (entityManager) => {
+    const res = await this.dataSource.transaction(async (entityManager) => {
       const [, deleteConversation] = await Promise.all([
         entityManager
           .createQueryBuilder()
@@ -116,7 +116,7 @@ export class ChatPostgresService implements ChatDatabaseProvider {
 
   @TryCatch
   async createMessage(props: MessageProps): Promise<Result<MessageEntity>> {
-    const res = await this.datasource.transaction(async (entityManager) => {
+    const res = await this.dataSource.transaction(async (entityManager) => {
       const message = await entityManager.save(Message.fromProps(props));
 
       // TODO Implement deleted chat logic

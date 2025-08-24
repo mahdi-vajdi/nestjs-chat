@@ -42,6 +42,7 @@ export class DatabaseModule {
         );
 
         return {
+          name: DatabaseType.POSTGRES, // Do not delete. Used in application shutdown.
           type: 'postgres',
           host: postgresConfig.host,
           port: postgresConfig.port,

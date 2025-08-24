@@ -13,7 +13,6 @@ export class SocketIoBroadcast implements BroadcastProvider {
       this.logger.error('Socket.io broadcast server is already initialized');
       return false;
     }
-
     this.server = server;
     this.logger.log('Socket.io broadcast server has been initialized.');
 
