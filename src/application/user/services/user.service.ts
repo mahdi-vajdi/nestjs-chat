@@ -10,6 +10,7 @@ import {
 } from '@user/database/providers/user-database.provider';
 import { UserEntity, UserProps } from '@user/models/user.model';
 import validator from 'validator';
+import { GetBlockStatusResponse } from '@user/services/dtos/get-block-status.dto';
 
 @Injectable()
 export class UserService {
@@ -204,5 +205,27 @@ export class UserService {
     }
 
     return Result.ok(res.value);
+  }
+
+  @TryCatch
+  async getBlockStatus(
+    userId: string,
+    targetUserId: string,
+  ): Promise<Result<GetBlockStatusResponse>> {
+    const [isBlockerRes, isBlockedRes] = await Promise.all([
+      this.userDatabaseProvider.getBlockStatus(userId, targetUserId),
+      this.userDatabaseProvider.getBlockStatus(targetUserId, userId),
+    ]);
+    if (isBlockerRes.isError()) {
+      return Result.error(isBlockerRes.error);
+    }
+    if (isBlockedRes.isError()) {
+      return Result.error(isBlockedRes.error);
+    }
+
+    return Result.ok({
+      isBlocker: isBlockerRes.value,
+      isBlocked: isBlockedRes.value,
+    });
   }
 }

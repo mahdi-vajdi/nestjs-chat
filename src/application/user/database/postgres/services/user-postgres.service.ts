@@ -156,4 +156,18 @@ export class UserPostgresService implements IUserDatabaseProvider {
 
     return Result.ok(res.affected !== 0);
   }
+
+  @TryCatch
+  async getBlockStatus(
+    blockerId: string,
+    blockedId: string,
+  ): Promise<Result<boolean>> {
+    const res = await this.userBlockRepository
+      .createQueryBuilder('ub')
+      .where('ub.blocker_id = :blockerId', { blockerId })
+      .andWhere('ub.blocked_id = :blocked_id', { blockedId })
+      .getExists();
+
+    return Result.ok(res);
+  }
 }

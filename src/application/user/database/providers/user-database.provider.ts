@@ -24,6 +24,11 @@ interface IUserDatabaseWriter {
   block(blockerId: string, blockedId: string): Promise<Result<boolean>>;
 
   unblock(blockerId: string, blockedId: string): Promise<Result<boolean>>;
+
+  getBlockStatus(
+    blockerId: string,
+    blockedId: string,
+  ): Promise<Result<boolean>>;
 }
 
 export interface IUserDatabaseProvider

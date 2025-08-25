@@ -16,6 +16,7 @@ import { GetConversationMembersOptions } from '@chat/database/options/get-conver
 import { ConversationType } from '@chat/enums/conversation-type.enum';
 import { randomUUID } from 'crypto';
 import { MessageEntity, MessageProps } from '@chat/models/message.entity';
+import { DeletedMessage } from '@chat/database/postgres/entities/deleted-message.entity';
 
 @Injectable()
 export class ChatPostgresService implements ChatDatabaseProvider {
@@ -119,30 +120,51 @@ export class ChatPostgresService implements ChatDatabaseProvider {
     const res = await this.dataSource.transaction(async (entityManager) => {
       const message = await entityManager.save(Message.fromProps(props));
 
-      // TODO Implement deleted chat logic
+      const deletedMessages = props.deletedForUserIds.map((userId) => {
+        const deletedMessage = new DeletedMessage();
+        deletedMessage.user_id = userId;
+        deletedMessage.message_id = message.id;
+        return deletedMessage;
+      });
 
       await Promise.all([
-        entityManager.update(
-          ConversationMember,
-          { id: message.sender_id },
-          {
+        // Set the last message id for user's in the conversation
+        entityManager
+          .getRepository(ConversationMember)
+          .createQueryBuilder()
+          .update()
+          .set({
             last_message_id: message.id,
+          })
+          .where('conversation_id = :conversationId', {
+            conversationId: message.conversation_id,
+          })
+          // Skip user's that are in the deleted chats
+          .andWhere('user_id NOT IN (:...deletedForUserIds)', {
+            deletedForUserIds: props.deletedForUserIds,
+          })
+          .execute(),
+        // Set the last seen message for the sender user
+        entityManager
+          .getRepository(ConversationMember)
+          .createQueryBuilder()
+          .update()
+          .set({
             last_seen_message_id: message.id,
-          },
-        ),
-        entityManager.update(
-          ConversationMember,
-          { conversation_id: message.conversation_id },
-          {
-            last_message_id: message.id,
-          },
-        ),
+          })
+          .where('id = :memberId', { memberId: message.sender_id })
+          .execute(),
+        // Save the deleted messages
+        entityManager.insert(DeletedMessage, deletedMessages),
       ]);
 
       return message;
     });
 
-    return Result.ok(Message.toEntity(res));
+    const entity = Message.toEntity(res);
+    entity.deletedForUserIds = props.deletedForUserIds;
+
+    return Result.ok(entity);
   }
 
   @TryCatch

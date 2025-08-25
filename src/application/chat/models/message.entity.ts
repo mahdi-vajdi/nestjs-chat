@@ -10,6 +10,7 @@ export interface MessageProps {
   type: MessageType;
   sender: Partial<ConversationMemberEntity>;
   conversation: Partial<ConversationEntity>;
+  deletedForUserIds?: string[];
 }
 
 export interface MessageEntity

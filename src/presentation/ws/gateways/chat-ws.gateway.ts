@@ -30,6 +30,7 @@ import { CreateConversationRequest } from '@presentation/ws/gateways/dtos/create
 import { MessageType } from '@chat/enums/chat-type.enum';
 import { BaseWsGateway } from '@common/websocket/base-ws.gateway';
 import { ConversationCreatedEvent } from '@presentation/ws/events/conversation-created.event';
+import { ErrorCode } from '@common/result/error';
 
 @UseGuards(AuthWsGuard)
 @WebSocketGateway({ namespace: 'chat', cors: '*' })
@@ -140,7 +141,25 @@ export class ChatWsGateway
       return;
     }
 
-    // TODO check the blocked status
+    const blockStatusRes = await this.userService.getBlockStatus(
+      authUserId,
+      targetUserRes.value.id,
+    );
+    if (blockStatusRes.isError()) {
+      msg.ack(StdResponse.fromResult(blockStatusRes));
+      return;
+    }
+    if (blockStatusRes.value.isBlocker) {
+      msg.ack(
+        StdResponse.fromResult(
+          Result.error(
+            'You have blocked this user.',
+            ErrorCode.VALIDATION_FAILURE,
+          ),
+        ),
+      );
+      return;
+    }
 
     const createConversationRes =
       await this.chatService.createDirectConversation(
@@ -158,6 +177,9 @@ export class ChatWsGateway
       ),
       text: msg.data.content,
       conversation: createConversationRes.value,
+      deletedForUserIds: blockStatusRes.value.isBlocked
+        ? [targetUserRes.value.id]
+        : [],
     });
     if (createMessageRes.isError()) {
       await this.chatService.deleteConversation(createConversationRes.value.id);
@@ -165,7 +187,12 @@ export class ChatWsGateway
       return;
     }
 
-    const rooms = [`user-${targetUserRes.value.id}`];
+    const userIds = [targetUserRes.value.id];
+    const rooms = userIds
+      .filter(
+        (userId) => !createMessageRes.value.deletedForUserIds.includes(userId),
+      )
+      .map((userId) => `user-${userId}`);
     this.logger.debug(
       `broadcasting 'UserChatCreated' event to the rooms: ${rooms}`,
     );
