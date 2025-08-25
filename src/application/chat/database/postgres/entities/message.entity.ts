@@ -14,7 +14,7 @@ import { Conversation } from '@chat/database/postgres/entities/conversation.enti
 import { MessageEntity, MessageProps } from '@chat/models/message.entity';
 import { ConversationMember } from '@chat/database/postgres/entities/conversation-member.entity';
 
-@Entity({ name: 'messages' })
+@Entity({ schema: 'chat', name: 'messages' })
 export class Message {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;

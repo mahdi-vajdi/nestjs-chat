@@ -5,10 +5,15 @@ import { StdResponse } from '@common/std-response/std-response';
 import { StdStatus } from '@common/std-response/std-status';
 
 export abstract class BaseHttpController {
-  protected respond(response: Response, result: Result<any>) {
+  protected respond(
+    response: Response,
+    result: Result<any>,
+    customStatus?: HttpStatus,
+  ) {
     const stdResponse = StdResponse.fromResult<any, any>(result);
+    const status = customStatus ?? this.fromStdStatus(stdResponse.status);
 
-    response.status(this.fromStdStatus(stdResponse.status)).send(stdResponse);
+    response.status(status).send(stdResponse);
   }
 
   private fromStdStatus(status: StdStatus): HttpStatus {
@@ -30,7 +35,7 @@ export abstract class BaseHttpController {
       case StdStatus.INTERNAL_ERROR:
         return HttpStatus.INTERNAL_SERVER_ERROR;
       default:
-        // This will throw a compile time error ig any case isn't handled
+        // This will throw a compile time error if any case isn't handled
         return status;
     }
   }

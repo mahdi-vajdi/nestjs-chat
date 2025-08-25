@@ -4,13 +4,15 @@ import {
   DeleteDateColumn,
   Entity,
   Index,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserRole } from '@user/enums/user-role.enum';
 import { UserEntity, UserProps } from '@user/models/user.model';
+import { UserBlock } from '@user/database/postgres/entities/user-block.entity';
 
-@Entity({ name: 'users' })
+@Entity({ schema: 'user', name: 'users' })
 export class User {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;
@@ -47,6 +49,12 @@ export class User {
   @DeleteDateColumn({ type: 'timestamp' })
   deleted_at: Date | null;
 
+  @OneToMany(() => UserBlock, (ub) => ub.blocked)
+  blockedUsers: UserBlock[];
+
+  @OneToMany(() => UserBlock, (ub) => ub.blocker)
+  blockerUsers: UserBlock[];
+
   static fromProps(props: UserProps): User {
     if (!props) return null;
 
@@ -78,6 +86,7 @@ export class User {
       createdAt: user.created_at,
       updatedAt: user.updated_at,
       deletedAt: user.deleted_at,
+      blockedUsers: [],
     };
   }
 }

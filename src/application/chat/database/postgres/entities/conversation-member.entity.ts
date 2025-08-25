@@ -16,7 +16,7 @@ import {
   ConversationMemberProps,
 } from '@chat/models/conversation-member.model';
 
-@Entity({ name: 'conversation_members' })
+@Entity({ schema: 'chat', name: 'conversation_members' })
 export class ConversationMember {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;

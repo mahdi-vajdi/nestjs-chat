@@ -12,7 +12,7 @@ import {
   RefreshTokenProps,
 } from '@auth/models/refresh-token.props';
 
-@Entity({ name: 'auth_refresh_tokens' })
+@Entity({ schema: 'auth', name: 'refresh_tokens' })
 export class RefreshToken {
   @PrimaryGeneratedColumn('increment')
   id: string;

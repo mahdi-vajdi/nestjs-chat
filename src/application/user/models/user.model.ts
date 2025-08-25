@@ -17,4 +17,6 @@ export interface UserEntity
   extends UserProps,
     IdentifiableEntity,
     TimestampedEntity,
-    SoftDeletableEntity {}
+    SoftDeletableEntity {
+  blockedUsers: Partial<UserEntity>[];
+}

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
@@ -9,12 +9,17 @@ import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { IUserDatabaseProvider } from '@user/database/providers/user-database.provider';
 import { UserEntity, UserProps } from '@user/models/user.model';
 import { UserExistsOptions } from '@user/database/options/user-exists.options';
+import { UserBlock } from '@user/database/postgres/entities/user-block.entity';
 
 @Injectable()
 export class UserPostgresService implements IUserDatabaseProvider {
   constructor(
     @InjectRepository(User, DatabaseType.POSTGRES)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(User, DatabaseType.POSTGRES)
+    private readonly userBlockRepository: Repository<UserBlock>,
+    @InjectDataSource(DatabaseType.POSTGRES)
+    private readonly dataSource: DataSource,
   ) {}
 
   @TryCatch
@@ -110,5 +115,45 @@ export class UserPostgresService implements IUserDatabaseProvider {
       .getMany();
 
     return Result.ok(res.map((u) => User.toEntity(u)));
+  }
+
+  @TryCatch
+  async block(blockerId: string, blockedId: string): Promise<Result<boolean>> {
+    const res = await this.dataSource.transaction(async (entityManager) => {
+      const status = await entityManager
+        .getRepository(UserBlock)
+        .createQueryBuilder('ub')
+        .where('blocker_id = :blockerId', { blockerId })
+        .andWhere('blocked_id = :blockedId', { blockedId })
+        .getExists();
+      if (status == true) {
+        return false;
+      }
+
+      const userBlock = new UserBlock();
+      userBlock.blocker_id = blockerId;
+      userBlock.blocked_id = blockedId;
+
+      await this.userBlockRepository.insert(userBlock);
+
+      return true;
+    });
+
+    return Result.ok(res);
+  }
+
+  @TryCatch
+  async unblock(
+    blockerId: string,
+    blockedId: string,
+  ): Promise<Result<boolean>> {
+    const res = await this.userBlockRepository
+      .createQueryBuilder()
+      .where('blocker_id = :blockerId', { blockerId })
+      .andWhere('blocked_id = :blockedId', { blockedId })
+      .softDelete()
+      .execute();
+
+    return Result.ok(res.affected !== 0);
   }
 }

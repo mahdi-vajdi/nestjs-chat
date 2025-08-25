@@ -51,7 +51,7 @@ export class DatabaseModule {
           database: postgresConfig.database,
           autoLoadEntities: true,
           migrations: ['dist/**/postgres/migrations/**/*.js'],
-          migrationsRun: false,
+          migrationsRun: env.NODE_ENV === 'development',
           migrationsTableName: 'typeorm_migrations',
           synchronize: env.NODE_ENV === 'development',
           logging: postgresConfig.log,

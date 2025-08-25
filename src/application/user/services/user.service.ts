@@ -36,7 +36,7 @@ export class UserService {
       this.logger.log(
         `User with email ${user.email} already exists; returning error`,
       );
-      return Result.error('You info is Duplicate', ErrorCode.ALREADY_EXISTS);
+      return Result.error('You email is Duplicate', ErrorCode.ALREADY_EXISTS);
     }
 
     // If user provided a username check for its existence
@@ -51,7 +51,10 @@ export class UserService {
         this.logger.log(
           `User with username ${user.username} already exists; returning error`,
         );
-        return Result.error('You info is Duplicate', ErrorCode.ALREADY_EXISTS);
+        return Result.error(
+          'You username is Duplicate',
+          ErrorCode.ALREADY_EXISTS,
+        );
       }
     } else {
       do {
@@ -165,5 +168,41 @@ export class UserService {
     }
 
     return Result.ok(userRes.value);
+  }
+
+  @TryCatch
+  async block(userId: string, targetUserId: string): Promise<Result<boolean>> {
+    this.logger.debug(`User ${userId} is blocking ${targetUserId}`);
+
+    const res = await this.userDatabaseProvider.block(userId, targetUserId);
+    if (res.isError()) {
+      return Result.error(res.error);
+    }
+
+    if (res.value == false) {
+      this.logger.log(
+        `User ${userId} has already blocked user ${targetUserId}`,
+      );
+    }
+
+    return Result.ok(res.value);
+  }
+
+  @TryCatch
+  async unblock(
+    userId: string,
+    targetUserId: string,
+  ): Promise<Result<boolean>> {
+    this.logger.debug(`User ${userId} is unblocking ${targetUserId}`);
+    const res = await this.userDatabaseProvider.unblock(userId, targetUserId);
+    if (res.isError()) {
+      return Result.error(res.error);
+    }
+
+    if (res.value == false) {
+      this.logger.log(`User ${targetUserId} was not blocked by ${userId}`);
+    }
+
+    return Result.ok(res.value);
   }
 }

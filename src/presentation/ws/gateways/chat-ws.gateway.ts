@@ -24,8 +24,7 @@ import {
 import { PaginationHelper } from '@common/pagination/pagination.helper';
 import { UserService } from '@user/services/user.service';
 import { StdResponse } from '@common/std-response/std-response';
-import { CurrentWsUser } from '@presentation/ws/decorators/current-ws-user.decorator';
-import { UserEntity } from '@user/models/user.model';
+import { AuthWsUserId } from '@presentation/ws/decorators/auth-ws-user-id.decorator';
 import { ConversationType } from '@chat/enums/conversation-type.enum';
 import { CreateConversationRequest } from '@presentation/ws/gateways/dtos/create-conversation.dto';
 import { MessageType } from '@chat/enums/chat-type.enum';
@@ -126,11 +125,16 @@ export class ChatWsGateway
   async createConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() msg: SocketMessage<CreateConversationRequest>,
-    @CurrentWsUser() currentUser: UserEntity,
+    @AuthWsUserId() authUserId: string,
   ) {
-    const targetUserRes = await this.userService.getUserById(
-      msg.data.targetUserId,
-    );
+    const [currentUserRes, targetUserRes] = await Promise.all([
+      this.userService.getUserById(authUserId),
+      this.userService.getUserById(msg.data.targetUserId),
+    ]);
+    if (currentUserRes.isError()) {
+      msg.ack(StdResponse.fromResult(currentUserRes));
+      return;
+    }
     if (targetUserRes.isError()) {
       msg.ack(StdResponse.fromResult(targetUserRes));
       return;
@@ -140,7 +144,7 @@ export class ChatWsGateway
 
     const createConversationRes =
       await this.chatService.createDirectConversation(
-        currentUser.id,
+        currentUserRes.value.id,
         msg.data.targetUserId,
       );
     if (createConversationRes.isError()) {
@@ -150,7 +154,7 @@ export class ChatWsGateway
     const createMessageRes = await this.chatService.createMessage({
       type: MessageType.TEXT, // FIXME: make the type dynamic
       sender: createConversationRes.value.members.find(
-        (m) => m.userId == currentUser.id,
+        (m) => m.userId == currentUserRes.value.id,
       ),
       text: msg.data.content,
       conversation: createConversationRes.value,
@@ -167,7 +171,7 @@ export class ChatWsGateway
     );
     client.join(rooms);
     this.logger.log(
-      `user ${currentUser.id} joined to room ${createMessageRes.value.conversation.id}`,
+      `user ${currentUserRes.value.id} joined to room ${createMessageRes.value.conversation.id}`,
     );
     await this.broadcast(
       client,
@@ -184,8 +188,8 @@ export class ChatWsGateway
           createdAt: createMessageRes.value.createdAt.toISOString(),
           seen: false,
           user: {
-            id: currentUser.id,
-            name: `${currentUser.firstName} ${currentUser.lastName}`,
+            id: currentUserRes.value.id,
+            name: `${currentUserRes.value.firstName} ${currentUserRes.value.lastName}`,
           },
         },
       }),
@@ -196,7 +200,7 @@ export class ChatWsGateway
   @UsePipes(new ValidationPipe(GetUserConversationListRequest, ['body'], 'ws'))
   async getUserConversationList(
     @MessageBody() msg: SocketMessage<GetUserConversationListRequest>,
-    @CurrentWsUser() currentUser: UserEntity,
+    @AuthWsUserId() authUserId: string,
   ): Promise<void> {
     const pagination = PaginationHelper.parse(msg.data.page, msg.data.pageSize);
 
@@ -231,7 +235,7 @@ export class ChatWsGateway
     }
 
     const conversationListRes = await this.chatService.getUserConversationList(
-      currentUser.id,
+      authUserId,
       pagination,
       filteredUserIds,
     );
@@ -253,9 +257,7 @@ export class ChatWsGateway
       StdResponse.fromResult(
         Result.ok<GetUserConversationListResponse>({
           list: conversationListRes.value.data.map((c) => {
-            const currentMember = c.members.find(
-              (m) => m.userId == currentUser.id,
-            );
+            const currentMember = c.members.find((m) => m.userId == authUserId);
             const item: UserConversationListItem = {
               id: c.id,
               name: c.title,
@@ -276,7 +278,7 @@ export class ChatWsGateway
 
             if (c.type === ConversationType.DIRECT) {
               const otherMember = c.members.find(
-                (cm) => cm.userId != currentUser.id,
+                (cm) => cm.userId != authUserId,
               );
               if (otherMember) {
                 const otherUser = usersRes.value.find(

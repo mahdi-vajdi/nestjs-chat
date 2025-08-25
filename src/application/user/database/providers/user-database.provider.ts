@@ -20,6 +20,10 @@ interface IUserDatabaseReader {
 
 interface IUserDatabaseWriter {
   createUser(user: UserProps): Promise<Result<UserEntity>>;
+
+  block(blockerId: string, blockedId: string): Promise<Result<boolean>>;
+
+  unblock(blockerId: string, blockedId: string): Promise<Result<boolean>>;
 }
 
 export interface IUserDatabaseProvider
