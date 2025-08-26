@@ -18,31 +18,25 @@ export class GetUserConversationListRequest {
   pageSize: number;
 }
 
-export class UserConversationListItemChatUser {
+export class UserConversationListItemMessageUser {
   id: string;
+  username: string;
   name: string;
 }
 
-export class UserConversationListItemChat {
+export class UserConversationListItemMessage {
   id: string;
-  content: string;
+  text: string;
   seen: boolean;
   createdAt: string;
-  user: UserConversationListItemChatUser;
+  user: UserConversationListItemMessageUser;
 }
 
 export class UserConversationListItem {
   id: string;
-  name: string;
-  avatar: string;
-  username: string;
-  lastMessage: UserConversationListItemChat;
+  title: string;
+  picture: string;
+  identifier: string;
   notSeenCount: number;
-}
-
-export class GetUserConversationListResponse {
-  list: UserConversationListItem[];
-  page: number;
-  pageSize: number;
-  total: number;
+  lastMessage: UserConversationListItemMessage;
 }

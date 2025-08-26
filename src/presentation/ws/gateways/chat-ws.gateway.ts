@@ -18,7 +18,6 @@ import { SocketMessage } from '@common/websocket/socket-message';
 import { ValidationPipe } from '@common/validation/validation.pipe';
 import {
   GetUserConversationListRequest,
-  GetUserConversationListResponse,
   UserConversationListItem,
 } from '@presentation/ws/gateways/dtos/get-user-conversation-list.dto';
 import { PaginationHelper } from '@common/pagination/pagination.helper';
@@ -31,6 +30,7 @@ import { MessageType } from '@chat/enums/chat-type.enum';
 import { BaseWsGateway } from '@common/websocket/base-ws.gateway';
 import { ConversationCreatedEvent } from '@presentation/ws/events/conversation-created.event';
 import { ErrorCode } from '@common/result/error';
+import { PaginatedResult } from '@common/pagination/pagination.interface';
 
 @UseGuards(AuthWsGuard)
 @WebSocketGateway({ namespace: 'chat', cors: '*' })
@@ -250,12 +250,9 @@ export class ChatWsGateway
     if (msg.data.filter && filteredUserIds.length === 0) {
       msg.ack(
         StdResponse.fromResult(
-          Result.ok<GetUserConversationListResponse>({
-            list: [],
-            page: pagination.page,
-            pageSize: pagination.pageSize,
-            total: 0,
-          }),
+          Result.ok<PaginatedResult<UserConversationListItem>>(
+            PaginationHelper.createResult([], 0, pagination),
+          ),
         ),
       );
       return;
@@ -264,7 +261,7 @@ export class ChatWsGateway
     const conversationListRes = await this.chatService.getUserConversationList(
       authUserId,
       pagination,
-      filteredUserIds,
+      filteredUserIds.filter((userId) => userId && userId !== authUserId),
     );
     if (conversationListRes.isError()) {
       msg.ack(StdResponse.fromResult(conversationListRes));
@@ -282,18 +279,21 @@ export class ChatWsGateway
 
     msg.ack(
       StdResponse.fromResult(
-        Result.ok<GetUserConversationListResponse>({
-          list: conversationListRes.value.data.map((c) => {
-            const currentMember = c.members.find((m) => m.userId == authUserId);
-            const item: UserConversationListItem = {
-              id: c.id,
-              name: c.title,
-              avatar: c.picture,
-              username: c.identifier,
-              lastMessage: c.lastMessage
+        Result.ok<PaginatedResult<UserConversationListItem>>({
+          meta: conversationListRes.value.meta,
+          data: conversationListRes.value.data.map((item) => {
+            const currentMember = item.members.find(
+              (m) => m.userId == authUserId,
+            );
+            const conversation: UserConversationListItem = {
+              id: item.id,
+              title: item.title,
+              picture: item.picture,
+              identifier: item.identifier,
+              lastMessage: item.lastMessage
                 ? {
                     id: currentMember.lastMessage.id,
-                    content: currentMember.lastMessage.text,
+                    text: currentMember.lastMessage.text,
                     createdAt:
                       currentMember.lastMessage.createdAt.toISOString(),
                     seen: false,
@@ -303,8 +303,8 @@ export class ChatWsGateway
               notSeenCount: currentMember.notSeenCount,
             };
 
-            if (c.type === ConversationType.DIRECT) {
-              const otherMember = c.members.find(
+            if (item.type === ConversationType.DIRECT) {
+              const otherMember = item.members.find(
                 (cm) => cm.userId != authUserId,
               );
               if (otherMember) {
@@ -312,18 +312,45 @@ export class ChatWsGateway
                   (u) => u.id == otherMember.userId,
                 );
                 if (otherUser) {
-                  item.name = `${otherUser.firstName} ${otherUser.lastName}`;
-                  item.username = otherUser.username;
-                  item.avatar = otherUser.avatar;
+                  conversation.title = `${otherUser.firstName} ${otherUser.lastName}`;
+                  conversation.identifier = otherUser.username;
+                  conversation.picture = otherUser.avatar;
+                }
+              }
+
+              if (conversation.lastMessage) {
+                const sender = usersRes.value.find(
+                  (user) =>
+                    item.members[0].lastMessage &&
+                    user.id === item.members[0].lastMessage.sender.userId,
+                );
+                if (sender) {
+                  conversation.lastMessage.user = {
+                    id: sender.id,
+                    username: sender.username,
+                    name: `${sender.firstName} ${sender.lastName}`,
+                  };
+
+                  if (
+                    conversation.lastMessage.user.id !== authUserId &&
+                    item.members[0]?.lastSeenMessage
+                  ) {
+                    conversation.lastMessage.seen =
+                      conversation.lastMessage.id <=
+                      item.members[0].lastSeenMessage.id;
+                  } else if (otherMember?.lastSeenMessage) {
+                    conversation.lastMessage.seen =
+                      conversation.lastMessage.id <=
+                      otherMember.lastSeenMessage.id;
+                  } else {
+                    // Nothing yet :\
+                  }
                 }
               }
             }
 
-            return item;
+            return conversation;
           }),
-          total: conversationListRes.value.meta.total,
-          page: conversationListRes.value.meta.page,
-          pageSize: conversationListRes.value.meta.pageSize,
         }),
       ),
     );
