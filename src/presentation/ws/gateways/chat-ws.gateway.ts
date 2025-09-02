@@ -25,12 +25,24 @@ import { UserService } from '@user/services/user.service';
 import { StdResponse } from '@common/std-response/std-response';
 import { AuthWsUserId } from '@presentation/ws/decorators/auth-ws-user-id.decorator';
 import { ConversationType } from '@chat/enums/conversation-type.enum';
-import { CreateConversationRequest } from '@presentation/ws/gateways/dtos/create-conversation.dto';
+import {
+  CreateConversationRequest,
+  CreateConversationResponse,
+} from '@presentation/ws/gateways/dtos/create-conversation.dto';
 import { MessageType } from '@chat/enums/chat-type.enum';
 import { BaseWsGateway } from '@common/websocket/base-ws.gateway';
 import { ConversationCreatedEvent } from '@presentation/ws/events/conversation-created.event';
 import { ErrorCode } from '@common/result/error';
 import { PaginatedResult } from '@common/pagination/pagination.interface';
+import {
+  CreateMessageRequest,
+  CreateMessageResponseResponse,
+} from '@presentation/ws/gateways/dtos/create-message.dto';
+import { StdStatus } from '@common/std-response/std-status';
+import {
+  UserMessageCreated,
+  UserMessageCreatedEvent,
+} from '@presentation/ws/events/message-created.event';
 
 @UseGuards(AuthWsGuard)
 @WebSocketGateway({ namespace: 'chat', cors: '*' })
@@ -122,7 +134,7 @@ export class ChatWsGateway
     }
   }
 
-  @SubscribeMessage('user.conversation.create')
+  @SubscribeMessage('direct.conversation.create')
   async createConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() msg: SocketMessage<CreateConversationRequest>,
@@ -221,9 +233,29 @@ export class ChatWsGateway
         },
       }),
     );
+
+    msg.ack(
+      StdResponse.success<CreateConversationResponse>({
+        id: createConversationRes.value.id,
+        username: createConversationRes.value.identifier,
+        createdAt: createMessageRes.value.createdAt.toISOString(),
+        avatar: createConversationRes.value.picture,
+        name: `${targetUserRes.value.firstName} ${targetUserRes.value.lastName}`,
+        chat: {
+          id: createMessageRes.value.id,
+          createdAt: createMessageRes.value.createdAt.toISOString(),
+          seen: false,
+          content: createMessageRes.value.text,
+          user: {
+            id: currentUserRes.value.id,
+            name: `${currentUserRes.value.firstName} ${currentUserRes.value.lastName}`,
+          },
+        },
+      }),
+    );
   }
 
-  @SubscribeMessage('user.conversation.list')
+  @SubscribeMessage('conversation.list')
   @UsePipes(new ValidationPipe(GetUserConversationListRequest, ['body'], 'ws'))
   async getUserConversationList(
     @MessageBody() msg: SocketMessage<GetUserConversationListRequest>,
@@ -278,81 +310,184 @@ export class ChatWsGateway
     }
 
     msg.ack(
-      StdResponse.fromResult(
-        Result.ok<PaginatedResult<UserConversationListItem>>({
-          meta: conversationListRes.value.meta,
-          data: conversationListRes.value.data.map((item) => {
-            const currentMember = item.members.find(
-              (m) => m.userId == authUserId,
+      StdResponse.success<PaginatedResult<UserConversationListItem>>({
+        meta: conversationListRes.value.meta,
+        data: conversationListRes.value.data.map((item) => {
+          const currentMember = item.members.find(
+            (m) => m.userId == authUserId,
+          );
+          const conversation: UserConversationListItem = {
+            id: item.id,
+            title: item.title,
+            picture: item.picture,
+            identifier: item.identifier,
+            lastMessage: item.lastMessage
+              ? {
+                  id: currentMember.lastMessage.id,
+                  text: currentMember.lastMessage.text,
+                  createdAt: currentMember.lastMessage.createdAt.toISOString(),
+                  seen: false,
+                  user: null,
+                }
+              : null,
+            notSeenCount: currentMember.notSeenCount,
+          };
+
+          if (item.type === ConversationType.DIRECT) {
+            const otherMember = item.members.find(
+              (cm) => cm.userId != authUserId,
             );
-            const conversation: UserConversationListItem = {
-              id: item.id,
-              title: item.title,
-              picture: item.picture,
-              identifier: item.identifier,
-              lastMessage: item.lastMessage
-                ? {
-                    id: currentMember.lastMessage.id,
-                    text: currentMember.lastMessage.text,
-                    createdAt:
-                      currentMember.lastMessage.createdAt.toISOString(),
-                    seen: false,
-                    user: null,
-                  }
-                : null,
-              notSeenCount: currentMember.notSeenCount,
-            };
-
-            if (item.type === ConversationType.DIRECT) {
-              const otherMember = item.members.find(
-                (cm) => cm.userId != authUserId,
+            if (otherMember) {
+              const otherUser = usersRes.value.find(
+                (u) => u.id == otherMember.userId,
               );
-              if (otherMember) {
-                const otherUser = usersRes.value.find(
-                  (u) => u.id == otherMember.userId,
-                );
-                if (otherUser) {
-                  conversation.title = `${otherUser.firstName} ${otherUser.lastName}`;
-                  conversation.identifier = otherUser.username;
-                  conversation.picture = otherUser.avatar;
-                }
-              }
-
-              if (conversation.lastMessage) {
-                const sender = usersRes.value.find(
-                  (user) =>
-                    item.members[0].lastMessage &&
-                    user.id === item.members[0].lastMessage.sender.userId,
-                );
-                if (sender) {
-                  conversation.lastMessage.user = {
-                    id: sender.id,
-                    username: sender.username,
-                    name: `${sender.firstName} ${sender.lastName}`,
-                  };
-
-                  if (
-                    conversation.lastMessage.user.id !== authUserId &&
-                    item.members[0]?.lastSeenMessage
-                  ) {
-                    conversation.lastMessage.seen =
-                      conversation.lastMessage.id <=
-                      item.members[0].lastSeenMessage.id;
-                  } else if (otherMember?.lastSeenMessage) {
-                    conversation.lastMessage.seen =
-                      conversation.lastMessage.id <=
-                      otherMember.lastSeenMessage.id;
-                  } else {
-                    // Nothing yet :\
-                  }
-                }
+              if (otherUser) {
+                conversation.title = `${otherUser.firstName} ${otherUser.lastName}`;
+                conversation.identifier = otherUser.username;
+                conversation.picture = otherUser.avatar;
               }
             }
 
-            return conversation;
-          }),
+            if (conversation.lastMessage) {
+              const sender = usersRes.value.find(
+                (user) =>
+                  item.members[0].lastMessage &&
+                  user.id === item.members[0].lastMessage.sender.userId,
+              );
+              if (sender) {
+                conversation.lastMessage.user = {
+                  id: sender.id,
+                  username: sender.username,
+                  name: `${sender.firstName} ${sender.lastName}`,
+                };
+
+                if (
+                  conversation.lastMessage.user.id !== authUserId &&
+                  item.members[0]?.lastSeenMessage
+                ) {
+                  conversation.lastMessage.seen =
+                    conversation.lastMessage.id <=
+                    item.members[0].lastSeenMessage.id;
+                } else if (otherMember?.lastSeenMessage) {
+                  conversation.lastMessage.seen =
+                    conversation.lastMessage.id <=
+                    otherMember.lastSeenMessage.id;
+                } else {
+                  // Nothing yet :\
+                }
+              }
+            }
+          }
+
+          return conversation;
         }),
-      ),
+      }),
+    );
+  }
+
+  @SubscribeMessage('direct.conversation.message.create')
+  async createMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() msg: SocketMessage<CreateMessageRequest>,
+    @AuthWsUserId() authUserId: string,
+  ): Promise<void> {
+    const conversationRes = await this.chatService.getUserConversation(
+      msg.data.conversationId,
+      authUserId,
+    );
+    if (conversationRes.isError()) {
+      msg.ack(StdResponse.fromResult(conversationRes));
+      return;
+    }
+
+    const targetMember = conversationRes.value.members.find(
+      (member) => member.userId !== authUserId,
+    );
+    if (!targetMember) {
+      msg.ack(StdResponse.error(StdStatus.NOT_FOUND, 'Conversation not found'));
+    }
+
+    const [currentUserRes, targetUserRes, blockStatusRes] = await Promise.all([
+      this.userService.getUserById(authUserId),
+      this.userService.getUserById(targetMember.userId),
+      this.userService.getBlockStatus(authUserId, targetMember.userId),
+    ]);
+    if (targetUserRes.isError()) {
+      msg.ack(StdResponse.fromResult(targetUserRes));
+      return;
+    }
+    if (blockStatusRes.isError()) {
+      msg.ack(StdResponse.fromResult(blockStatusRes));
+      return;
+    }
+
+    if (blockStatusRes.value.isBlocker) {
+      msg.ack(
+        StdResponse.error(
+          StdStatus.VALIDATION_FAILURE,
+          'You need to unblock the user before sending a message.',
+        ),
+      );
+      return;
+    }
+
+    const createMessageRes = await this.chatService.createMessage({
+      conversation: { id: conversationRes.value.id },
+      type: MessageType.TEXT,
+      text: msg.data.text,
+      sender: {
+        id: conversationRes.value.members.find(
+          (member) => member.userId === authUserId,
+        ).id,
+      },
+      deletedForUserIds: blockStatusRes.value.isBlocked
+        ? [targetUserRes.value.id]
+        : [],
+    });
+    if (createMessageRes.isError()) {
+      msg.ack(StdResponse.fromResult(createMessageRes));
+      return;
+    }
+
+    let rooms = [targetUserRes.value.id];
+    rooms = rooms.filter(
+      (x) => !createMessageRes.value.deletedForUserIds.includes(x),
+    );
+
+    await this.broadcast<UserMessageCreated>(
+      client,
+      rooms,
+      new UserMessageCreatedEvent({
+        id: createMessageRes.value.id,
+        seen: false,
+        createdAt: createMessageRes.value.createdAt.toISOString(),
+        user: {
+          id: currentUserRes.value.id,
+          username: currentUserRes.value.username,
+          name: `${currentUserRes.value.firstName} ${currentUserRes.value.lastName}`,
+          avatar: currentUserRes.value.avatar,
+        },
+        content: createMessageRes.value.text,
+        conversation: {
+          id: conversationRes.value.id,
+          name: conversationRes.value.id,
+          avatar: conversationRes.value.picture,
+          username: conversationRes.value.identifier,
+        },
+      }),
+    );
+
+    msg.ack(
+      StdResponse.success<CreateMessageResponseResponse>({
+        id: createMessageRes.value.id,
+        createdAt: createMessageRes.value.createdAt.toISOString(),
+        seen: false,
+        user: {
+          id: currentUserRes.value.id,
+          name: `${currentUserRes.value.firstName} ${currentUserRes.value.lastName}`,
+        },
+        content: createMessageRes.value.text,
+      }),
     );
   }
 }

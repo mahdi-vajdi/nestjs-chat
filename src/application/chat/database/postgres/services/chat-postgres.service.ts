@@ -17,6 +17,7 @@ import { ConversationType } from '@chat/enums/conversation-type.enum';
 import { randomUUID } from 'crypto';
 import { MessageEntity, MessageProps } from '@chat/models/message.entity';
 import { DeletedMessage } from '@chat/database/postgres/entities/deleted-message.entity';
+import { ErrorCode } from '@common/result/error';
 
 @Injectable()
 export class ChatPostgresService implements ChatDatabaseProvider {
@@ -243,7 +244,6 @@ export class ChatPostgresService implements ChatDatabaseProvider {
     userId: string,
     conversationIds: string[],
   ): Promise<Result<Record<string, number>>> {
-    // TODO: add condition for deleted chats
     // TODO: use create date for not seen chats instead of id
     const res = await this.conversationMemberRepository
       .createQueryBuilder('cm')
@@ -255,10 +255,16 @@ export class ChatPostgresService implements ChatDatabaseProvider {
       .addSelect(
         (qb: SelectQueryBuilder<any>) =>
           qb
-            .select()
-            .from(Message, 'message')
-            .where('message.conversation_id = cm.conversation_id')
-            .andWhere('message.id > cm.last_seen_message_id'),
+            .select('COUNT(m.id) - COUNT(dm.id)')
+            .from(Message, 'm')
+            .leftJoin(
+              DeletedMessage,
+              'dm',
+              'm.id = dm.id AND dm.user_id = :userId',
+              { userId },
+            )
+            .where('m.conversation_id = cm.conversation_id')
+            .andWhere('m.id > cm.last_seen_message_id'),
         'notSeenCount',
       )
       .getRawMany();
@@ -287,5 +293,29 @@ export class ChatPostgresService implements ChatDatabaseProvider {
     const res = await query.getMany();
 
     return Result.ok(res.map((cm) => ConversationMember.toEntity(cm)));
+  }
+
+  @TryCatch
+  async getUserConversationById(
+    conversationId: string,
+    userId: string,
+  ): Promise<Result<ConversationEntity>> {
+    const res = await this.conversationRepository
+      .createQueryBuilder('c')
+      .innerJoinAndSelect('c.conversationMembers', 'cm')
+      .where('c.id = :conversationId', { conversationId })
+      .andWhereExists(
+        this.conversationMemberRepository
+          .createQueryBuilder('sub_cm')
+          .where('sub_cm.user_id = :userId', { userId })
+          .andWhere('sub_cm.conversation_id = c.id'),
+      )
+      .getOne();
+
+    if (!res) {
+      return Result.error('Conversation not found.', ErrorCode.NOT_FOUND);
+    }
+
+    return Result.ok(Conversation.toEntity(res));
   }
 }

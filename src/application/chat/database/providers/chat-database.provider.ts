@@ -7,6 +7,11 @@ import { GetConversationMembersOptions } from '@chat/database/options/get-conver
 import { MessageEntity, MessageProps } from '@chat/models/message.entity';
 
 export interface ChatDatabaseReader {
+  getUserConversationById(
+    conversationId: string,
+    userId: string,
+  ): Promise<Result<ConversationEntity>>;
+
   conversationExists(
     userId: string,
     targetUserId: string,

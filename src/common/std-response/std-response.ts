@@ -3,11 +3,23 @@ import { ErrorCode } from '@common/result/error';
 import { StdStatus } from '@common/std-response/std-status';
 
 export class StdResponse<T> {
-  constructor(
-    readonly data: T,
-    readonly message: string,
-    readonly status: StdStatus,
+  private constructor(
+    public readonly data: T,
+    public readonly message: string,
+    public readonly status: StdStatus,
   ) {}
+
+  static success<T>(data: T, message = 'Success'): StdResponse<T> {
+    return new StdResponse<T>(data, message, StdStatus.SUCCESS);
+  }
+
+  static error<T>(
+    status: StdStatus,
+    message: string,
+    data?: T,
+  ): StdResponse<T> {
+    return new StdResponse<T>(data, message, status);
+  }
 
   static fromResult<T, E>(
     result: Result<T, E>,

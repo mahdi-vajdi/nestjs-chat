@@ -190,7 +190,25 @@ export class ChatService {
     this.logger.debug(
       `Fetched ${res.value.length} conversation IDs for user ${userId}`,
     );
+    return Result.ok(res.value);
+  }
 
+  @TryCatch
+  async getUserConversation(
+    conversationId: string,
+    userId: string,
+  ): Promise<Result<ConversationEntity>> {
+    const res = await this.chatDatabaseProvider.getUserConversationById(
+      conversationId,
+      userId,
+    );
+    if (res.isError()) {
+      return Result.error(res.error);
+    }
+
+    this.logger.debug(
+      `Fetched conversation ${conversationId} for user ${userId}`,
+    );
     return Result.ok(res.value);
   }
 }
