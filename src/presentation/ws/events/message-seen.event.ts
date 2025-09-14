@@ -2,7 +2,7 @@ import { BaseWsEvent } from '@common/websocket/base-ws-event';
 
 export class MessageSeenEvent extends BaseWsEvent<MessageSeen> {
   get eventName(): string {
-    return 'user.conversation.message.seen';
+    return 'conversation.message.seen';
   }
 }
 

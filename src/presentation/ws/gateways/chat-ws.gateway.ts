@@ -117,31 +117,20 @@ export class ChatWsGateway
     client.join(userEventsRoom);
 
     this.logger.log(`Client authorized: ${authRes.value.sub}`);
-
-    if (client.disconnected) {
-      this.handleDisconnect(client);
-    }
   }
 
   handleDisconnect(client: Socket): void {
     const authUser = client.data?.user;
     if (authUser) {
       this.logger.log(`Client disconnected: ${authUser}`);
-
-      for (const room of client.rooms) {
-        if (room != client.id) {
-          client.leave(room);
-          this.logger.debug(`Leaving room: ${room}`);
-        }
-      }
     } else {
       this.logger.debug(`Unknown client ${client.id} disconnected`);
     }
   }
 
-  @SubscribeMessage('user.conversation.create')
+  @SubscribeMessage('conversation.direct.create')
   @UsePipes(new ValidationPipe(CreateConversationRequest, ['body'], 'ws'))
-  async createConversation(
+  async createDirectConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() msg: SocketMessage<CreateConversationRequest>,
     @AuthWsUserId() authUserId: string,
@@ -214,7 +203,6 @@ export class ChatWsGateway
     this.logger.debug(
       `broadcasting 'UserChatCreated' event to the rooms: ${rooms}`,
     );
-    client.join(rooms);
     this.logger.log(
       `user ${currentUserRes.value.id} joined to room ${createMessageRes.value.conversation.id}`,
     );
@@ -307,9 +295,15 @@ export class ChatWsGateway
     }
 
     const conversationsUserIds = conversationListRes.value.data
-      .filter((c) => c.members.length != 0 && c.members[0].lastMessage)
-      .map((c) => c.members[0].lastMessage.sender.userId);
-    const usersRes = await this.userService.getUsersByIds(conversationsUserIds);
+      .map((c) => c.lastMessage?.sender?.userId)
+      .filter((id) => id != null);
+    const allUsersInvolved = conversationListRes.value.data.flatMap((c) =>
+      c.members.map((m) => m.userId),
+    );
+    allUsersInvolved.push(...conversationsUserIds);
+    const uniqueUserIds = Array.from(new Set(allUsersInvolved));
+
+    const usersRes = await this.userService.getUsersByIds(uniqueUserIds);
     if (usersRes.isError()) {
       msg.ack(usersRes);
       return;
@@ -356,9 +350,7 @@ export class ChatWsGateway
 
             if (conversation.lastMessage) {
               const sender = usersRes.value.find(
-                (user) =>
-                  item.members[0].lastMessage &&
-                  user.id === item.members[0].lastMessage.sender.userId,
+                (user) => user.id === item.lastMessage.sender.userId,
               );
               if (sender) {
                 conversation.lastMessage.user = {
@@ -367,19 +359,20 @@ export class ChatWsGateway
                   name: `${sender.firstName} ${sender.lastName}`,
                 };
 
-                if (
-                  conversation.lastMessage.user.id !== authUserId &&
-                  item.members[0]?.lastSeenMessage
-                ) {
-                  conversation.lastMessage.seen =
-                    conversation.lastMessage.id <=
-                    item.members[0].lastSeenMessage.id;
-                } else if (otherMember?.lastSeenMessage) {
-                  conversation.lastMessage.seen =
-                    conversation.lastMessage.id <=
-                    otherMember.lastSeenMessage.id;
+                if (sender.id === authUserId) {
+                  if (
+                    otherMember?.lastSeenMessage &&
+                    item.lastMessage.createdAt <=
+                      otherMember.lastSeenMessage.createdAt
+                  ) {
+                    conversation.lastMessage.seen = true;
+                  }
                 } else {
-                  // Nothing yet :\
+                  if (currentMember?.lastSeenMessage) {
+                    conversation.lastMessage.seen =
+                      item.lastMessage.createdAt <=
+                      currentMember.lastSeenMessage.createdAt;
+                  }
                 }
               }
             }
@@ -391,7 +384,7 @@ export class ChatWsGateway
     );
   }
 
-  @SubscribeMessage('user.conversation.message.create')
+  @SubscribeMessage('conversation.message.create')
   @UsePipes(new ValidationPipe(CreateMessageRequest, ['body'], 'ws'))
   async createMessage(
     @ConnectedSocket() client: Socket,
@@ -456,7 +449,7 @@ export class ChatWsGateway
       return;
     }
 
-    let rooms = [targetUserRes.value.id];
+    let rooms = [`user-${targetUserRes.value.id}`];
     rooms = rooms.filter(
       (x) => !createMessageRes.value.deletedForUserIds.includes(x),
     );
@@ -498,7 +491,7 @@ export class ChatWsGateway
     );
   }
 
-  @SubscribeMessage('user.conversation.message.list')
+  @SubscribeMessage('conversation.message.list')
   @UsePipes(
     new ValidationPipe(GetConversationMessageListRequest, ['body'], 'ws'),
   )
@@ -553,11 +546,10 @@ export class ChatWsGateway
         client,
         conversationRes.value.members
           .filter((member) => member.userId !== authUserId)
-          .map((member) => member.id),
+          .map((member) => `user-${member.userId}`),
         new MessageSeenEvent({
           conversationId: conversationRes.value.id,
-          messageId:
-            messageListRes.value.data[messageListRes.value.data.length - 1].id,
+          messageId: messageListRes.value.data[0].id,
         }),
       );
     }
@@ -571,7 +563,7 @@ export class ChatWsGateway
             : conversationRes.value.title,
         avatar:
           conversationRes.value.type == ConversationType.DIRECT
-            ? usersRes.value.find((m) => m.id != authUserId)?.firstName
+            ? usersRes.value.find((m) => m.id != authUserId)?.avatar
             : conversationRes.value.title,
         username:
           conversationRes.value.type == ConversationType.DIRECT
@@ -609,7 +601,7 @@ export class ChatWsGateway
               const otherMember = conversationRes.value.members.find(
                 (m) => m.userId !== authUserId,
               );
-              if (message.id < otherMember.lastSeenMessage.id) {
+              if (item.createdAt < otherMember.lastSeenMessage.createdAt) {
                 message.seen = true;
               }
             }

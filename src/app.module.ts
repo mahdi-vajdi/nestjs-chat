@@ -13,6 +13,8 @@ import { BroadcastModule } from '@infrastructure/websocket/broadcast/broadcast.m
 import { authConfig } from '@auth/configs/auth.config';
 import { UserModule } from '@user/user.module';
 import { AuthModule } from '@auth/auth.module';
+import { DatabaseModule } from '@infrastructure/database/database.module';
+import { DatabaseType } from '@infrastructure/database/database-type.enum';
 
 @Module({
   imports: [
@@ -29,6 +31,7 @@ import { AuthModule } from '@auth/auth.module';
       ],
       cache: true,
     }),
+    DatabaseModule.register(DatabaseType.POSTGRES),
     LoggerModule,
     PresentationModule,
     RedisModule,

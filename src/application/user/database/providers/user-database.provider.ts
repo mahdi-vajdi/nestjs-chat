@@ -40,4 +40,4 @@ export interface IUserDatabaseProvider
   extends IUserDatabaseReader,
     IUserDatabaseWriter {}
 
-export const USER_DATABASE_PROVIDER = 'user-database-providers';
+export const USER_DATABASE_PROVIDER = 'user-database-provider';

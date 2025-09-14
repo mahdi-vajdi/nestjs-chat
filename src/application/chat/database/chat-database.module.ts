@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '@infrastructure/database/database.module';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CHAT_DATABASE_PROVIDER } from '@chat/database/providers/chat-database.provider';
@@ -10,7 +9,6 @@ import { ConversationMember } from '@chat/database/postgres/entities/conversatio
 
 @Module({
   imports: [
-    DatabaseModule.register(DatabaseType.POSTGRES),
     TypeOrmModule.forFeature(
       [Conversation, Message, ConversationMember],
       DatabaseType.POSTGRES,
