@@ -16,6 +16,16 @@ interface IUserDatabaseReader {
   getUserByEmail(email: string): Promise<Result<UserEntity>>;
 
   getUserByUsername(username: string): Promise<Result<UserEntity>>;
+
+  getBlockStatus(
+    blockerId: string,
+    blockedId: string,
+  ): Promise<Result<boolean>>;
+
+  getBlockedUserIds(
+    blockerId: string,
+    blockedIds?: string[],
+  ): Promise<Result<string[]>>;
 }
 
 interface IUserDatabaseWriter {
@@ -24,11 +34,6 @@ interface IUserDatabaseWriter {
   block(blockerId: string, blockedId: string): Promise<Result<boolean>>;
 
   unblock(blockerId: string, blockedId: string): Promise<Result<boolean>>;
-
-  getBlockStatus(
-    blockerId: string,
-    blockedId: string,
-  ): Promise<Result<boolean>>;
 }
 
 export interface IUserDatabaseProvider

@@ -170,4 +170,23 @@ export class UserPostgresService implements IUserDatabaseProvider {
 
     return Result.ok(res);
   }
+
+  @TryCatch
+  async getBlockedUserIds(
+    blockerId: string,
+    blockedIds?: string[],
+  ): Promise<Result<string[]>> {
+    const query = this.userBlockRepository
+      .createQueryBuilder('ub')
+      .select('ub.blocked_id', 'blockedId')
+      .where('ub.blocker_id = :userId', { blockerId });
+
+    if (blockedIds?.length) {
+      query.andWhere('ub.blocked_id IN (:...blockedId)', { blockedIds });
+    }
+
+    const res = await query.getRawMany<string>();
+
+    return Result.ok(res);
+  }
 }

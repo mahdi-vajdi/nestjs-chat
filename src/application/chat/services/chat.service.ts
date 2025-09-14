@@ -211,4 +211,24 @@ export class ChatService {
     );
     return Result.ok(res.value);
   }
+
+  @TryCatch
+  async getUserConversationMessageList(
+    conversationId: string,
+    userId: string,
+    pagination: PaginationOptions,
+  ): Promise<Result<PaginatedResult<MessageEntity>>> {
+    const res = await this.chatDatabaseProvider.getUserConversationMessageList(
+      conversationId,
+      userId,
+      pagination,
+    );
+    if (res.isError()) {
+      return Result.error(res.error);
+    }
+
+    return Result.ok(
+      PaginationHelper.createResult(res.value[0], res.value[1], pagination),
+    );
+  }
 }

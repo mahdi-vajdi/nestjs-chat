@@ -1,7 +1,7 @@
 import { BaseWsEvent } from '@common/websocket/base-ws-event';
 
 export class UserMessageCreatedEvent extends BaseWsEvent<UserMessageCreated> {
-  get name(): string {
+  get eventName(): string {
     return 'user.conversation.message.created';
   }
 }

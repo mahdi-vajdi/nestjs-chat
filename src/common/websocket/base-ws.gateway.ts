@@ -16,15 +16,15 @@ export abstract class BaseWsGateway {
   ): Promise<Result<boolean>> {
     if (rooms.length === 0) {
       this.getLogger().log(
-        `Rooms are empty; Skipping broadcast for event ${event.name}`,
+        `Rooms are empty; Skipping broadcast for event ${event.eventName}`,
       );
       return Result.ok(false);
     }
 
     this.getLogger().debug(
-      `Broadcasting event ${event.name} to rooms ${rooms}: ${inspect(event.data)}`,
+      `Broadcasting event ${event.eventName} to rooms ${rooms}: ${inspect(event.data)}`,
     );
-    client.broadcast.to(rooms).emit(event.name, event.data);
+    client.broadcast.to(rooms).emit(event.eventName, event.data);
 
     return Result.ok(true);
   }

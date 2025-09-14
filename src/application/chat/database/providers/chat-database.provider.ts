@@ -5,6 +5,7 @@ import { ConversationEntity } from '@chat/models/conversation.model';
 import { ConversationMemberEntity } from '@chat/models/conversation-member.model';
 import { GetConversationMembersOptions } from '@chat/database/options/get-conversation-members.options';
 import { MessageEntity, MessageProps } from '@chat/models/message.entity';
+import { PaginationOptions } from '@common/pagination/pagination.interface';
 
 export interface ChatDatabaseReader {
   getUserConversationById(
@@ -36,6 +37,12 @@ export interface ChatDatabaseReader {
     conversationIds: string[],
     options: GetConversationMembersOptions,
   ): Promise<Result<ConversationMemberEntity[]>>;
+
+  getUserConversationMessageList(
+    conversationId: string,
+    userId: string,
+    pagination: PaginationOptions,
+  ): Promise<Result<[MessageEntity[], number]>>
 }
 
 export interface ChatDatabaseWriter {

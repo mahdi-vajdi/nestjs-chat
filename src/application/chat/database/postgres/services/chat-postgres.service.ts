@@ -18,6 +18,7 @@ import { randomUUID } from 'crypto';
 import { MessageEntity, MessageProps } from '@chat/models/message.entity';
 import { DeletedMessage } from '@chat/database/postgres/entities/deleted-message.entity';
 import { ErrorCode } from '@common/result/error';
+import { PaginationOptions } from '@common/pagination/pagination.interface';
 
 @Injectable()
 export class ChatPostgresService implements ChatDatabaseProvider {
@@ -317,5 +318,58 @@ export class ChatPostgresService implements ChatDatabaseProvider {
     }
 
     return Result.ok(Conversation.toEntity(res));
+  }
+
+  @TryCatch
+  async getUserConversationMessageList(
+    conversationId: string,
+    userId: string,
+    pagination: PaginationOptions,
+  ): Promise<Result<[MessageEntity[], number]>> {
+    const [messages, count] = await this.dataSource.transaction(
+      async (entityManager) => {
+        const res = await entityManager
+          .getRepository(Message)
+          .createQueryBuilder('m')
+          .innerJoinAndSelect('m.sender', 'cm')
+          .where('m.conversation_id = :conversationId', { conversationId })
+          .andWhere(() => {
+            const sq = entityManager
+              .getRepository(DeletedMessage)
+              .createQueryBuilder('dm')
+              .where('dm.user_id = :userId')
+              .andWhere('dm.message_id = m.id')
+              .getQuery();
+
+            return `NOT EXISTS (${sq})`;
+          })
+          .setParameter('userId', userId)
+          .orderBy('m.created_at', 'DESC')
+          .offset(pagination.offset)
+          .limit(pagination.limit)
+          .getManyAndCount();
+
+        // Update last seen message for the user
+        if (res[0].length) {
+          await entityManager
+            .getRepository(ConversationMember)
+            .createQueryBuilder()
+            .update()
+            .set({
+              last_seen_message_id: res[0][0].id,
+            })
+            .where('user_id = :userId', { userId })
+            .andWhere('conversation_id = :conversationId', { conversationId })
+            .execute();
+        }
+
+        return res;
+      },
+    );
+
+    return Result.ok([
+      messages.map((message) => Message.toEntity(message)),
+      count,
+    ]);
   }
 }

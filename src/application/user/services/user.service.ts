@@ -228,4 +228,20 @@ export class UserService {
       isBlocked: isBlockedRes.value,
     });
   }
+
+  @TryCatch
+  async getBlockedUsersIds(
+    userId: string,
+    targetUserIds: string[],
+  ): Promise<Result<string[]>> {
+    const res = await this.userDatabaseProvider.getBlockedUserIds(
+      userId,
+      targetUserIds,
+    );
+    if (res.isError()) {
+      return Result.error(res.error);
+    }
+
+    return Result.ok(res.value);
+  }
 }

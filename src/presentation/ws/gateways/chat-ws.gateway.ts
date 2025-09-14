@@ -43,6 +43,11 @@ import {
   UserMessageCreated,
   UserMessageCreatedEvent,
 } from '@presentation/ws/events/message-created.event';
+import {
+  GetConversationMessageListRequest,
+  GetConversationMessageListResponse,
+} from '@presentation/ws/gateways/dtos/get-conversation-message-list.dto';
+import { MessageSeenEvent } from '@presentation/ws/events/message-seen.event';
 
 @UseGuards(AuthWsGuard)
 @WebSocketGateway({ namespace: 'chat', cors: '*' })
@@ -134,7 +139,8 @@ export class ChatWsGateway
     }
   }
 
-  @SubscribeMessage('direct.conversation.create')
+  @SubscribeMessage('user.conversation.create')
+  @UsePipes(new ValidationPipe(CreateConversationRequest, ['body'], 'ws'))
   async createConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() msg: SocketMessage<CreateConversationRequest>,
@@ -385,7 +391,8 @@ export class ChatWsGateway
     );
   }
 
-  @SubscribeMessage('direct.conversation.message.create')
+  @SubscribeMessage('user.conversation.message.create')
+  @UsePipes(new ValidationPipe(CreateMessageRequest, ['body'], 'ws'))
   async createMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() msg: SocketMessage<CreateMessageRequest>,
@@ -487,6 +494,129 @@ export class ChatWsGateway
           name: `${currentUserRes.value.firstName} ${currentUserRes.value.lastName}`,
         },
         content: createMessageRes.value.text,
+      }),
+    );
+  }
+
+  @SubscribeMessage('user.conversation.message.list')
+  @UsePipes(
+    new ValidationPipe(GetConversationMessageListRequest, ['body'], 'ws'),
+  )
+  async getConversationMessageList(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() msg: SocketMessage<GetConversationMessageListRequest>,
+    @AuthWsUserId() authUserId: string,
+  ) {
+    const conversationRes = await this.chatService.getUserConversation(
+      msg.data.conversationId,
+      authUserId,
+    );
+    if (conversationRes.isError()) {
+      msg.ack(StdResponse.fromResult(conversationRes));
+      return;
+    }
+
+    const pagination = PaginationHelper.parse(msg.data.page, msg.data.pageSize);
+
+    const messageListRes =
+      await this.chatService.getUserConversationMessageList(
+        msg.data.conversationId,
+        authUserId,
+        pagination,
+      );
+    if (messageListRes.isError()) {
+      msg.ack(StdResponse.fromResult(messageListRes));
+      return;
+    }
+
+    let userIds = messageListRes.value.data.map(
+      (message) => message.sender.userId,
+    );
+    userIds.push(
+      ...conversationRes.value.members.map((member) => member.userId),
+    );
+    userIds = Array.from(new Set(userIds));
+
+    const usersRes = await this.userService.getUsersByIds(userIds);
+    if (usersRes.isError()) {
+      msg.ack(StdResponse.fromResult(usersRes));
+      return;
+    }
+
+    const blockedUserIdsRes = await this.userService.getBlockedUsersIds(
+      authUserId,
+      usersRes.value.map((user) => user.id),
+    );
+
+    if (messageListRes.value.data.length) {
+      await this.broadcast(
+        client,
+        conversationRes.value.members
+          .filter((member) => member.userId !== authUserId)
+          .map((member) => member.id),
+        new MessageSeenEvent({
+          conversationId: conversationRes.value.id,
+          messageId:
+            messageListRes.value.data[messageListRes.value.data.length - 1].id,
+        }),
+      );
+    }
+
+    msg.ack(
+      StdResponse.success<GetConversationMessageListResponse>({
+        id: conversationRes.value.id,
+        name:
+          conversationRes.value.type == ConversationType.DIRECT
+            ? usersRes.value.find((m) => m.id != authUserId)?.firstName
+            : conversationRes.value.title,
+        avatar:
+          conversationRes.value.type == ConversationType.DIRECT
+            ? usersRes.value.find((m) => m.id != authUserId)?.firstName
+            : conversationRes.value.title,
+        username:
+          conversationRes.value.type == ConversationType.DIRECT
+            ? usersRes.value.find((m) => m.id != authUserId)?.username
+            : conversationRes.value.identifier,
+        members: usersRes.value
+          .filter((user) => user.id != authUserId)
+          .map((m) => ({
+            id: m.id,
+            avatar: m.avatar,
+            username: m.username,
+            name: m.firstName,
+            isBlocked: blockedUserIdsRes.value.includes(m.id),
+          })),
+        messages: {
+          total: messageListRes.value.meta.total,
+          page: messageListRes.value.meta.page,
+          pageSize: messageListRes.value.meta.pageSize,
+          list: messageListRes.value.data.map((item) => {
+            const user = usersRes.value.find((u) => u.id == item.sender.userId);
+            const message = {
+              id: item.id,
+              content: item.text,
+              createdAt: item.createdAt.toISOString(),
+              seen: false,
+              user: user
+                ? {
+                    id: user.id,
+                    name: user.firstName,
+                  }
+                : null,
+            };
+
+            if (message.user.id === authUserId) {
+              const otherMember = conversationRes.value.members.find(
+                (m) => m.userId !== authUserId,
+              );
+              if (message.id < otherMember.lastSeenMessage.id) {
+                message.seen = true;
+              }
+            }
+
+            return message;
+          }),
+        },
       }),
     );
   }
