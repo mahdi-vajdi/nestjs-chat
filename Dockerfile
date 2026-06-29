@@ -1,4 +1,4 @@
-FROM node:22.11-alpine AS build
+FROM node:24-alpine AS build
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ COPY . .
 
 RUN yarn build
 
-FROM node:22.11-alpine AS release
+FROM node:24-alpine AS release
 
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
