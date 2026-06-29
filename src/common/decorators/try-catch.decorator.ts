@@ -14,16 +14,17 @@ export function TryCatch(
     try {
       return await originalMethod.apply(this, args);
     } catch (error) {
-      if (typeof error === 'string') {
-        error = new Error(error);
+      let err: any = error;
+      if (typeof err === 'string') {
+        err = new Error(err);
       }
       errorLogger.error(
-        `Error in ${propertyKey}@${target.constructor.name}: ${error.name} ${error.message}`,
-        error.stack,
+        `Error in ${propertyKey}@${target.constructor.name}: ${err.name} ${err.message}`,
+        err.stack,
         target.constructor.name,
       );
 
-      return Result.error(error);
+      return Result.error(err);
     }
   };
 }

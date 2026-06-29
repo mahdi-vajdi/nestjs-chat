@@ -58,6 +58,7 @@ export class UserService {
         );
       }
     } else {
+      let isUsernameUnique = false;
       do {
         const username = `user_${crypto.randomBytes(5).toString('hex')}`;
         const usernameExistsRes = await this.userDatabaseProvider.userExists({
@@ -69,10 +70,9 @@ export class UserService {
         if (usernameExistsRes.value === false) {
           // Set the random username to the user
           user.username = username;
-
-          break;
+          isUsernameUnique = true;
         }
-      } while (true);
+      } while (!isUsernameUnique);
     }
 
     this.logger.debug(

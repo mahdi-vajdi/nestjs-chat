@@ -9,7 +9,8 @@ export interface RefreshTokenProps {
 }
 
 export interface RefreshTokenEntity
-  extends RefreshTokenProps,
+  extends
+    RefreshTokenProps,
     IdentifiableEntity,
     TimestampedEntity,
     SoftDeletableEntity {}
