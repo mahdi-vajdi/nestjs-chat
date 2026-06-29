@@ -44,7 +44,7 @@ export class IORedisClient implements IRedisProvider, OnApplicationShutdown {
     return this.client;
   }
 
-  async onApplicationShutdown(signal?: string) {
+  async onApplicationShutdown() {
     await this.disconnect();
   }
 }

@@ -71,11 +71,11 @@ export class ChatWsGateway
     return this.logger;
   }
 
-  afterInit(_server: Server) {
+  afterInit() {
     this.logger.debug('Conversation gateway initialized successfully.');
   }
 
-  async handleConnection(client: Socket, ...args: any[]) {
+  async handleConnection(client: Socket) {
     this.logger.debug(`New client connected. id: ${client.id}`);
 
     if (!client.data['authPromise']) {

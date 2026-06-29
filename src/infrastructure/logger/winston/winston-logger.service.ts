@@ -1,6 +1,6 @@
 import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-import { Logger as TypeOrmLogger, QueryRunner } from 'typeorm';
+import { Logger as TypeOrmLogger } from 'typeorm';
 
 @Injectable()
 export class WinstonLoggerService implements LoggerService, TypeOrmLogger {
@@ -79,7 +79,7 @@ export class WinstonLoggerService implements LoggerService, TypeOrmLogger {
   /*
   Implementing methods for typeorm logger service
    */
-  logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
+  logQuery(query: string, parameters?: any[]) {
     this.logger.debug(
       {
         message: `[Query]: ${query}; [Parameters]: [${[parameters]}]`,
@@ -89,12 +89,7 @@ export class WinstonLoggerService implements LoggerService, TypeOrmLogger {
     );
   }
 
-  logQueryError(
-    error: string | Error,
-    query: string,
-    parameters?: any[],
-    queryRunner?: QueryRunner,
-  ) {
+  logQueryError(error: string | Error, query: string, parameters?: any[]) {
     this.logger.error(
       {
         message: `[Error]: error ${error}. [Query]: ${query}; [Parameters]: [${[
@@ -106,12 +101,7 @@ export class WinstonLoggerService implements LoggerService, TypeOrmLogger {
     );
   }
 
-  logQuerySlow(
-    time: number,
-    query: string,
-    parameters?: any[],
-    queryRunner?: QueryRunner,
-  ) {
+  logQuerySlow(time: number, query: string, parameters?: any[]) {
     this.logger.warn(
       {
         message: `[Slow Query (${time} ms)]: ${query}; [Parameters]: [${[
@@ -123,7 +113,7 @@ export class WinstonLoggerService implements LoggerService, TypeOrmLogger {
     );
   }
 
-  logSchemaBuild(message: string, queryRunner?: QueryRunner) {
+  logSchemaBuild(message: string) {
     this.logger.log(
       {
         message: `[Schema Build]: ${message}`,
@@ -133,7 +123,7 @@ export class WinstonLoggerService implements LoggerService, TypeOrmLogger {
     );
   }
 
-  logMigration(message: string, queryRunner?: QueryRunner) {
+  logMigration(message: string) {
     this.logger.log(
       {
         message: `[Migration]: ${message}`,

@@ -42,7 +42,7 @@ export interface ChatDatabaseReader {
     conversationId: string,
     userId: string,
     pagination: PaginationOptions,
-  ): Promise<Result<[MessageEntity[], number]>>
+  ): Promise<Result<[MessageEntity[], number]>>;
 }
 
 export interface ChatDatabaseWriter {

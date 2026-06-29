@@ -38,18 +38,21 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "dotenv": "^17.4.2",
     "ioredis": "^5.11.1",
     "joi": "^18.2.3",
     "nest-winston": "^1.10.2",
     "pg": "^8.22.0",
-    "redis": "^6.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "socket.io": "^4.8.3",
     "typeorm": "^1.0.0",
+    "uuid": "^14.0.1",
+    "validator": "^13.15.35",
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@nestjs/cli": "^11.0.23",
     "@nestjs/schematics": "^11.1.0",
     "@nestjs/testing": "^11.1.27",
@@ -58,11 +61,11 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
     "@types/supertest": "^7.2.0",
-    "@typescript-eslint/eslint-plugin": "^8.62.0",
-    "@typescript-eslint/parser": "^8.62.0",
+    "@types/validator": "^13.15.10",
     "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.6",
+    "globals": "^17.7.0",
     "jest": "^30.4.2",
     "prettier": "^3.9.1",
     "source-map-support": "^0.5.21",
@@ -71,7 +74,8 @@
     "ts-loader": "^9.6.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.62.0"
   },
   "jest": {
     "moduleFileExtensions": [

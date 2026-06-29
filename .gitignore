@@ -49,3 +49,6 @@ keys/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# TypeScript build info
+*.tsbuildinfo

@@ -15,7 +15,8 @@ export interface ConversationProps {
 }
 
 export interface ConversationEntity
-  extends ConversationProps,
+  extends
+    ConversationProps,
     IdentifiableEntity,
     TimestampedEntity,
     SoftDeletableEntity {
