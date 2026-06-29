@@ -22,7 +22,6 @@ interface AuthDatabaseWriter {
 }
 
 export interface AuthDatabaseProvider
-  extends AuthDatabaseReader,
-    AuthDatabaseWriter {}
+  extends AuthDatabaseReader, AuthDatabaseWriter {}
 
 export const AUTH_DATABASE_PROVIDER = 'auth-database-providers';

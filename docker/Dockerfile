@@ -2,12 +2,12 @@ FROM node:22.11-alpine AS build
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
 
 COPY . .
 
-RUN npm run build
+RUN yarn build
 
 FROM node:22.11-alpine AS release
 
@@ -17,9 +17,10 @@ ENV NODE_ENV=${NODE_ENV}
 WORKDIR /app
 
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/package*.json ./
+COPY --from=build /app/package.json ./
+COPY --from=build /app/yarn.lock ./
 
-RUN npm ci --omit=dev
+RUN yarn install --production --frozen-lockfile
 
 USER node
 

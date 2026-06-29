@@ -14,7 +14,8 @@ export interface MessageProps {
 }
 
 export interface MessageEntity
-  extends MessageProps,
+  extends
+    MessageProps,
     IdentifiableEntity,
     TimestampedEntity,
     SoftDeletableEntity {}

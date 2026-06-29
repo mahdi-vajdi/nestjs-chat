@@ -40,3 +40,12 @@ lerna-debug.log*
 
 # Directory for the project keys
 keys/
+
+# Yarn
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

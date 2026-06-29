@@ -19,7 +19,7 @@ Chatterbox is a real-time chat application built with NestJS, designed for scala
 Before you begin, ensure you have the following installed:
 
 *   [Node.js](https://nodejs.org/) (v18.x or later recommended)
-*   [npm](https://www.npmjs.com/) (v9.x or later) or [yarn](https://yarnpkg.com/)
+*   [yarn](https://yarnpkg.com/)
 *   [PostgreSQL](https://www.postgresql.org/) (v13.x or later)
 *   [Redis](https://redis.io/) (v6.x or later)
 *   [OpenSSL](https://www.openssl.org/) (for generating RSA keys)
@@ -35,9 +35,7 @@ Before you begin, ensure you have the following installed:
 
 2.  **Install dependencies:**
     ```bash
-    npm install
-    # or
-    # yarn install
+    yarn install
     ```
 
 3.  **Set up environment variables:**
@@ -59,48 +57,48 @@ Before you begin, ensure you have the following installed:
     Ensure your PostgreSQL server is running and accessible with the credentials provided in your `.env` file.
     Run database migrations to create the necessary tables:
     ```bash
-    npm run migration:run
+    yarn migration:run
     ```
 
 ## Running the Application
 
 *   **Development Mode (with hot-reloading):**
     ```bash
-    npm run start:dev
+    yarn start:dev
     ```
     The application will typically be available at `http://localhost:<PORT>` (as defined in your `.env`).
 
 *   **Production Mode:**
     ```bash
-    npm run build
-    npm run start:prod
+    yarn build
+    yarn start:prod
     ```
 
 *   **Debugging Mode:**
     ```bash
-    npm run start:debug
+    yarn start:debug
     ```
 
 ## Running Tests
 
 *   **Run all tests:**
     ```bash
-    npm test
+    yarn test
     ```
 
 *   **Run tests in watch mode:**
     ```bash
-    npm run test:watch
+    yarn test:watch
     ```
 
 *   **Run tests with coverage report:**
     ```bash
-    npm run test:cov
+    yarn test:cov
     ```
 
 *   **Run End-to-End (E2E) tests:**
     ```bash
-    npm run test:e2e
+    yarn test:e2e
     ```
 
 ## API Documentation

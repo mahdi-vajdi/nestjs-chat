@@ -14,7 +14,8 @@ export class UserProps {
 }
 
 export interface UserEntity
-  extends UserProps,
+  extends
+    UserProps,
     IdentifiableEntity,
     TimestampedEntity,
     SoftDeletableEntity {
