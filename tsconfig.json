@@ -33,17 +33,15 @@
       "@infrastructure/*": [
         "src/infrastructure/*"
       ],
-      "@presentation/*": [
-        "src/presentation/*"
-      ],
+      
       "@user/*": [
-        "src/application/user/*"
+        "src/modules/user/*"
       ],
       "@auth/*": [
-        "src/application/auth/*"
+        "src/modules/auth/*"
       ],
       "@chat/*": [
-        "src/application/chat/*"
+        "src/modules/chat/*"
       ]
     }
   }

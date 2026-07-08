@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
-import { HTTP_CONFIG_TOKEN, IHttpConfig } from '@presentation/http/http.config';
+import { HTTP_CONFIG_TOKEN, IHttpConfig } from '@infrastructure/http/http.config';
 import { INestApplication, Logger, LoggerService } from '@nestjs/common';
 import { LOGGER_PROVIDER } from '@infrastructure/logger/provider/logger.provider';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';

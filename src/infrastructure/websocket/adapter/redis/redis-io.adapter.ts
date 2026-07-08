@@ -1,7 +1,7 @@
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { INestApplication, Logger } from '@nestjs/common';
-import { WS_CONFIG_TOKEN, WsConfig } from '@presentation/ws/ws.config';
+import { WS_CONFIG_TOKEN, WsConfig } from '@infrastructure/websocket/ws.config';
 import { ConfigService } from '@nestjs/config';
 import { BroadcastProvider } from '@infrastructure/websocket/broadcast/providers/broadcast.provider';
 import { IRedisProvider } from '@infrastructure/redis/providers/redis.provider';
