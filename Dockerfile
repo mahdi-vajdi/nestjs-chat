@@ -8,7 +8,7 @@ WORKDIR /app
 # ---- Dependencies Stage ----
 FROM base AS deps
 
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock .yarnrc.yml* ./
 
 RUN --mount=type=cache,target=/root/.yarn/berry/cache \
     --mount=type=cache,target=/root/.cache \
@@ -25,7 +25,7 @@ RUN yarn build
 # ---- Production Dependencies Stage ----
 FROM base AS prod-deps
 
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock .yarnrc.yml* ./
 
 RUN --mount=type=cache,target=/root/.yarn/berry/cache \
     --mount=type=cache,target=/root/.cache \
@@ -39,7 +39,7 @@ ENV NODE_ENV=${NODE_ENV}
 
 USER node
 
-COPY --chown=n  ode:node --from=prod-deps /app/node_modules ./node_modules
+COPY --chown=node:node --from=prod-deps /app/node_modules ./node_modules
 COPY --chown=node:node --from=build /app/dist ./dist
 COPY --chown=node:node package.json ./
 
