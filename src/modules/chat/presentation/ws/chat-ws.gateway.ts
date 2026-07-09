@@ -10,9 +10,9 @@ import {
 } from '@nestjs/websockets';
 import { Logger, UseGuards, UsePipes } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { AuthWsGuard } from '@auth/presentation/guards/auth-ws.guard';
+import { ChatWsGuard } from '@chat/presentation/ws/guards/chat-ws.guard';
 import { Result } from '@common/result/result';
-import { AccessTokenPayload } from '@auth/domain/types/access-token-payload.type';
+import { ValidatedTokenPayload } from '@chat/application/ports/auth-integration.port';
 import { ChatService } from '@chat/application/services/chat.service';
 import { SocketMessage } from '@common/websocket/socket-message';
 import { ValidationPipe } from '@common/validation/validation.pipe';
@@ -21,7 +21,7 @@ import {
   UserConversationListItem,
 } from '@chat/presentation/ws/dtos/get-user-conversation-list.dto';
 import { PaginationHelper } from '@common/pagination/pagination.helper';
-import { UserService } from '@user/application/services/user.service';
+import { UserIntegrationPort } from '@chat/application/ports/user-integration.port';
 import { StdResponse } from '@common/std-response/std-response';
 import { AuthWsUserId } from '@auth/presentation/decorators/auth-ws-user-id.decorator';
 import { ConversationType } from '@chat/domain/enums/conversation-type.enum';
@@ -49,7 +49,7 @@ import {
 } from '@chat/presentation/ws/dtos/get-conversation-message-list.dto';
 import { MessageSeenEvent } from '@chat/presentation/ws/events/message-seen.event';
 
-@UseGuards(AuthWsGuard)
+@UseGuards(ChatWsGuard)
 @WebSocketGateway({ namespace: 'chat', cors: '*' })
 export class ChatWsGateway
   extends BaseWsGateway
@@ -60,9 +60,9 @@ export class ChatWsGateway
   private readonly logger = new Logger(ChatWsGateway.name);
 
   constructor(
-    private readonly authWsGuard: AuthWsGuard,
+    private readonly chatWsGuard: ChatWsGuard,
     private readonly chatService: ChatService,
-    private readonly userService: UserService,
+    private readonly userIntegrationPort: UserIntegrationPort,
   ) {
     super();
   }
@@ -79,10 +79,10 @@ export class ChatWsGateway
     this.logger.debug(`New client connected. id: ${client.id}`);
 
     if (!client.data['authPromise']) {
-      client.data['authPromise'] = this.authWsGuard.authenticateUser(client);
+      client.data['authPromise'] = this.chatWsGuard.authenticateUser(client);
     }
 
-    const authRes: Result<AccessTokenPayload> =
+    const authRes: Result<ValidatedTokenPayload> =
       await client.data['authPromise'];
     if (authRes.isError()) {
       this.logger.debug(
@@ -136,8 +136,8 @@ export class ChatWsGateway
     @AuthWsUserId() authUserId: string,
   ) {
     const [currentUserRes, targetUserRes] = await Promise.all([
-      this.userService.getUserById(authUserId),
-      this.userService.getUserById(msg.data.targetUserId),
+      this.userIntegrationPort.getUserById(authUserId),
+      this.userIntegrationPort.getUserById(msg.data.targetUserId),
     ]);
     if (currentUserRes.isError()) {
       msg.ack(StdResponse.fromResult(currentUserRes));
@@ -148,7 +148,7 @@ export class ChatWsGateway
       return;
     }
 
-    const blockStatusRes = await this.userService.getBlockStatus(
+    const blockStatusRes = await this.userIntegrationPort.getBlockStatus(
       authUserId,
       targetUserRes.value.id,
     );
@@ -259,9 +259,10 @@ export class ChatWsGateway
 
     let filteredUserIds: string[] = [];
     if (msg.data.filter) {
-      const userIdsRes = await this.userService.getUserIdsByNameOrUsername(
-        msg.data.filter,
-      );
+      const userIdsRes =
+        await this.userIntegrationPort.getUserIdsByNameOrUsername(
+          msg.data.filter,
+        );
       if (userIdsRes.isError()) {
         msg.ack(StdResponse.fromResult(userIdsRes));
         return;
@@ -303,7 +304,8 @@ export class ChatWsGateway
     allUsersInvolved.push(...conversationsUserIds);
     const uniqueUserIds = Array.from(new Set(allUsersInvolved));
 
-    const usersRes = await this.userService.getUsersByIds(uniqueUserIds);
+    const usersRes =
+      await this.userIntegrationPort.getUsersByIds(uniqueUserIds);
     if (usersRes.isError()) {
       msg.ack(usersRes);
       return;
@@ -408,9 +410,9 @@ export class ChatWsGateway
     }
 
     const [currentUserRes, targetUserRes, blockStatusRes] = await Promise.all([
-      this.userService.getUserById(authUserId),
-      this.userService.getUserById(targetMember.userId),
-      this.userService.getBlockStatus(authUserId, targetMember.userId),
+      this.userIntegrationPort.getUserById(authUserId),
+      this.userIntegrationPort.getUserById(targetMember.userId),
+      this.userIntegrationPort.getBlockStatus(authUserId, targetMember.userId),
     ]);
     if (targetUserRes.isError()) {
       msg.ack(StdResponse.fromResult(targetUserRes));
@@ -530,13 +532,13 @@ export class ChatWsGateway
     );
     userIds = Array.from(new Set(userIds));
 
-    const usersRes = await this.userService.getUsersByIds(userIds);
+    const usersRes = await this.userIntegrationPort.getUsersByIds(userIds);
     if (usersRes.isError()) {
       msg.ack(StdResponse.fromResult(usersRes));
       return;
     }
 
-    const blockedUserIdsRes = await this.userService.getBlockedUsersIds(
+    const blockedUserIdsRes = await this.userIntegrationPort.getBlockedUsersIds(
       authUserId,
       usersRes.value.map((user) => user.id),
     );

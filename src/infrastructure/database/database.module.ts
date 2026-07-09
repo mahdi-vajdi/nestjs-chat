@@ -53,7 +53,7 @@ export class DatabaseModule {
           migrations: ['dist/**/postgres/migrations/**/*.js'],
           migrationsRun: env.NODE_ENV === 'development',
           migrationsTableName: 'typeorm_migrations',
-          synchronize: env.NODE_ENV === 'development',
+          synchronize: false,
           logging: postgresConfig.log,
           logger: logger,
           maxQueryExecutionTime: postgresConfig.slowQueryLimit,

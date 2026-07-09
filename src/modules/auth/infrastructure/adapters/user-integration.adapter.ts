@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import {
   UserIntegrationPort,
   AuthUser,
@@ -8,7 +8,10 @@ import { Result } from '@common/result/result';
 
 @Injectable()
 export class UserIntegrationAdapter implements UserIntegrationPort {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService,
+  ) {}
 
   async createUser(data: any): Promise<Result<AuthUser>> {
     const res = await this.userService.createUser(data);

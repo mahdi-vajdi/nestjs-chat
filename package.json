@@ -19,7 +19,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "typeorm": "typeorm-ts-node-commonjs -d ./src/infrastructure/database/postgres/configs/typeorm.config.ts",
+    "typeorm": "typeorm-ts-node-commonjs -d ./src/infrastructure/database/postgres/configs/data-source.ts",
     "migration:generate": "yarn build && yarn typeorm migration:generate",
     "migration:run": "yarn build && yarn typeorm migration:run",
     "migration:revert": "yarn typeorm migration:revert"

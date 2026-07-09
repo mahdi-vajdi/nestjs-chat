@@ -4,7 +4,7 @@ import { UserModule } from '@user/user.module';
 import { AuthHttpController } from '@auth/presentation/http/auth-http.controller';
 import { AuthHttpGuard } from '@auth/presentation/guards/auth-http.guard';
 import { AuthWsGuard } from '@auth/presentation/guards/auth-ws.guard';
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { AuthService } from '@auth/application/services/auth.service';
@@ -12,7 +12,7 @@ import { AuthDatabaseModule } from '@auth/infrastructure/postgres/auth-database.
 
 @Module({
   imports: [
-    UserModule,
+    forwardRef(() => UserModule),
     ConfigModule,
     AuthDatabaseModule,
     AuthDatabaseModule,

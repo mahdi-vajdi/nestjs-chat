@@ -31,7 +31,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ValidationPipe } from '@common/validation/validation.pipe';
-import { AuthHttpGuard } from '@auth/presentation/guards/auth-http.guard';
+import { UserHttpGuard } from '@user/presentation/http/guards/user-http.guard';
 
 @Controller('user')
 @ApiTags('User')
@@ -53,7 +53,7 @@ export class UserHttpController extends BaseHttpController {
     description: 'User is already blocked',
   })
   @Post('block')
-  @UseGuards(AuthHttpGuard)
+  @UseGuards(UserHttpGuard)
   @UsePipes(new ValidationPipe(BlockRequestBody, ['body'], 'http'))
   async block(
     @Body() body: BlockRequestBody,
@@ -87,7 +87,7 @@ export class UserHttpController extends BaseHttpController {
   })
   @ApiNoContentResponse({ type: null, description: 'User was not blocked' })
   @Delete('block/:userId')
-  @UseGuards(AuthHttpGuard)
+  @UseGuards(UserHttpGuard)
   @UsePipes(new ValidationPipe(UnblockRequestParams, ['body'], 'http'))
   async unblock(
     @Param() params: UnblockRequestParams,
