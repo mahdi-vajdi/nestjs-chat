@@ -15,7 +15,10 @@ import { ConversationMemberEntity } from '@chat/domain/models/conversation-membe
 import { GetConversationMembersOptions } from '@chat/application/ports/options/get-conversation-members.options';
 import { ConversationType } from '@chat/domain/enums/conversation-type.enum';
 import { randomUUID } from 'crypto';
-import { MessageEntity, MessageProps } from '@chat/domain/models/message.entity';
+import {
+  MessageEntity,
+  MessageProps,
+} from '@chat/domain/models/message.entity';
 import { DeletedMessage } from '@chat/infrastructure/postgres/entities/deleted-message.entity';
 import { ErrorCode } from '@common/result/error';
 import { PaginationOptions } from '@common/pagination/pagination.interface';

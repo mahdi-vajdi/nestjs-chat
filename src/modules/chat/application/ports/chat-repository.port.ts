@@ -4,7 +4,10 @@ import { GetUserConversationListOptions } from '@chat/application/ports/options/
 import { ConversationEntity } from '@chat/domain/models/conversation.model';
 import { ConversationMemberEntity } from '@chat/domain/models/conversation-member.model';
 import { GetConversationMembersOptions } from '@chat/application/ports/options/get-conversation-members.options';
-import { MessageEntity, MessageProps } from '@chat/domain/models/message.entity';
+import {
+  MessageEntity,
+  MessageProps,
+} from '@chat/domain/models/message.entity';
 import { PaginationOptions } from '@common/pagination/pagination.interface';
 
 export interface ChatDatabaseReader {

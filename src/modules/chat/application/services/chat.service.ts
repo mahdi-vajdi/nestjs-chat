@@ -3,6 +3,7 @@ import {
   CHAT_REPOSITORY_PORT,
   ChatRepositoryPort,
 } from '@chat/application/ports/chat-repository.port';
+import { UserIntegrationPort } from '@chat/application/ports/user-integration.port';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { Result } from '@common/result/result';
 import {
@@ -14,7 +15,10 @@ import { ConversationEntity } from '@chat/domain/models/conversation.model';
 import { PaginationHelper } from '@common/pagination/pagination.helper';
 import { ConversationType } from '@chat/domain/enums/conversation-type.enum';
 import { ErrorCode } from '@common/result/error';
-import { MessageEntity, MessageProps } from '@chat/domain/models/message.entity';
+import {
+  MessageEntity,
+  MessageProps,
+} from '@chat/domain/models/message.entity';
 
 @Injectable()
 export class ChatService {
@@ -23,6 +27,7 @@ export class ChatService {
   constructor(
     @Inject(CHAT_REPOSITORY_PORT)
     private readonly chatDatabaseProvider: ChatRepositoryPort,
+    private readonly userIntegrationPort: UserIntegrationPort,
   ) {}
 
   @TryCatch
@@ -30,6 +35,24 @@ export class ChatService {
     userId: string,
     targetUserId: string,
   ): Promise<Result<ConversationEntity>> {
+    const userExistsRes =
+      await this.userIntegrationPort.doesUserExist(targetUserId);
+    if (userExistsRes.isError()) return Result.error(userExistsRes.error);
+    if (!userExistsRes.value) {
+      return Result.error('Target user does not exist', ErrorCode.NOT_FOUND);
+    }
+
+    const blockRelationRes = await this.userIntegrationPort.hasBlockRelation(
+      userId,
+      targetUserId,
+    );
+    if (blockRelationRes.isError()) return Result.error(blockRelationRes.error);
+    if (blockRelationRes.value) {
+      return Result.error(
+        'Cannot create conversation due to a block relation',
+        ErrorCode.VALIDATION_FAILURE,
+      );
+    }
     const conversationExistsRes =
       await this.chatDatabaseProvider.conversationExists(userId, targetUserId);
     if (conversationExistsRes.isError()) {

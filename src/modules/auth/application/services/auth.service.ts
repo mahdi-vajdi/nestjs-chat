@@ -14,7 +14,10 @@ import {
   AUTH_REPOSITORY_PORT,
   AuthRepositoryPort,
 } from '@auth/application/ports/auth-repository.port';
-import { AUTH_CONFIG_TOKEN, IAuthConfig } from '@auth/infrastructure/configs/auth.config';
+import {
+  AUTH_CONFIG_TOKEN,
+  IAuthConfig,
+} from '@auth/infrastructure/configs/auth.config';
 import { RefreshTokenPayload } from '@auth/domain/types/refresh-token-payload.type';
 import { SignRefreshTokenOutput } from '@auth/application/services/dtos/sign-refresh-token.dto';
 

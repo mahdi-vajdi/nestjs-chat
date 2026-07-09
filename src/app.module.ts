@@ -33,7 +33,7 @@ import { DatabaseType } from '@infrastructure/database/database-type.enum';
     }),
     DatabaseModule.register(DatabaseType.POSTGRES),
     LoggerModule,
-        RedisModule,
+    RedisModule,
     BroadcastModule,
     UserModule,
     AuthModule,
