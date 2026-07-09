@@ -1,5 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-
+import { UserIntegrationPort } from '@auth/application/ports/user-integration.port';
+import {
+  SignupRequestBody,
+  SignupResponse,
+} from '@auth/presentation/http/dtos/signup.dto';
+import {
+  SigninRequestBody,
+  SigninResponse,
+} from '@auth/presentation/http/dtos/signin.dto';
+import { ErrorCode } from '@common/result/error';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
@@ -9,7 +18,6 @@ import { AccessTokenPayload } from '../../domain/types/access-token-payload.type
 import { RefreshTokensOutput } from './dtos/refresh-tokens.dto';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidV4 } from 'uuid';
-import { ErrorCode } from '@common/result/error';
 import {
   AUTH_REPOSITORY_PORT,
   AuthRepositoryPort,
@@ -33,8 +41,77 @@ export class AuthService {
     @Inject(AUTH_REPOSITORY_PORT)
     private readonly authDatabaseProvider: AuthRepositoryPort,
     private readonly jwtService: JwtService,
+    private readonly userIntegrationPort: UserIntegrationPort,
   ) {
     this.authConfig = configService.get<IAuthConfig>(AUTH_CONFIG_TOKEN);
+  }
+
+  async signup(body: SignupRequestBody): Promise<Result<SignupResponse>> {
+    const createUserRes = await this.userIntegrationPort.createUser({
+      email: body.email,
+      username: null,
+      password: body.password,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      avatar: null,
+      role: 'USER',
+    });
+
+    if (createUserRes.isError()) {
+      return Result.error(createUserRes.error);
+    }
+
+    const createAuthTokensRes = await this.createTokens(
+      createUserRes.value.id,
+      'USER',
+    );
+    if (createAuthTokensRes.isError()) {
+      return Result.error(
+        'Failed to create token; please sign in again',
+        ErrorCode.INTERNAL,
+      );
+    }
+
+    return Result.ok({
+      id: createUserRes.value.id,
+      accessToken: createAuthTokensRes.value.accessToken,
+      refreshToken: createAuthTokensRes.value.refreshToken,
+      createdAt: createUserRes.value.createdAt.toISOString(),
+    });
+  }
+
+  async signin(body: SigninRequestBody): Promise<Result<SigninResponse>> {
+    const validateRes = await this.userIntegrationPort.validatePassword(
+      body.property,
+      body.password,
+    );
+    if (validateRes.isError()) {
+      if (validateRes.error.code == ErrorCode.INTERNAL) {
+        return Result.error('Something went wrong. Please try again.');
+      }
+      return Result.error('Invalid Credentials', ErrorCode.UNAUTHENTICATED);
+    }
+
+    const tokensRes = await this.createTokens(
+      validateRes.value.id,
+      validateRes.value.role,
+    );
+    if (tokensRes.isError()) {
+      return Result.error(tokensRes.error);
+    }
+
+    return Result.ok({
+      user: {
+        id: validateRes.value.id,
+        firstName: validateRes.value.firstName,
+        lastName: validateRes.value.lastName,
+        createdAt: validateRes.value.createdAt.toISOString(),
+      },
+      tokens: {
+        accessToken: tokensRes.value.accessToken,
+        refreshToken: tokensRes.value.refreshToken,
+      },
+    });
   }
 
   @TryCatch
