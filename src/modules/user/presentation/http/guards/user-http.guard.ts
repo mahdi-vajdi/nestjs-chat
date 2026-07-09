@@ -1,4 +1,3 @@
-
 import {
   CanActivate,
   ExecutionContext,
@@ -24,7 +23,8 @@ export class UserHttpGuard implements CanActivate {
       throw new UnauthorizedException('No access token was provided.');
     }
 
-    const verifyTokenRes = await this.authIntegrationPort.verifyToken(accessToken);
+    const verifyTokenRes =
+      await this.authIntegrationPort.verifyToken(accessToken);
     if (verifyTokenRes.isError()) {
       this.logger.warn(
         `Error verifying access token: ${verifyTokenRes.error.message}`,

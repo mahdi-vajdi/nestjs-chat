@@ -13,7 +13,7 @@ import {
   ValidatedTokenPayload,
 } from '@chat/application/ports/auth-integration.port';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
-import { ClientData } from '@infrastructure/websocket/client-data.interface';
+import { ClientData } from '@common/websocket/interfaces/client-data.interface';
 
 @Injectable()
 export class ChatWsGuard implements CanActivate {

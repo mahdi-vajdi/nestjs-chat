@@ -23,7 +23,7 @@ import {
 import { PaginationHelper } from '@common/pagination/pagination.helper';
 import { UserIntegrationPort } from '@chat/application/ports/user-integration.port';
 import { StdResponse } from '@common/std-response/std-response';
-import { AuthWsUserId } from '@auth/presentation/decorators/auth-ws-user-id.decorator';
+import { CurrentWsUserId } from '@common/websocket/decorators/current-ws-user-id.decorator';
 import { ConversationType } from '@chat/domain/enums/conversation-type.enum';
 import {
   CreateConversationRequest,
@@ -133,7 +133,7 @@ export class ChatWsGateway
   async createDirectConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() msg: SocketMessage<CreateConversationRequest>,
-    @AuthWsUserId() authUserId: string,
+    @CurrentWsUserId() authUserId: string,
   ) {
     const [currentUserRes, targetUserRes] = await Promise.all([
       this.userIntegrationPort.getUserById(authUserId),
@@ -253,7 +253,7 @@ export class ChatWsGateway
   @UsePipes(new ValidationPipe(GetUserConversationListRequest, ['body'], 'ws'))
   async getUserConversationList(
     @MessageBody() msg: SocketMessage<GetUserConversationListRequest>,
-    @AuthWsUserId() authUserId: string,
+    @CurrentWsUserId() authUserId: string,
   ): Promise<void> {
     const pagination = PaginationHelper.parse(msg.data.page, msg.data.pageSize);
 
@@ -391,7 +391,7 @@ export class ChatWsGateway
   async createMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() msg: SocketMessage<CreateMessageRequest>,
-    @AuthWsUserId() authUserId: string,
+    @CurrentWsUserId() authUserId: string,
   ): Promise<void> {
     const conversationRes = await this.chatService.getUserConversation(
       msg.data.conversationId,
@@ -500,7 +500,7 @@ export class ChatWsGateway
   async getConversationMessageList(
     @ConnectedSocket() client: Socket,
     @MessageBody() msg: SocketMessage<GetConversationMessageListRequest>,
-    @AuthWsUserId() authUserId: string,
+    @CurrentWsUserId() authUserId: string,
   ) {
     const conversationRes = await this.chatService.getUserConversation(
       msg.data.conversationId,

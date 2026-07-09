@@ -14,7 +14,7 @@ import {
   BlockRequestBody,
   BlockResponse,
 } from '@user/presentation/http/dtos/block.dto';
-import { AuthHttpUserId } from '@auth/presentation/decorators/auth-http-user-id.decorator';
+import { CurrentUserId } from '@common/http/decorators/current-user-id.decorator';
 import { Response } from 'express';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
@@ -58,7 +58,7 @@ export class UserHttpController extends BaseHttpController {
   async block(
     @Body() body: BlockRequestBody,
     @Res() response: Response,
-    @AuthHttpUserId() authUserId: string,
+    @CurrentUserId() authUserId: string,
   ): Promise<void> {
     const res = await this.userService.block(authUserId, body.targetUserId);
     if (res.isError()) {
@@ -92,7 +92,7 @@ export class UserHttpController extends BaseHttpController {
   async unblock(
     @Param() params: UnblockRequestParams,
     @Res() response: Response,
-    @AuthHttpUserId() authUserId: string,
+    @CurrentUserId() authUserId: string,
   ): Promise<void> {
     const res = await this.userService.unblock(authUserId, params.targetUserId);
     if (res.isError()) {

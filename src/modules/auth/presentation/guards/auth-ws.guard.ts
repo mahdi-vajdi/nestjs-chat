@@ -11,7 +11,7 @@ import { ErrorCode } from '@common/result/error';
 import { AuthService } from '@auth/application/services/auth.service';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { AccessTokenPayload } from '@auth/domain/types/access-token-payload.type';
-import { ClientData } from '@infrastructure/websocket/client-data.interface';
+import { ClientData } from '@common/websocket/interfaces/client-data.interface';
 
 @Injectable()
 export class AuthWsGuard implements CanActivate {

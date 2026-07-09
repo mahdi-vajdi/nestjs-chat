@@ -1,17 +1,15 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { ClientData } from '@infrastructure/websocket/client-data.interface';
-import { AccessTokenPayload } from '@auth/domain/types/access-token-payload.type';
+import { ClientData } from '@common/websocket/interfaces/client-data.interface';
 
-export const AuthWsUserId = createParamDecorator(
+export const CurrentWsUserId = createParamDecorator(
   (data: unknown, context: ExecutionContext) => {
     const clientData = context
       .switchToWs()
       .getClient<Socket<any, any, any, ClientData>>().data;
     const wsData = context.switchToWs().getData();
-    const authUser =
-      clientData.authUser || (wsData['authUser'] as AccessTokenPayload);
+    const authUser = clientData.authUser || wsData['authUser'];
 
-    return authUser.sub;
+    return authUser?.sub;
   },
 );

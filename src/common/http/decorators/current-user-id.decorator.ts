@@ -1,12 +1,11 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
-import { AccessTokenPayload } from '@auth/domain/types/access-token-payload.type';
 
-export const AuthHttpUserId = createParamDecorator(
+export const CurrentUserId = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest<Request>();
-    const authUser: AccessTokenPayload = request['authUser'];
+    const authUser = request['authUser'] as { sub: string } | undefined;
 
-    return authUser.sub;
+    return authUser?.sub;
   },
 );

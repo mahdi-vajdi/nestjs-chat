@@ -10,7 +10,11 @@ import { UserService } from '@user/application/services/user.service';
 @Module({
   imports: [UserDatabaseModule, forwardRef(() => AuthModule)],
   controllers: [UserHttpController],
-  providers: [UserService, UserHttpGuard, { provide: AuthIntegrationPort, useClass: AuthIntegrationAdapter }],
+  providers: [
+    UserService,
+    UserHttpGuard,
+    { provide: AuthIntegrationPort, useClass: AuthIntegrationAdapter },
+  ],
   exports: [UserService],
 })
 export class UserModule {}

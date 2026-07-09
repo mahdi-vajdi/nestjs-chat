@@ -1,4 +1,3 @@
-
 import { Result } from '@common/result/result';
 
 export interface ValidatedTokenPayload {
