@@ -15,6 +15,7 @@ import { CreateDirectConversationHandler } from './application/commands/create-d
 import { CreateMessageHandler } from './application/commands/create-message/create-message.handler';
 import { DeleteConversationHandler } from './application/commands/delete-conversation/delete-conversation.handler';
 import { MarkConversationAsReadCommandHandler } from './application/commands/mark-conversation-as-read/mark-conversation-as-read.handler';
+import { MessageCreatedWsEventHandler } from './presentation/ws/events/handlers/message-created.ws-handler';
 import { GetUserConversationListHandler } from './application/queries/get-user-conversation-list/get-user-conversation-list.handler';
 import { GetUserConversationIdsHandler } from './application/queries/get-user-conversation-ids/get-user-conversation-ids.handler';
 import { GetUserConversationHandler } from './application/queries/get-user-conversation/get-user-conversation.handler';
@@ -26,6 +27,8 @@ const CommandHandlers = [
   DeleteConversationHandler,
   MarkConversationAsReadCommandHandler,
 ];
+
+const EventHandlers = [MessageCreatedWsEventHandler];
 
 const QueryHandlers = [
   GetUserConversationListHandler,
@@ -41,6 +44,7 @@ const QueryHandlers = [
     ChatWsGuard,
     ...CommandHandlers,
     ...QueryHandlers,
+    ...EventHandlers,
     { provide: AuthIntegrationPort, useClass: AuthIntegrationAdapter },
     {
       provide: UserIntegrationPort,

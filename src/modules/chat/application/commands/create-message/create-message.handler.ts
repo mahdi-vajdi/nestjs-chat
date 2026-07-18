@@ -24,12 +24,14 @@ export class CreateMessageHandler implements ICommandHandler<
   async execute(command: CreateMessageCommand): Promise<Result<MessageEntity>> {
     const { text, type, senderId, conversationId, deletedForUserIds } = command;
 
-    const message = MessageEntity.create(
-      text,
-      type,
-      senderId,
-      conversationId,
-      deletedForUserIds,
+    const message = this.publisher.mergeObjectContext(
+      MessageEntity.create(
+        text,
+        type,
+        senderId,
+        conversationId,
+        deletedForUserIds,
+      ),
     );
 
     const saveRes = await this.commandRepo.saveMessage(message);
@@ -37,10 +39,7 @@ export class CreateMessageHandler implements ICommandHandler<
       return Result.error(saveRes.error);
     }
 
-    // Note: The websocket broadcast requires emitting domain events here if we want to do it in an event handler.
-    // However, since MessageEntity is not currently an AggregateRoot, we can't mergeObjectContext unless we change it.
-    // Given the user's constraints, we can either make MessageEntity an AggregateRoot or just let the gateway broadcast.
-    // For now, we return the saved entity and let the caller handle it.
+    message.commit();
 
     this.logger.log(`Created message: ${saveRes.value.id}`);
 

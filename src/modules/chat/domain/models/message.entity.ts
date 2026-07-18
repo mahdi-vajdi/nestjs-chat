@@ -1,22 +1,21 @@
 import { MessageType } from '@chat/domain/enums/chat-type.enum';
-import { IdentifiableEntity } from '@common/entities/identifiable-entity.interface';
-import { TimestampedEntity } from '@common/entities/timestamped-entity.interface';
 import { SoftDeletableEntity } from '@common/entities/soft-deletable-entity.interface';
 import { ConversationEntity } from '@chat/domain/models/conversation.model';
 import { ConversationMemberEntity } from '@chat/domain/models/conversation-member.model';
 import { v7 as uuidv7 } from 'uuid';
 
+import { AggregateRoot } from '@common/domain/aggregate-root';
+import { MessageCreatedDomainEvent } from '@chat/domain/events/message-created.domain-event';
+
 export class MessageEntity
-  implements IdentifiableEntity, TimestampedEntity, SoftDeletableEntity
+  extends AggregateRoot<string>
+  implements SoftDeletableEntity
 {
-  private _id: string;
   private _text: string;
   private _type: MessageType;
   private _senderId: string;
   private _conversationId: string;
   private _deletedForUserIds: string[];
-  private _createdAt: Date;
-  private _updatedAt: Date;
   private _deletedAt?: Date;
 
   // Transient properties
@@ -25,20 +24,22 @@ export class MessageEntity
 
   private constructor(
     id: string,
+    createdAt: Date,
+    updatedAt: Date,
     text: string,
     type: MessageType,
     senderId: string,
     conversationId: string,
     deletedForUserIds: string[] = [],
+    deletedAt?: Date,
   ) {
-    this._id = id;
+    super(id, createdAt, updatedAt);
     this._text = text;
     this._type = type;
     this._senderId = senderId;
     this._conversationId = conversationId;
     this._deletedForUserIds = deletedForUserIds;
-    this._createdAt = new Date();
-    this._updatedAt = new Date();
+    this._deletedAt = deletedAt;
   }
 
   public static create(
@@ -48,14 +49,31 @@ export class MessageEntity
     conversationId: string,
     deletedForUserIds: string[] = [],
   ): MessageEntity {
-    return new MessageEntity(
-      uuidv7(),
+    const id = uuidv7();
+    const createdAt = new Date();
+    const message = new MessageEntity(
+      id,
+      createdAt,
+      createdAt,
       text,
       type,
       senderId,
       conversationId,
       deletedForUserIds,
     );
+
+    message.apply(
+      new MessageCreatedDomainEvent(
+        id,
+        conversationId,
+        senderId,
+        text,
+        deletedForUserIds,
+        createdAt,
+      ),
+    );
+
+    return message;
   }
 
   public static reconstruct(
@@ -69,23 +87,19 @@ export class MessageEntity
     updatedAt: Date,
     deletedAt?: Date,
   ): MessageEntity {
-    const message = new MessageEntity(
+    return new MessageEntity(
       id,
+      createdAt,
+      updatedAt,
       text,
       type,
       senderId,
       conversationId,
       deletedForUserIds,
+      deletedAt,
     );
-    message._createdAt = createdAt;
-    message._updatedAt = updatedAt;
-    message._deletedAt = deletedAt;
-    return message;
   }
 
-  public get id(): string {
-    return this._id;
-  }
   public get text(): string {
     return this._text;
   }
@@ -101,12 +115,6 @@ export class MessageEntity
   public get deletedForUserIds(): string[] {
     return [...this._deletedForUserIds];
   }
-  public get createdAt(): Date {
-    return this._createdAt;
-  }
-  public get updatedAt(): Date {
-    return this._updatedAt;
-  }
   public get deletedAt(): Date | undefined {
     return this._deletedAt;
   }
@@ -114,15 +122,17 @@ export class MessageEntity
   public deleteForUser(userId: string): void {
     if (!this._deletedForUserIds.includes(userId)) {
       this._deletedForUserIds.push(userId);
-      this._updatedAt = new Date();
+      this.updatedAt = new Date();
     }
   }
 
   public softDelete(): void {
     this._deletedAt = new Date();
+    this.updatedAt = new Date();
   }
 
   public restore(): void {
     this._deletedAt = undefined;
+    this.updatedAt = new Date();
   }
 }

@@ -1,23 +1,19 @@
-import { IdentifiableEntity } from '@common/entities/identifiable-entity.interface';
-import { TimestampedEntity } from '@common/entities/timestamped-entity.interface';
 import { SoftDeletableEntity } from '@common/entities/soft-deletable-entity.interface';
 import { MessageEntity } from '@chat/domain/models/message.entity';
 import { ConversationType } from '@chat/domain/enums/conversation-type.enum';
 import { ConversationMemberEntity } from '@chat/domain/models/conversation-member.model';
-import { AggregateRoot as CqrsAggregateRoot } from '@nestjs/cqrs';
 import { v7 as uuidv7 } from 'uuid';
 
+import { AggregateRoot } from '@common/domain/aggregate-root';
+
 export class ConversationEntity
-  extends CqrsAggregateRoot
-  implements IdentifiableEntity, TimestampedEntity, SoftDeletableEntity
+  extends AggregateRoot<string>
+  implements SoftDeletableEntity
 {
-  private _id: string;
   private _title: string | null;
   private _picture: string | null;
   private _identifier: string | null;
   private _type: ConversationType;
-  private _createdAt: Date;
-  private _updatedAt: Date;
   private _deletedAt?: Date;
 
   // Domain associations
@@ -27,19 +23,20 @@ export class ConversationEntity
 
   private constructor(
     id: string,
+    createdAt: Date,
+    updatedAt: Date,
     type: ConversationType,
     title: string | null = null,
     picture: string | null = null,
     identifier: string | null = null,
+    deletedAt?: Date,
   ) {
-    super();
-    this._id = id;
+    super(id, createdAt, updatedAt);
     this._type = type;
     this._title = title;
     this._picture = picture;
     this._identifier = identifier;
-    this._createdAt = new Date();
-    this._updatedAt = new Date();
+    this._deletedAt = deletedAt;
   }
 
   public static createDirect(
@@ -49,6 +46,8 @@ export class ConversationEntity
     const id = uuidv7();
     const conversation = new ConversationEntity(
       id,
+      new Date(),
+      new Date(),
       ConversationType.DIRECT,
       null,
       null,
@@ -75,22 +74,18 @@ export class ConversationEntity
     updatedAt: Date,
     deletedAt?: Date,
   ): ConversationEntity {
-    const conversation = new ConversationEntity(
+    return new ConversationEntity(
       id,
+      createdAt,
+      updatedAt,
       type,
       title,
       picture,
       identifier,
+      deletedAt,
     );
-    conversation._createdAt = createdAt;
-    conversation._updatedAt = updatedAt;
-    conversation._deletedAt = deletedAt;
-    return conversation;
   }
 
-  public get id(): string {
-    return this._id;
-  }
   public get type(): ConversationType {
     return this._type;
   }
@@ -102,12 +97,6 @@ export class ConversationEntity
   }
   public get identifier(): string | null {
     return this._identifier;
-  }
-  public get createdAt(): Date {
-    return this._createdAt;
-  }
-  public get updatedAt(): Date {
-    return this._updatedAt;
   }
   public get deletedAt(): Date | undefined {
     return this._deletedAt;
@@ -122,9 +111,11 @@ export class ConversationEntity
 
   public softDelete(): void {
     this._deletedAt = new Date();
+    this.updatedAt = new Date();
   }
 
   public restore(): void {
     this._deletedAt = undefined;
+    this.updatedAt = new Date();
   }
 }

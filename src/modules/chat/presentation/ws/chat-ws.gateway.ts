@@ -46,10 +46,6 @@ import {
   CreateMessageResponseResponse,
 } from '@chat/presentation/ws/dtos/create-message.dto';
 import { StdStatus } from '@common/std-response/std-status';
-import {
-  UserMessageCreated,
-  UserMessageCreatedEvent,
-} from '@chat/presentation/ws/events/message-created.event';
 import { MarkConversationAsReadCommand } from '@chat/application/commands/mark-conversation-as-read/mark-conversation-as-read.command';
 import {
   GetConversationMessageListRequest,
@@ -460,34 +456,6 @@ export class ChatWsGateway
       msg.ack(StdResponse.fromResult(createMessageRes));
       return;
     }
-
-    let rooms = [`user-${targetUserRes.value.id}`];
-    rooms = rooms.filter(
-      (x) => !createMessageRes.value.deletedForUserIds.includes(x),
-    );
-
-    await this.broadcast<UserMessageCreated>(
-      client,
-      rooms,
-      new UserMessageCreatedEvent({
-        id: createMessageRes.value.id,
-        seen: false,
-        createdAt: createMessageRes.value.createdAt.toISOString(),
-        user: {
-          id: currentUserRes.value.id,
-          username: currentUserRes.value.username,
-          name: `${currentUserRes.value.firstName} ${currentUserRes.value.lastName}`,
-          avatar: currentUserRes.value.avatar,
-        },
-        content: createMessageRes.value.text,
-        conversation: {
-          id: conversationRes.value.id,
-          name: conversationRes.value.id,
-          avatar: conversationRes.value.picture,
-          username: conversationRes.value.identifier,
-        },
-      }),
-    );
 
     msg.ack(
       StdResponse.success<CreateMessageResponseResponse>({
