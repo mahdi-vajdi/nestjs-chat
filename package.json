@@ -29,6 +29,7 @@
     "@nestjs/common": "^11.1.27",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.1.27",
+    "@nestjs/cqrs": "^11.0.3",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.1.27",
     "@nestjs/platform-socket.io": "^11.1.27",

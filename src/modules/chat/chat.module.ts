@@ -9,9 +9,10 @@ import { ChatService } from '@chat/application/services/chat.service';
 import { UserModule } from '@user/user.module';
 import { UserIntegrationPort } from '@chat/application/ports/user-integration.port';
 import { UserIntegrationAdapter } from '@chat/infrastructure/adapters/user-integration.adapter';
+import { CqrsModule } from '@nestjs/cqrs';
 
 @Module({
-  imports: [ChatDatabaseModule, UserModule, AuthModule],
+  imports: [CqrsModule, ChatDatabaseModule, UserModule, AuthModule],
   providers: [
     ChatService,
     ChatWsGateway,

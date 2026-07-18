@@ -1,5 +1,5 @@
 import { Result } from '@common/result/result';
-import { UserEntity, UserProps } from '@user/domain/models/user.model';
+import { UserEntity } from '@user/domain/models/user.model';
 import { UserExistsOptions } from '@user/application/ports/options/user-exists.options';
 
 interface IUserDatabaseReader {
@@ -29,7 +29,7 @@ interface IUserDatabaseReader {
 }
 
 interface IUserDatabaseWriter {
-  createUser(user: UserProps): Promise<Result<UserEntity>>;
+  save(user: UserEntity): Promise<Result<UserEntity>>;
 
   block(blockerId: string, blockedId: string): Promise<Result<boolean>>;
 

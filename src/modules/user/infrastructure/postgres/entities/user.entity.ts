@@ -5,16 +5,16 @@ import {
   Entity,
   Index,
   OneToMany,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserRole } from '@user/domain/enums/user-role.enum';
-import { UserEntity, UserProps } from '@user/domain/models/user.model';
+import { UserEntity } from '@user/domain/models/user.model';
 import { UserBlock } from '@user/infrastructure/postgres/entities/user-block.entity';
 
 @Entity({ schema: 'user', name: 'users' })
 export class User {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryColumn('uuid')
   id: string;
 
   @Column({ type: 'varchar', length: 150 })
@@ -49,24 +49,45 @@ export class User {
   @DeleteDateColumn({ type: 'timestamp' })
   deleted_at: Date | null;
 
-  @OneToMany(() => UserBlock, (ub) => ub.blocked)
+  // The users I have blocked (I am the blocker)
+  @OneToMany(() => UserBlock, (ub) => ub.blocker, { cascade: true })
   blockedUsers: UserBlock[];
 
-  @OneToMany(() => UserBlock, (ub) => ub.blocker)
+  // The users who have blocked me (I am the blocked)
+  @OneToMany(() => UserBlock, (ub) => ub.blocked)
   blockerUsers: UserBlock[];
 
-  static fromProps(props: UserProps): User {
-    if (!props) return null;
+  static toOrm(userEntity: UserEntity): User {
+    if (!userEntity) return null;
 
     const user = new User();
 
-    user.email = props.email;
-    user.username = props.username;
-    user.password = props.password;
-    user.first_name = props.firstName;
-    user.last_name = props.lastName;
-    user.role = props.role;
-    user.avatar = props.avatar;
+    // TypeORM handles bigints as strings, if it's undefined (new entity), we leave it
+    if (userEntity.id) {
+      user.id = userEntity.id;
+    }
+
+    user.email = userEntity.email;
+    user.username = userEntity.username;
+    user.password = userEntity.password;
+    user.first_name = userEntity.firstName;
+    user.last_name = userEntity.lastName;
+    user.role = userEntity.role;
+    user.avatar = userEntity.avatar;
+    user.created_at = userEntity.createdAt;
+    user.updated_at = userEntity.updatedAt;
+    user.deleted_at = userEntity.deletedAt;
+
+    if (userEntity.blockedUsers && userEntity.blockedUsers.length > 0) {
+      user.blockedUsers = userEntity.blockedUsers.map((blockedUser) => {
+        const ub = new UserBlock();
+        ub.blocker_id = userEntity.id;
+        ub.blocked_id = blockedUser.id!;
+        return ub;
+      });
+    } else {
+      user.blockedUsers = [];
+    }
 
     return user;
   }
@@ -74,19 +95,19 @@ export class User {
   static toEntity(user: User): UserEntity {
     if (!user) return null;
 
-    return {
-      id: user.id,
-      role: user.role,
-      email: user.email,
-      username: user.username,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      avatar: user.avatar,
-      password: user.password,
-      createdAt: user.created_at,
-      updatedAt: user.updated_at,
-      deletedAt: user.deleted_at,
-      blockedUsers: [],
-    };
+    return new UserEntity(
+      user.id,
+      user.created_at,
+      user.updated_at,
+      user.email,
+      user.username,
+      user.password,
+      user.first_name,
+      user.last_name,
+      user.role,
+      user.avatar,
+      [], // blockedUsers
+      user.deleted_at,
+    );
   }
 }

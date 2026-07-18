@@ -7,7 +7,7 @@ import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { IUserRepositoryPort } from '@user/application/ports/user-repository.port';
-import { UserEntity, UserProps } from '@user/domain/models/user.model';
+import { UserEntity } from '@user/domain/models/user.model';
 import { UserExistsOptions } from '@user/application/ports/options/user-exists.options';
 import { UserBlock } from '@user/infrastructure/postgres/entities/user-block.entity';
 
@@ -23,10 +23,10 @@ export class UserPostgresRepository implements IUserRepositoryPort {
   ) {}
 
   @TryCatch
-  async createUser(user: UserProps): Promise<Result<UserEntity>> {
-    const res = await this.userRepository.save(User.fromProps(user));
+  async save(userEntity: UserEntity): Promise<Result<UserEntity>> {
+    const res = await this.userRepository.save(User.toOrm(userEntity));
 
-    if (!res) Result.error('Could not create user', ErrorCode.INTERNAL);
+    if (!res) Result.error('Could not save user', ErrorCode.INTERNAL);
 
     return Result.ok(User.toEntity(res));
   }

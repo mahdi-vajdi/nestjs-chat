@@ -1,10 +1,10 @@
 import { UserIntegrationPort } from '@auth/application/ports/user-integration.port';
 import { UserIntegrationAdapter } from '@auth/infrastructure/adapters/user-integration.adapter';
-import { UserModule } from '@user/user.module';
 import { AuthHttpController } from '@auth/presentation/http/auth-http.controller';
 import { AuthHttpGuard } from '@auth/presentation/guards/auth-http.guard';
 import { AuthWsGuard } from '@auth/presentation/guards/auth-ws.guard';
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { AuthService } from '@auth/application/services/auth.service';
@@ -12,7 +12,7 @@ import { AuthDatabaseModule } from '@auth/infrastructure/postgres/auth-database.
 
 @Module({
   imports: [
-    forwardRef(() => UserModule),
+    CqrsModule,
     ConfigModule,
     AuthDatabaseModule,
     AuthDatabaseModule,

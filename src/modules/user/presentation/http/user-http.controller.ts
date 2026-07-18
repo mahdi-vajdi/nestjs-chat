@@ -9,11 +9,13 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { BaseHttpController } from '@common/http/base-http-controller';
-import { UserService } from '@user/application/services/user.service';
 import {
   BlockRequestBody,
   BlockResponse,
 } from '@user/presentation/http/dtos/block.dto';
+import { CommandBus } from '@nestjs/cqrs';
+import { BlockUserCommand } from '@user/application/commands/block-user/block-user.command';
+import { UnblockUserCommand } from '@user/application/commands/unblock-user/unblock-user.command';
 import { CurrentUserId } from '@common/http/decorators/current-user-id.decorator';
 import { Response } from 'express';
 import { Result } from '@common/result/result';
@@ -36,7 +38,7 @@ import { UserHttpGuard } from '@user/presentation/http/guards/user-http.guard';
 @Controller('user')
 @ApiTags('User')
 export class UserHttpController extends BaseHttpController {
-  constructor(private readonly userService: UserService) {
+  constructor(private readonly commandBus: CommandBus) {
     super();
   }
 
@@ -60,7 +62,9 @@ export class UserHttpController extends BaseHttpController {
     @Res() response: Response,
     @CurrentUserId() authUserId: string,
   ): Promise<void> {
-    const res = await this.userService.block(authUserId, body.targetUserId);
+    const res = await this.commandBus.execute(
+      new BlockUserCommand(authUserId, body.targetUserId),
+    );
     if (res.isError()) {
       this.respond(response, res);
       return;
@@ -94,7 +98,9 @@ export class UserHttpController extends BaseHttpController {
     @Res() response: Response,
     @CurrentUserId() authUserId: string,
   ): Promise<void> {
-    const res = await this.userService.unblock(authUserId, params.targetUserId);
+    const res = await this.commandBus.execute(
+      new UnblockUserCommand(authUserId, params.targetUserId),
+    );
     if (res.isError()) {
       this.respond(response, res);
       return;

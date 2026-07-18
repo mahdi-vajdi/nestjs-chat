@@ -12,13 +12,13 @@ import { User } from '@user/infrastructure/postgres/entities/user.entity';
 
 @Entity({ schema: 'user', name: 'user_blocks' })
 export class UserBlock {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'uuid' })
   blocker_id: string;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'uuid' })
   blocked_id: string;
 
   @CreateDateColumn({ type: 'timestamp' })

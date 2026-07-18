@@ -1,20 +1,31 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
-  UserIntegrationPort,
   AuthUser,
+  UserIntegrationPort,
 } from '@auth/application/ports/user-integration.port';
-import { UserService } from '@user/application/services/user.service';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { CreateUserCommand } from '@user/application/commands/create-user/create-user.command';
+import { ValidatePasswordQuery } from '@user/application/queries/validate-password/validate-password.query';
 import { Result } from '@common/result/result';
 
 @Injectable()
 export class UserIntegrationAdapter implements UserIntegrationPort {
   constructor(
-    @Inject(forwardRef(() => UserService))
-    private readonly userService: UserService,
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
   ) {}
 
   async createUser(data: any): Promise<Result<AuthUser>> {
-    const res = await this.userService.createUser(data);
+    const res = await this.commandBus.execute(
+      new CreateUserCommand(
+        data.email,
+        data.username,
+        data.password,
+        data.firstName,
+        data.lastName,
+        data.avatar,
+      ),
+    );
     if (res.isError()) return Result.error(res.error);
     return Result.ok({
       id: res.value.id,
@@ -29,7 +40,9 @@ export class UserIntegrationAdapter implements UserIntegrationPort {
     property: string,
     password: string,
   ): Promise<Result<AuthUser>> {
-    const res = await this.userService.validatePassword(property, password);
+    const res = await this.queryBus.execute(
+      new ValidatePasswordQuery(property, password),
+    );
     if (res.isError()) return Result.error(res.error);
     return Result.ok({
       id: res.value.id,

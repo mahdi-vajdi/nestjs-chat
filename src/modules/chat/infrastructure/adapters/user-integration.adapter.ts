@@ -4,16 +4,21 @@ import {
   ChatUser,
   BlockStatus,
 } from '@chat/application/ports/user-integration.port';
-import { UserService } from '@user/application/services/user.service';
+import { QueryBus } from '@nestjs/cqrs';
+import { GetUserByIdQuery } from '@user/application/queries/get-user-by-id/get-user-by-id.query';
+import { GetBlockStatusQuery } from '@user/application/queries/get-block-status/get-block-status.query';
+import { GetUsersByIdsQuery } from '@user/application/queries/get-users-by-ids/get-users-by-ids.query';
+import { GetUserIdsByNameOrUsernameQuery } from '@user/application/queries/get-user-ids-by-name-or-username/get-user-ids-by-name-or-username.query';
+import { GetBlockedUsersIdsQuery } from '@user/application/queries/get-blocked-users-ids/get-blocked-users-ids.query';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
 
 @Injectable()
 export class UserIntegrationAdapter implements UserIntegrationPort {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly queryBus: QueryBus) {}
 
   async doesUserExist(userId: string): Promise<Result<boolean>> {
-    const userRes = await this.userService.getUserById(userId);
+    const userRes = await this.queryBus.execute(new GetUserByIdQuery(userId));
     if (userRes.isError()) {
       if (
         userRes.error.message.includes('not found') ||
@@ -30,7 +35,9 @@ export class UserIntegrationAdapter implements UserIntegrationPort {
     userA: string,
     userB: string,
   ): Promise<Result<boolean>> {
-    const res = await this.userService.getBlockStatus(userA, userB);
+    const res = await this.queryBus.execute(
+      new GetBlockStatusQuery(userA, userB),
+    );
     if (res.isError()) {
       return Result.error(res.error);
     }
@@ -38,7 +45,7 @@ export class UserIntegrationAdapter implements UserIntegrationPort {
   }
 
   async getUserById(userId: string): Promise<Result<ChatUser>> {
-    const res = await this.userService.getUserById(userId);
+    const res = await this.queryBus.execute(new GetUserByIdQuery(userId));
     if (res.isError()) return Result.error(res.error);
     return Result.ok({
       id: res.value.id,
@@ -50,7 +57,7 @@ export class UserIntegrationAdapter implements UserIntegrationPort {
   }
 
   async getUsersByIds(userIds: string[]): Promise<Result<ChatUser[]>> {
-    const res = await this.userService.getUsersByIds(userIds);
+    const res = await this.queryBus.execute(new GetUsersByIdsQuery(userIds));
     if (res.isError()) return Result.error(res.error);
     return Result.ok(
       res.value.map((u) => ({
@@ -64,20 +71,22 @@ export class UserIntegrationAdapter implements UserIntegrationPort {
   }
 
   async getUserIdsByNameOrUsername(filter: string): Promise<Result<string[]>> {
-    return this.userService.getUserIdsByNameOrUsername(filter);
+    return this.queryBus.execute(new GetUserIdsByNameOrUsernameQuery(filter));
   }
 
   async getBlockedUsersIds(
     userId: string,
     targetUserIds: string[],
   ): Promise<Result<string[]>> {
-    return this.userService.getBlockedUsersIds(userId, targetUserIds);
+    return this.queryBus.execute(
+      new GetBlockedUsersIdsQuery(userId, targetUserIds),
+    );
   }
 
   async getBlockStatus(
     userId: string,
     targetUserId: string,
   ): Promise<Result<BlockStatus>> {
-    return this.userService.getBlockStatus(userId, targetUserId);
+    return this.queryBus.execute(new GetBlockStatusQuery(userId, targetUserId));
   }
 }
