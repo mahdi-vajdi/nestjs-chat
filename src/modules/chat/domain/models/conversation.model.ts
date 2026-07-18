@@ -113,6 +113,13 @@ export class ConversationEntity
     return this._deletedAt;
   }
 
+  public markAsRead(userId: string, messageId: string): void {
+    const member = this.members.find((m) => m.userId === userId);
+    if (member) {
+      member.updateLastSeenMessage(messageId);
+    }
+  }
+
   public softDelete(): void {
     this._deletedAt = new Date();
   }

@@ -295,20 +295,6 @@ export class ChatQueryPostgresRepository implements ChatQueryRepositoryPort {
           .limit(pagination.limit)
           .getManyAndCount();
 
-        // Update last seen message for the user (we do this in the query repo for simplicity since it's an implicit read side effect, though strictly speaking it's a command)
-        if (queryRes[0].length) {
-          await entityManager
-            .getRepository(ConversationMember)
-            .createQueryBuilder()
-            .update()
-            .set({
-              last_seen_message_id: queryRes[0][0].id,
-            })
-            .where('user_id = :userId', { userId })
-            .andWhere('conversation_id = :conversationId', { conversationId })
-            .execute();
-        }
-
         return queryRes;
       },
     );

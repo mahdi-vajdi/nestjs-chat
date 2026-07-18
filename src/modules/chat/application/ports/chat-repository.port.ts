@@ -66,6 +66,7 @@ export interface ChatQueryRepositoryPort {
 }
 
 export interface ChatCommandRepositoryPort {
+  getConversationById(id: string): Promise<Result<ConversationEntity | null>>;
   saveConversation(
     conversation: ConversationEntity,
   ): Promise<Result<ConversationEntity>>;

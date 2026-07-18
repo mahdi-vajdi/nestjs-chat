@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { Message } from '@chat/infrastructure/postgres/entities/message.entity';
 import { ChatCommandRepositoryPort } from '@chat/application/ports/chat-repository.port';
@@ -18,6 +18,24 @@ export class ChatCommandPostgresRepository implements ChatCommandRepositoryPort 
     @InjectDataSource(DatabaseType.POSTGRES)
     private readonly dataSource: DataSource,
   ) {}
+
+  @TryCatch
+  async getConversationById(
+    id: string,
+  ): Promise<Result<ConversationEntity | null>> {
+    const conversation = await this.dataSource
+      .getRepository(Conversation)
+      .findOne({
+        where: { id },
+        relations: { conversationMembers: true },
+      });
+
+    if (!conversation) {
+      return Result.ok(null);
+    }
+
+    return Result.ok(Conversation.toDomain(conversation));
+  }
 
   @TryCatch
   async saveConversation(

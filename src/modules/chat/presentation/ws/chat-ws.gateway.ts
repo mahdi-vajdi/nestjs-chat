@@ -50,6 +50,7 @@ import {
   UserMessageCreated,
   UserMessageCreatedEvent,
 } from '@chat/presentation/ws/events/message-created.event';
+import { MarkConversationAsReadCommand } from '@chat/application/commands/mark-conversation-as-read/mark-conversation-as-read.command';
 import {
   GetConversationMessageListRequest,
   GetConversationMessageListResponse,
@@ -551,6 +552,14 @@ export class ChatWsGateway
     );
 
     if (messageListRes.value.data.length) {
+      await this.commandBus.execute(
+        new MarkConversationAsReadCommand(
+          conversationRes.value.id,
+          authUserId,
+          messageListRes.value.data[0].id,
+        ),
+      );
+
       await this.broadcast(
         client,
         conversationRes.value.members
