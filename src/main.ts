@@ -13,10 +13,6 @@ import {
   REDIS_DB0_PROVIDER,
 } from '@infrastructure/redis/providers/redis.provider';
 import { RedisIoAdapter } from '@infrastructure/websocket/adapter/redis/redis-io.adapter';
-import {
-  BROADCAST_PROVIDER,
-  BroadcastProvider,
-} from '@infrastructure/websocket/broadcast/providers/broadcast.provider';
 
 function setUpSwagger(app: INestApplication) {
   const swaggerConfig = new DocumentBuilder()
@@ -53,14 +49,11 @@ async function bootstrap() {
   // Set up adapter for socket gateway
   const redisDB0Provider =
     await app.resolve<IRedisProvider>(REDIS_DB0_PROVIDER);
-  const broadcastProvider =
-    await app.resolve<BroadcastProvider>(BROADCAST_PROVIDER);
   const redisIoAdapter = new RedisIoAdapter(
     configService,
     app,
     redisDB0Provider,
     redisDB0Provider,
-    broadcastProvider,
   );
   await redisIoAdapter.connectToRedis();
   app.useWebSocketAdapter(redisIoAdapter);

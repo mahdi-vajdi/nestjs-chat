@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { StdResponse } from '@common/std-response/std-response';
+
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
 import {
@@ -14,6 +14,7 @@ import {
 } from '@chat/application/ports/auth-integration.port';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { ClientData } from '@common/websocket/interfaces/client-data.interface';
+import { WsException } from '@nestjs/websockets';
 
 @Injectable()
 export class ChatWsGuard implements CanActivate {
@@ -26,7 +27,6 @@ export class ChatWsGuard implements CanActivate {
 
     const wsContext = context.switchToWs();
     const client = wsContext.getClient<Socket<any, any, any, ClientData>>();
-    const data = wsContext.getData();
 
     if (client.data.authUser) {
       if (
@@ -36,7 +36,7 @@ export class ChatWsGuard implements CanActivate {
         this.logger.warn(
           `Token expired for user: ${client.data.authUser.sub}.`,
         );
-        this.handleExpiredSession(client, data);
+        this.handleExpiredSession(client);
         return false;
       }
 
@@ -55,10 +55,10 @@ export class ChatWsGuard implements CanActivate {
     if (authRes.isError()) {
       this.logger.debug(`Error from authentication: ${authRes.error.message}`);
       client.data['authPromise'] = null;
-      if (typeof data.ack == 'function') {
-        data.ack(StdResponse.fromResult(authRes));
-      }
-      return false;
+      throw new WsException({
+        code: ErrorCode.UNAUTHENTICATED,
+        message: authRes.error.message,
+      });
     }
 
     this.logger.debug(`User authenticated: ${authRes.value.sub}`);
@@ -114,19 +114,12 @@ export class ChatWsGuard implements CanActivate {
     return splitToken[1];
   }
 
-  private handleExpiredSession(
-    client: Socket<any, any, any, ClientData>,
-    data: any,
-  ) {
-    if (typeof data.ack == 'function') {
-      data.ack(
-        StdResponse.fromResult(
-          Result.error('Unauthorized', ErrorCode.UNAUTHENTICATED),
-        ),
-      );
-    }
-
+  private handleExpiredSession(client: Socket<any, any, any, ClientData>) {
     client.data = null;
     client.disconnect(true);
+    throw new WsException({
+      code: ErrorCode.UNAUTHENTICATED,
+      message: 'Unauthorized',
+    });
   }
 }

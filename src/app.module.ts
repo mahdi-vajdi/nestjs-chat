@@ -9,7 +9,6 @@ import { LoggerModule } from '@infrastructure/logger/logger.module';
 import { redisConfig } from '@infrastructure/redis/configs/redis.config';
 import { wsConfig } from '@infrastructure/websocket/ws.config';
 import { RedisModule } from '@infrastructure/redis/redis.module';
-import { BroadcastModule } from '@infrastructure/websocket/broadcast/broadcast.module';
 import { authConfig } from '@auth/infrastructure/configs/auth.config';
 import { UserModule } from '@user/user.module';
 import { AuthModule } from '@auth/auth.module';
@@ -34,7 +33,6 @@ import { DatabaseType } from '@infrastructure/database/database-type.enum';
     DatabaseModule.register(DatabaseType.POSTGRES),
     LoggerModule,
     RedisModule,
-    BroadcastModule,
     UserModule,
     AuthModule,
     ChatModule,
