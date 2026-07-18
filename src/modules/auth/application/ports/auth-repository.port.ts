@@ -1,8 +1,5 @@
 import { Result } from '@common/result/result';
-import {
-  RefreshTokenEntity,
-  RefreshTokenProps,
-} from '@auth/domain/models/refresh-token.props';
+import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
 
 interface AuthDatabaseReader {
   getRefreshToken(
@@ -12,13 +9,7 @@ interface AuthDatabaseReader {
 }
 
 interface AuthDatabaseWriter {
-  createRefreshToken(
-    props: RefreshTokenProps,
-  ): Promise<Result<RefreshTokenEntity>>;
-
-  deleteRefreshToken(id: string): Promise<Result<boolean>>;
-
-  restoreRefreshToken(id: string): Promise<Result<boolean>>;
+  save(entity: RefreshTokenEntity): Promise<Result<RefreshTokenEntity>>;
 }
 
 export interface AuthRepositoryPort

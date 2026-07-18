@@ -6,10 +6,7 @@ import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { ErrorCode } from '@common/result/error';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { AuthRepositoryPort } from '@auth/application/ports/auth-repository.port';
-import {
-  RefreshTokenEntity,
-  RefreshTokenProps,
-} from '@auth/domain/models/refresh-token.props';
+import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
 import { RefreshToken } from '@auth/infrastructure/postgres/entities/refresh-token.entity';
 
 @Injectable()
@@ -20,14 +17,12 @@ export class AuthPostgresRepository implements AuthRepositoryPort {
   ) {}
 
   @TryCatch
-  async createRefreshToken(
-    props: RefreshTokenProps,
-  ): Promise<Result<RefreshTokenEntity>> {
+  async save(entity: RefreshTokenEntity): Promise<Result<RefreshTokenEntity>> {
     const res = await this.refreshTokenRepository.save(
-      RefreshToken.fromProps(props),
+      RefreshToken.fromDomain(entity),
     );
 
-    return Result.ok(RefreshToken.toEntity(res));
+    return Result.ok(RefreshToken.toDomain(res));
   }
 
   @TryCatch
@@ -37,35 +32,13 @@ export class AuthPostgresRepository implements AuthRepositoryPort {
   ): Promise<Result<RefreshTokenEntity>> {
     const refreshToken = await this.refreshTokenRepository
       .createQueryBuilder('rt')
-      .where('rt.userId = :userId', { userId })
+      .where('rt.user_id = :userId', { userId })
       .andWhere('rt.identifier = :identifier', { identifier })
       .getOne();
 
     if (!refreshToken)
       return Result.error('Could not find refresh token', ErrorCode.NOT_FOUND);
 
-    return Result.ok(RefreshToken.toEntity(refreshToken));
-  }
-
-  @TryCatch
-  async deleteRefreshToken(id: string): Promise<Result<boolean>> {
-    const res = await this.refreshTokenRepository
-      .createQueryBuilder()
-      .softDelete()
-      .where('id = :id', { id })
-      .execute();
-
-    return Result.ok(res.affected === 1);
-  }
-
-  @TryCatch
-  async restoreRefreshToken(id: string): Promise<Result<boolean>> {
-    const res = await this.refreshTokenRepository
-      .createQueryBuilder()
-      .restore()
-      .where('id = :id', { id })
-      .execute();
-
-    return Result.ok(res.affected === 1);
+    return Result.ok(RefreshToken.toDomain(refreshToken));
   }
 }

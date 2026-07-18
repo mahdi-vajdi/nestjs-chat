@@ -13,7 +13,10 @@ import {
   SignupResponse,
 } from '@auth/presentation/http/dtos/signup.dto';
 import { ValidationPipe } from '@common/validation/validation.pipe';
-import { AuthService } from '@auth/application/services/auth.service';
+import { CommandBus } from '@nestjs/cqrs';
+import { SignupCommand } from '@auth/application/commands/signup/signup.command';
+import { SigninCommand } from '@auth/application/commands/signin/signin.command';
+import { Result } from '@common/result/result';
 import {
   SigninRequestBody,
   SigninResponse,
@@ -22,7 +25,7 @@ import {
 @Controller('v1/auth')
 @ApiTags('Auth')
 export class AuthHttpController extends BaseHttpController {
-  constructor(private readonly authService: AuthService) {
+  constructor(private readonly commandBus: CommandBus) {
     super();
   }
 
@@ -38,7 +41,17 @@ export class AuthHttpController extends BaseHttpController {
     @Res() response: Response,
     @Body() body: SignupRequestBody,
   ): Promise<void> {
-    const res = await this.authService.signup(body);
+    const res = await this.commandBus.execute<
+      SignupCommand,
+      Result<SignupResponse>
+    >(
+      new SignupCommand(
+        body.email,
+        body.password,
+        body.firstName,
+        body.lastName,
+      ),
+    );
     this.respond(response, res);
   }
 
@@ -52,7 +65,10 @@ export class AuthHttpController extends BaseHttpController {
     @Body() body: SigninRequestBody,
     @Res() response: Response,
   ): Promise<void> {
-    const res = await this.authService.signin(body);
+    const res = await this.commandBus.execute<
+      SigninCommand,
+      Result<SigninResponse>
+    >(new SigninCommand(body.property, body.password));
     this.respond(response, res);
   }
 }

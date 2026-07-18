@@ -1,20 +1,22 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   AuthIntegrationPort,
   ValidatedTokenPayload,
 } from '@user/application/ports/auth-integration.port';
-import { AuthService } from '@auth/application/services/auth.service';
+import { QueryBus } from '@nestjs/cqrs';
 import { Result } from '@common/result/result';
+import { VerifyAccessTokenQuery } from '@auth/application/queries/verify-access-token/verify-access-token.query';
+import { AccessTokenPayload } from '@auth/domain/types/access-token-payload.type';
 
 @Injectable()
 export class AuthIntegrationAdapter implements AuthIntegrationPort {
-  constructor(
-    @Inject(forwardRef(() => AuthService))
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly queryBus: QueryBus) {}
 
   async verifyToken(token: string): Promise<Result<ValidatedTokenPayload>> {
-    const res = await this.authService.verifyAccessToken(token);
+    const res = await this.queryBus.execute<
+      VerifyAccessTokenQuery,
+      Result<AccessTokenPayload>
+    >(new VerifyAccessTokenQuery(token));
     if (res.isError()) return Result.error(res.error);
     return Result.ok({
       sub: res.value.sub,

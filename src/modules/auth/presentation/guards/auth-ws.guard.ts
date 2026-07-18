@@ -8,7 +8,8 @@ import { Socket } from 'socket.io';
 import { StdResponse } from '@common/std-response/std-response';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
-import { AuthService } from '@auth/application/services/auth.service';
+import { QueryBus } from '@nestjs/cqrs';
+import { VerifyAccessTokenQuery } from '@auth/application/queries/verify-access-token/verify-access-token.query';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { AccessTokenPayload } from '@auth/domain/types/access-token-payload.type';
 import { ClientData } from '@common/websocket/interfaces/client-data.interface';
@@ -17,7 +18,7 @@ import { ClientData } from '@common/websocket/interfaces/client-data.interface';
 export class AuthWsGuard implements CanActivate {
   private readonly logger = new Logger(AuthWsGuard.name);
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly queryBus: QueryBus) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     this.logger.debug('authenticating user...');
@@ -78,7 +79,10 @@ export class AuthWsGuard implements CanActivate {
       return Result.error('Unauthorized', ErrorCode.UNAUTHENTICATED);
     }
 
-    const verifyRes = await this.authService.verifyAccessToken(accessToken);
+    const verifyRes = await this.queryBus.execute<
+      VerifyAccessTokenQuery,
+      Result<AccessTokenPayload>
+    >(new VerifyAccessTokenQuery(accessToken));
     if (verifyRes.isError()) {
       this.logger.warn(
         `Error verifying access token: ${verifyRes.error.message}`,

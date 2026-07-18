@@ -6,13 +6,16 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthService } from '@auth/application/services/auth.service';
+import { QueryBus } from '@nestjs/cqrs';
+import { VerifyAccessTokenQuery } from '@auth/application/queries/verify-access-token/verify-access-token.query';
+import { AccessTokenPayload } from '@auth/domain/types/access-token-payload.type';
+import { Result } from '@common/result/result';
 
 @Injectable()
 export class AuthHttpGuard implements CanActivate {
   private readonly logger = new Logger(AuthHttpGuard.name);
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly queryBus: QueryBus) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // TODO: Check if token is not blacklisted
@@ -25,8 +28,10 @@ export class AuthHttpGuard implements CanActivate {
       throw new UnauthorizedException('No access token was provided.');
     }
 
-    const verifyTokenRes =
-      await this.authService.verifyAccessToken(accessToken);
+    const verifyTokenRes = await this.queryBus.execute<
+      VerifyAccessTokenQuery,
+      Result<AccessTokenPayload>
+    >(new VerifyAccessTokenQuery(accessToken));
     if (verifyTokenRes.isError()) {
       this.logger.warn(
         `Error verifying access token: ${verifyTokenRes.error.message}`,

@@ -7,7 +7,11 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
-import { AuthService } from '@auth/application/services/auth.service';
+import { SignupHandler } from '@auth/application/commands/signup/signup.handler';
+import { SigninHandler } from '@auth/application/commands/signin/signin.handler';
+import { RefreshTokensHandler } from '@auth/application/commands/refresh-tokens/refresh-tokens.handler';
+import { VerifyAccessTokenHandler } from '@auth/application/queries/verify-access-token/verify-access-token.handler';
+import { TokenService } from '@auth/application/services/token.service';
 import { AuthDatabaseModule } from '@auth/infrastructure/postgres/auth-database.module';
 
 @Module({
@@ -32,11 +36,15 @@ import { AuthDatabaseModule } from '@auth/infrastructure/postgres/auth-database.
   ],
   controllers: [AuthHttpController],
   providers: [
-    AuthService,
+    TokenService,
+    SignupHandler,
+    SigninHandler,
+    RefreshTokensHandler,
+    VerifyAccessTokenHandler,
     AuthHttpGuard,
     AuthWsGuard,
     { provide: UserIntegrationPort, useClass: UserIntegrationAdapter },
   ],
-  exports: [AuthService],
+  exports: [AuthHttpGuard, AuthWsGuard],
 })
 export class AuthModule {}

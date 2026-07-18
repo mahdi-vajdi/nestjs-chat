@@ -4,21 +4,18 @@ import {
   DeleteDateColumn,
   Entity,
   Index,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import {
-  RefreshTokenEntity,
-  RefreshTokenProps,
-} from '@auth/domain/models/refresh-token.props';
+import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
 
 @Entity({ schema: 'auth', name: 'refresh_tokens' })
 export class RefreshToken {
-  @PrimaryGeneratedColumn('increment')
+  @PrimaryColumn('uuid')
   id: string;
 
   @Column({
-    type: 'bigint',
+    type: 'uuid',
   })
   @Index('refresh_tokens_user_id_idx')
   user_id: string;
@@ -45,29 +42,35 @@ export class RefreshToken {
   @DeleteDateColumn()
   deleted_at: Date | null;
 
-  static fromProps(refreshToken: RefreshTokenProps): RefreshToken {
-    if (!refreshToken) return null;
+  static fromDomain(entity: RefreshTokenEntity): RefreshToken {
+    if (!entity) return null;
 
     const refreshTokenEntity = new RefreshToken();
 
-    refreshTokenEntity.user_id = refreshToken.userId;
-    refreshTokenEntity.token = refreshToken.token;
-    refreshTokenEntity.identifier = refreshToken.identifier;
+    if (entity.id) {
+      refreshTokenEntity.id = entity.id;
+    }
+    refreshTokenEntity.user_id = entity.userId;
+    refreshTokenEntity.token = entity.token;
+    refreshTokenEntity.identifier = entity.identifier;
+    refreshTokenEntity.created_at = entity.createdAt;
+    refreshTokenEntity.updated_at = entity.updatedAt;
+    refreshTokenEntity.deleted_at = entity.deletedAt;
 
     return refreshTokenEntity;
   }
 
-  static toEntity(refreshToken: RefreshToken): RefreshTokenEntity {
+  static toDomain(refreshToken: RefreshToken): RefreshTokenEntity {
     if (!refreshToken) return null;
 
-    return {
-      id: refreshToken.id,
-      userId: refreshToken.user_id,
-      token: refreshToken.token,
-      identifier: refreshToken.identifier,
-      createdAt: refreshToken.created_at,
-      updatedAt: refreshToken.updated_at,
-      deletedAt: refreshToken.deleted_at,
-    };
+    return new RefreshTokenEntity(
+      refreshToken.id,
+      refreshToken.created_at,
+      refreshToken.updated_at,
+      refreshToken.user_id,
+      refreshToken.token,
+      refreshToken.identifier,
+      refreshToken.deleted_at,
+    );
   }
 }
