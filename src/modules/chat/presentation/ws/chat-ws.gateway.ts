@@ -1,3 +1,10 @@
+import { GetUserConversationIdsQuery } from '@chat/application/queries/get-user-conversation-ids/get-user-conversation-ids.query';
+import { CreateDirectConversationCommand } from '@chat/application/commands/create-direct-conversation/create-direct-conversation.command';
+import { CreateMessageCommand } from '@chat/application/commands/create-message/create-message.command';
+import { DeleteConversationCommand } from '@chat/application/commands/delete-conversation/delete-conversation.command';
+import { GetUserConversationListQuery } from '@chat/application/queries/get-user-conversation-list/get-user-conversation-list.query';
+import { GetUserConversationQuery } from '@chat/application/queries/get-user-conversation/get-user-conversation.query';
+import { GetUserConversationMessageListQuery } from '@chat/application/queries/get-user-conversation-message-list/get-user-conversation-message-list.query';
 import {
   ConnectedSocket,
   MessageBody,
@@ -13,7 +20,7 @@ import { Server, Socket } from 'socket.io';
 import { ChatWsGuard } from '@chat/presentation/ws/guards/chat-ws.guard';
 import { Result } from '@common/result/result';
 import { ValidatedTokenPayload } from '@chat/application/ports/auth-integration.port';
-import { ChatService } from '@chat/application/services/chat.service';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { SocketMessage } from '@common/websocket/socket-message';
 import { ValidationPipe } from '@common/validation/validation.pipe';
 import {
@@ -61,7 +68,8 @@ export class ChatWsGateway
 
   constructor(
     private readonly chatWsGuard: ChatWsGuard,
-    private readonly chatService: ChatService,
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
     private readonly userIntegrationPort: UserIntegrationPort,
   ) {
     super();
@@ -93,8 +101,8 @@ export class ChatWsGateway
       return;
     }
 
-    const conversationIdsRes = await this.chatService.getUserConversationIds(
-      authRes.value.sub,
+    const conversationIdsRes = await this.queryBus.execute(
+      new GetUserConversationIdsQuery(authRes.value.sub, {}),
     );
     if (conversationIdsRes.isError()) {
       this.logger.error(
@@ -168,28 +176,30 @@ export class ChatWsGateway
       return;
     }
 
-    const createConversationRes =
-      await this.chatService.createDirectConversation(
+    const createConversationRes = await this.commandBus.execute(
+      new CreateDirectConversationCommand(
         currentUserRes.value.id,
         msg.data.targetUserId,
-      );
+      ),
+    );
     if (createConversationRes.isError()) {
       msg.ack(StdResponse.fromResult(createConversationRes));
     }
 
-    const createMessageRes = await this.chatService.createMessage({
-      type: MessageType.TEXT, // FIXME: make the type dynamic
-      sender: createConversationRes.value.members.find(
-        (m) => m.userId == currentUserRes.value.id,
+    const createMessageRes = await this.commandBus.execute(
+      new CreateMessageCommand(
+        msg.data.content,
+        MessageType.TEXT,
+        currentUserRes.value.id,
+        createConversationRes.value.id,
+        blockStatusRes.value.isBlocked ? [targetUserRes.value.id] : [],
       ),
-      text: msg.data.content,
-      conversation: createConversationRes.value,
-      deletedForUserIds: blockStatusRes.value.isBlocked
-        ? [targetUserRes.value.id]
-        : [],
-    });
+    );
+
     if (createMessageRes.isError()) {
-      await this.chatService.deleteConversation(createConversationRes.value.id);
+      await this.commandBus.execute(
+        new DeleteConversationCommand(createConversationRes.value.id),
+      );
       msg.ack(StdResponse.fromResult(createMessageRes));
       return;
     }
@@ -210,7 +220,7 @@ export class ChatWsGateway
       client,
       rooms,
       new ConversationCreatedEvent({
-        id: createMessageRes.value.conversation.id,
+        id: createMessageRes.value.conversationId,
         name: `${targetUserRes.value.firstName} ${targetUserRes.value.lastName}`,
         avatar: targetUserRes.value.avatar,
         username: targetUserRes.value.username,
@@ -285,10 +295,14 @@ export class ChatWsGateway
       return;
     }
 
-    const conversationListRes = await this.chatService.getUserConversationList(
-      authUserId,
-      pagination,
-      filteredUserIds.filter((userId) => userId && userId !== authUserId),
+    const conversationListRes = await this.queryBus.execute(
+      new GetUserConversationListQuery(authUserId, {
+        pagination,
+        filterUserIds: filteredUserIds.filter(
+          (userId) => userId && userId !== authUserId,
+        ),
+        withLastMessage: true,
+      }),
     );
     if (conversationListRes.isError()) {
       msg.ack(StdResponse.fromResult(conversationListRes));
@@ -296,13 +310,13 @@ export class ChatWsGateway
     }
 
     const conversationsUserIds = conversationListRes.value.data
-      .map((c) => c.lastMessage?.sender?.userId)
+      .map((c) => c.lastMessage?.senderId)
       .filter((id) => id != null);
     const allUsersInvolved = conversationListRes.value.data.flatMap((c) =>
       c.members.map((m) => m.userId),
     );
     allUsersInvolved.push(...conversationsUserIds);
-    const uniqueUserIds = Array.from(new Set(allUsersInvolved));
+    const uniqueUserIds = Array.from(new Set(allUsersInvolved)) as string[];
 
     const usersRes =
       await this.userIntegrationPort.getUsersByIds(uniqueUserIds);
@@ -325,9 +339,9 @@ export class ChatWsGateway
             identifier: item.identifier,
             lastMessage: item.lastMessage
               ? {
-                  id: currentMember.lastMessage.id,
-                  text: currentMember.lastMessage.text,
-                  createdAt: currentMember.lastMessage.createdAt.toISOString(),
+                  id: item.lastMessage.id,
+                  text: item.lastMessage.text,
+                  createdAt: item.lastMessage.createdAt,
                   seen: false,
                   user: null,
                 }
@@ -352,7 +366,7 @@ export class ChatWsGateway
 
             if (conversation.lastMessage) {
               const sender = usersRes.value.find(
-                (user) => user.id === item.lastMessage.sender.userId,
+                (user) => user.id === item.lastMessage.senderId,
               );
               if (sender) {
                 conversation.lastMessage.user = {
@@ -393,9 +407,8 @@ export class ChatWsGateway
     @MessageBody() msg: SocketMessage<CreateMessageRequest>,
     @CurrentWsUserId() authUserId: string,
   ): Promise<void> {
-    const conversationRes = await this.chatService.getUserConversation(
-      msg.data.conversationId,
-      authUserId,
+    const conversationRes = await this.queryBus.execute(
+      new GetUserConversationQuery(msg.data.conversationId, authUserId),
     );
     if (conversationRes.isError()) {
       msg.ack(StdResponse.fromResult(conversationRes));
@@ -433,19 +446,15 @@ export class ChatWsGateway
       return;
     }
 
-    const createMessageRes = await this.chatService.createMessage({
-      conversation: { id: conversationRes.value.id },
-      type: MessageType.TEXT,
-      text: msg.data.text,
-      sender: {
-        id: conversationRes.value.members.find(
-          (member) => member.userId === authUserId,
-        ).id,
-      },
-      deletedForUserIds: blockStatusRes.value.isBlocked
-        ? [targetUserRes.value.id]
-        : [],
-    });
+    const createMessageRes = await this.commandBus.execute(
+      new CreateMessageCommand(
+        msg.data.text,
+        MessageType.TEXT,
+        authUserId,
+        conversationRes.value.id,
+        blockStatusRes.value.isBlocked ? [targetUserRes.value.id] : [],
+      ),
+    );
     if (createMessageRes.isError()) {
       msg.ack(StdResponse.fromResult(createMessageRes));
       return;
@@ -502,9 +511,8 @@ export class ChatWsGateway
     @MessageBody() msg: SocketMessage<GetConversationMessageListRequest>,
     @CurrentWsUserId() authUserId: string,
   ) {
-    const conversationRes = await this.chatService.getUserConversation(
-      msg.data.conversationId,
-      authUserId,
+    const conversationRes = await this.queryBus.execute(
+      new GetUserConversationQuery(msg.data.conversationId, authUserId),
     );
     if (conversationRes.isError()) {
       msg.ack(StdResponse.fromResult(conversationRes));
@@ -513,20 +521,19 @@ export class ChatWsGateway
 
     const pagination = PaginationHelper.parse(msg.data.page, msg.data.pageSize);
 
-    const messageListRes =
-      await this.chatService.getUserConversationMessageList(
+    const messageListRes = await this.queryBus.execute(
+      new GetUserConversationMessageListQuery(
         msg.data.conversationId,
         authUserId,
         pagination,
-      );
+      ),
+    );
     if (messageListRes.isError()) {
       msg.ack(StdResponse.fromResult(messageListRes));
       return;
     }
 
-    let userIds = messageListRes.value.data.map(
-      (message) => message.sender.userId,
-    );
+    let userIds = messageListRes.value.data.map((message) => message.senderId);
     userIds.push(
       ...conversationRes.value.members.map((member) => member.userId),
     );
@@ -585,11 +592,11 @@ export class ChatWsGateway
           page: messageListRes.value.meta.page,
           pageSize: messageListRes.value.meta.pageSize,
           list: messageListRes.value.data.map((item) => {
-            const user = usersRes.value.find((u) => u.id == item.sender.userId);
+            const user = usersRes.value.find((u) => u.id == item.senderId);
             const message = {
               id: item.id,
               content: item.text,
-              createdAt: item.createdAt.toISOString(),
+              createdAt: item.createdAt,
               seen: false,
               user: user
                 ? {

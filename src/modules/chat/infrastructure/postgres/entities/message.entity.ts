@@ -11,15 +11,12 @@ import {
 } from 'typeorm';
 import { MessageType } from '@chat/domain/enums/chat-type.enum';
 import { Conversation } from '@chat/infrastructure/postgres/entities/conversation.entity';
-import {
-  MessageEntity,
-  MessageProps,
-} from '@chat/domain/models/message.entity';
+import { MessageEntity } from '@chat/domain/models/message.entity';
 import { ConversationMember } from '@chat/infrastructure/postgres/entities/conversation-member.entity';
 
 @Entity({ schema: 'chat', name: 'messages' })
 export class Message {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'text' })
@@ -28,11 +25,11 @@ export class Message {
   @Column({ type: 'enum', enum: MessageType, default: MessageType.TEXT })
   type: MessageType;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'uuid' })
   @Index('messages_sender_id_idx')
   sender_id: string;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'uuid' })
   conversation_id: string;
 
   @CreateDateColumn()
@@ -61,39 +58,45 @@ export class Message {
   })
   sender: ConversationMember;
 
-  static fromProps(props: MessageProps): Message {
-    if (!props) return null;
+  static fromDomain(entity: MessageEntity): Message {
+    if (!entity) return null;
 
     const message = new Message();
-
-    message.text = props.text;
-    message.type = props.type;
-    message.sender_id = props.sender.id;
-    message.conversation_id = props.conversation.id;
+    message.id = entity.id;
+    message.text = entity.text;
+    message.type = entity.type;
+    message.sender_id = entity.senderId;
+    message.conversation_id = entity.conversationId;
+    message.created_at = entity.createdAt;
+    message.updated_at = entity.updatedAt;
+    message.deleted_at = entity.deletedAt;
 
     return message;
   }
 
-  static toEntity(message: Message): MessageEntity {
+  static toDomain(message: Message): MessageEntity {
     if (!message) return null;
 
-    return {
-      id: message.id,
-      text: message.text,
-      type: message.type,
-      sender: message.sender
-        ? ConversationMember.toEntity(message.sender)
-        : {
-            id: message.sender_id,
-          },
-      conversation: message.conversation
-        ? Conversation.toEntity(message.conversation)
-        : {
-            id: message.conversation_id,
-          },
-      createdAt: message.created_at,
-      updatedAt: message.updated_at,
-      deletedAt: message.deleted_at,
-    };
+    const entity = MessageEntity.reconstruct(
+      message.id,
+      message.text,
+      message.type,
+      message.sender_id,
+      message.conversation_id,
+      [], // deletedForUserIds must be populated separately by the repo
+      message.created_at,
+      message.updated_at,
+      message.deleted_at,
+    );
+
+    if (message.sender) {
+      entity.sender = ConversationMember.toDomain(message.sender);
+    }
+
+    if (message.conversation) {
+      entity.conversation = Conversation.toDomain(message.conversation);
+    }
+
+    return entity;
   }
 }

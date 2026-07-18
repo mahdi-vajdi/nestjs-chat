@@ -10,15 +10,12 @@ import {
 } from 'typeorm';
 import { ConversationType } from '@chat/domain/enums/conversation-type.enum';
 import { Message } from '@chat/infrastructure/postgres/entities/message.entity';
-import {
-  ConversationEntity,
-  ConversationProps,
-} from '@chat/domain/models/conversation.model';
+import { ConversationEntity } from '@chat/domain/models/conversation.model';
 import { ConversationMember } from '@chat/infrastructure/postgres/entities/conversation-member.entity';
 
 @Entity({ schema: 'chat', name: 'conversations' })
 export class Conversation {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'varchar', nullable: true })
@@ -56,39 +53,56 @@ export class Conversation {
   @OneToMany(() => ConversationMember, (cm) => cm.conversation)
   conversationMembers: ConversationMember[];
 
-  static fromProps(props: ConversationProps): Conversation {
-    if (!props) return null;
+  static fromDomain(entity: ConversationEntity): Conversation {
+    if (!entity) return null;
 
     const conversation = new Conversation();
+    conversation.id = entity.id;
+    conversation.title = entity.title;
+    conversation.picture = entity.picture;
+    conversation.identifier = entity.identifier;
+    conversation.type = entity.type;
+    conversation.created_at = entity.createdAt;
+    conversation.updated_at = entity.updatedAt;
+    conversation.deleted_at = entity.deletedAt;
 
-    conversation.title = props.title;
-    conversation.picture = props.picture;
-    conversation.identifier = props.identifier;
-    conversation.type = props.type;
+    if (entity.messages && entity.messages.length > 0) {
+      conversation.messages = entity.messages.map((m) => Message.fromDomain(m));
+    }
+
+    if (entity.members && entity.members.length > 0) {
+      conversation.conversationMembers = entity.members.map((cm) =>
+        ConversationMember.fromDomain(cm),
+      );
+    }
 
     return conversation;
   }
 
-  static toEntity(conversation: Conversation): ConversationEntity {
+  static toDomain(conversation: Conversation): ConversationEntity {
     if (!conversation) return null;
 
-    return {
-      id: conversation.id,
-      title: conversation.title,
-      picture: conversation.picture,
-      identifier: conversation.identifier,
-      type: conversation.type,
-      messages: conversation.messages
-        ? conversation.messages.map((m) => Message.toEntity(m))
-        : [],
-      members: conversation.conversationMembers
-        ? conversation.conversationMembers.map((cm) =>
-            ConversationMember.toEntity(cm),
-          )
-        : [],
-      createdAt: conversation.created_at,
-      updatedAt: conversation.updated_at,
-      deletedAt: conversation.deleted_at,
-    };
+    const entity = ConversationEntity.reconstruct(
+      conversation.id,
+      conversation.type,
+      conversation.title,
+      conversation.picture,
+      conversation.identifier,
+      conversation.created_at,
+      conversation.updated_at,
+      conversation.deleted_at,
+    );
+
+    if (conversation.messages) {
+      entity.messages = conversation.messages.map((m) => Message.toDomain(m));
+    }
+
+    if (conversation.conversationMembers) {
+      entity.members = conversation.conversationMembers.map((cm) =>
+        ConversationMember.toDomain(cm),
+      );
+    }
+
+    return entity;
   }
 }

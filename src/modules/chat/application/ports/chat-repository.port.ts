@@ -2,19 +2,46 @@ import { GetUserConversationIdsOptions } from '@chat/application/ports/options/g
 import { Result } from '@common/result/result';
 import { GetUserConversationListOptions } from '@chat/application/ports/options/get-user-conversation-list.options';
 import { ConversationEntity } from '@chat/domain/models/conversation.model';
-import { ConversationMemberEntity } from '@chat/domain/models/conversation-member.model';
-import { GetConversationMembersOptions } from '@chat/application/ports/options/get-conversation-members.options';
+import { MessageEntity } from '@chat/domain/models/message.entity';
 import {
-  MessageEntity,
-  MessageProps,
-} from '@chat/domain/models/message.entity';
-import { PaginationOptions } from '@common/pagination/pagination.interface';
+  PaginationOptions,
+  PaginatedResult,
+} from '@common/pagination/pagination.interface';
 
-export interface ChatDatabaseReader {
+// Read DTOs (Primitive Data Structures bypassing Domain entirely)
+export interface ConversationReadDto {
+  id: string;
+  type: string;
+  identifier: string | null;
+  title: string | null;
+  picture: string | null;
+  createdAt: string;
+  updatedAt: string;
+  members: ConversationMemberReadDto[];
+  lastMessage: MessageReadDto | null;
+  notSeenCount: number;
+}
+
+export interface ConversationMemberReadDto {
+  id: string;
+  userId: string;
+  lastSeenMessageId: string | null;
+  lastMessageId: string | null;
+}
+
+export interface MessageReadDto {
+  id: string;
+  text: string;
+  type: string;
+  senderId: string;
+  createdAt: string;
+}
+
+export interface ChatQueryRepositoryPort {
   getUserConversationById(
     conversationId: string,
     userId: string,
-  ): Promise<Result<ConversationEntity>>;
+  ): Promise<Result<ConversationReadDto>>;
 
   conversationExists(
     userId: string,
@@ -24,42 +51,27 @@ export interface ChatDatabaseReader {
   getUserConversationList(
     userId: string,
     options: GetUserConversationListOptions,
-  ): Promise<Result<[ConversationEntity[], number]>>;
+  ): Promise<Result<PaginatedResult<ConversationReadDto>>>;
 
   getUserConversationIds(
     userId: string,
     options: GetUserConversationIdsOptions,
   ): Promise<Result<string[]>>;
 
-  getConversationsNotSeenCounts(
-    userId: string,
-    conversationIds: string[],
-  ): Promise<Result<Record<string, number>>>;
-
-  getConversationMembers(
-    conversationIds: string[],
-    options: GetConversationMembersOptions,
-  ): Promise<Result<ConversationMemberEntity[]>>;
-
   getUserConversationMessageList(
     conversationId: string,
     userId: string,
     pagination: PaginationOptions,
-  ): Promise<Result<[MessageEntity[], number]>>;
+  ): Promise<Result<PaginatedResult<MessageReadDto>>>;
 }
 
-export interface ChatDatabaseWriter {
-  createDirectConversation(
-    userId: string,
-    targetUserId: string,
+export interface ChatCommandRepositoryPort {
+  saveConversation(
+    conversation: ConversationEntity,
   ): Promise<Result<ConversationEntity>>;
-
+  saveMessage(message: MessageEntity): Promise<Result<MessageEntity>>;
   deleteConversation(id: string): Promise<Result<boolean>>;
-
-  createMessage(props: MessageProps): Promise<Result<MessageEntity>>;
 }
 
-export interface ChatRepositoryPort
-  extends ChatDatabaseReader, ChatDatabaseWriter {}
-
-export const CHAT_REPOSITORY_PORT = 'chat-database-provider';
+export const CHAT_QUERY_REPOSITORY_PORT = 'chat-query-repository-port';
+export const CHAT_COMMAND_REPOSITORY_PORT = 'chat-command-repository-port';

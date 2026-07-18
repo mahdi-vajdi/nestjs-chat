@@ -14,13 +14,13 @@ import { Message } from '@chat/infrastructure/postgres/entities/message.entity';
   comment: 'messages that are deleted for users',
 })
 export class DeletedMessage {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'uuid' })
   user_id: string;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'uuid' })
   message_id: string;
 
   @CreateDateColumn()
