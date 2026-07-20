@@ -6,26 +6,19 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2021",
+    "target": "ES2022",
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": "./",
     "ignoreDeprecations": "6.0",
     "incremental": true,
-    "types": [
-      "node",
-      "jest"
-    ],
     "skipLibCheck": true,
     "strictNullChecks": false,
+    "forceConsistentCasingInFileNames": false,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "lib": [
-      "ES2021"
-    ],
     "paths": {
       "@common/*": [
         "src/common/*"
@@ -33,7 +26,6 @@
       "@infrastructure/*": [
         "src/infrastructure/*"
       ],
-      
       "@user/*": [
         "src/modules/user/*"
       ],

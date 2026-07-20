@@ -1,31 +1,12 @@
-import * as Joi from 'joi';
-import { ConfigFactory, registerAs } from '@nestjs/config';
+import { registerAs } from '@nestjs/config';
+import { z } from 'zod';
 
-export interface WsConfig {
-  port: number;
-}
-
-export const WS_CONFIG_TOKEN = 'ws-config-token';
-
-const wsConfigSchema = Joi.object({
-  port: Joi.number().port().required(),
+const wsConfigSchema = z.object({
+  port: z.coerce.number().min(1).max(65535),
 });
 
-export const wsConfig = registerAs<WsConfig, ConfigFactory<WsConfig>>(
-  WS_CONFIG_TOKEN,
-  () => {
-    const { error, value } = wsConfigSchema.validate(
-      {
-        port: process.env.WEBSOCKET_PORT,
-      },
-      {
-        allowUnknown: false,
-        abortEarly: false,
-      },
-    );
-
-    if (error) throw new Error(`Error validating WS config: ${error.message}`);
-
-    return value;
-  },
-);
+export const wsConfig = registerAs('ws', () => {
+  return wsConfigSchema.parse({
+    port: process.env.WEBSOCKET_PORT,
+  });
+});

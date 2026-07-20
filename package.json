@@ -42,7 +42,6 @@
     "class-validator": "^0.15.1",
     "dotenv": "^17.4.2",
     "ioredis": "^5.11.1",
-    "joi": "^18.2.3",
     "nest-winston": "^1.10.2",
     "pg": "^8.22.0",
     "reflect-metadata": "^0.2.2",
@@ -52,7 +51,8 @@
     "typeorm": "^1.0.0",
     "uuid": "^14.0.1",
     "validator": "^13.15.35",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

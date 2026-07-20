@@ -1,12 +1,9 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigType } from '@nestjs/config';
 import { Logger as TypeOrmLogger } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from '../logger/logger.module';
-import {
-  IPostgresConfig,
-  POSTGRES_CONFIG_TOKEN,
-} from '@infrastructure/database/postgres/configs/postgres.config';
+import { postgresConfig } from '@infrastructure/database/postgres/configs/postgres.config';
 import { DatabaseType } from './database-type.enum';
 import { LOGGER_PROVIDER } from '../logger/provider/logger.provider';
 import { env } from 'node:process';
@@ -34,32 +31,28 @@ export class DatabaseModule {
       name: DatabaseType.POSTGRES,
       imports: [ConfigModule, LoggerModule],
       useFactory: async (
-        configService: ConfigService,
+        dbConfig: ConfigType<typeof postgresConfig>,
         logger: TypeOrmLogger,
       ) => {
-        const postgresConfig = configService.get<IPostgresConfig>(
-          POSTGRES_CONFIG_TOKEN,
-        );
-
         return {
           name: DatabaseType.POSTGRES, // Do not delete. Used in application shutdown.
           type: 'postgres',
-          host: postgresConfig.host,
-          port: postgresConfig.port,
-          username: postgresConfig.username,
-          password: postgresConfig.password,
-          database: postgresConfig.database,
+          host: dbConfig.host,
+          port: dbConfig.port,
+          username: dbConfig.username,
+          password: dbConfig.password,
+          database: dbConfig.database,
           autoLoadEntities: true,
           migrations: ['dist/**/postgres/migrations/**/*.js'],
           migrationsRun: env.NODE_ENV === 'development',
           migrationsTableName: 'typeorm_migrations',
           synchronize: false,
-          logging: postgresConfig.log,
+          logging: dbConfig.log,
           logger: logger,
-          maxQueryExecutionTime: postgresConfig.slowQueryLimit,
+          maxQueryExecutionTime: dbConfig.slowQueryLimit,
         };
       },
-      inject: [ConfigService, LOGGER_PROVIDER],
+      inject: [postgresConfig.KEY, LOGGER_PROVIDER],
     });
   }
 }

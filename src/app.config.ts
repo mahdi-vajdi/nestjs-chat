@@ -1,31 +1,12 @@
-import * as Joi from 'joi';
-import { ConfigFactory, registerAs } from '@nestjs/config';
+import { registerAs } from '@nestjs/config';
+import { z } from 'zod';
 
-export interface IAppConfig {
-  debugMode: boolean;
-}
-
-export const APP_CONFIG_TOKEN = 'app-configs-token';
-
-const appConfigSchema = Joi.object<IAppConfig>({
-  debugMode: Joi.boolean().default(false),
+const appConfigSchema = z.object({
+  debugMode: z.coerce.boolean().default(false),
 });
 
-export const appConfig = registerAs<IAppConfig, ConfigFactory<IAppConfig>>(
-  APP_CONFIG_TOKEN,
-  () => {
-    const { error, value } = appConfigSchema.validate(
-      {
-        debugMode: process.env.DEBUG_MODE,
-      },
-      {
-        allowUnknown: false,
-        abortEarly: false,
-      },
-    );
-
-    if (error) throw error;
-
-    return value;
-  },
-);
+export const appConfig = registerAs('app', () => {
+  return appConfigSchema.parse({
+    debugMode: process.env.DEBUG_MODE,
+  });
+});

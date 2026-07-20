@@ -1,40 +1,18 @@
-import * as Joi from 'joi';
-import { ConfigFactory, registerAs } from '@nestjs/config';
+import { registerAs } from '@nestjs/config';
+import { z } from 'zod';
 
-export interface IRedisConfig {
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-}
-
-export const REDIS_CONFIG_TOKEN = 'redis-configs-token';
-
-const redisConfigSchema = Joi.object<IRedisConfig>({
-  host: Joi.string().hostname().required(),
-  port: Joi.number().port().required(),
-  username: Joi.string().allow('').required(),
-  password: Joi.string().allow('').required(),
+const redisConfigSchema = z.object({
+  host: z.string().min(1),
+  port: z.coerce.number().min(1).max(65535),
+  username: z.string(),
+  password: z.string(),
 });
 
-export const redisConfig = registerAs<
-  IRedisConfig,
-  ConfigFactory<IRedisConfig>
->(REDIS_CONFIG_TOKEN, () => {
-  const { error, value } = redisConfigSchema.validate(
-    {
-      host: process.env.REDIS_HOST,
-      port: Number(process.env.REDIS_PORT),
-      username: process.env.REDIS_USERNAME,
-      password: process.env.REDIS_PASSWORD,
-    },
-    {
-      allowUnknown: false,
-      abortEarly: false,
-    },
-  );
-
-  if (error) throw new Error(`Error validating redis config: ${error.message}`);
-
-  return value;
+export const redisConfig = registerAs('redis', () => {
+  return redisConfigSchema.parse({
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    username: process.env.REDIS_USERNAME || '',
+    password: process.env.REDIS_PASSWORD || '',
+  });
 });

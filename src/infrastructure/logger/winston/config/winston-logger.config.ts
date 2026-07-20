@@ -1,43 +1,16 @@
-import { ConfigFactory, registerAs } from '@nestjs/config';
-import * as Joi from 'joi';
+import { registerAs } from '@nestjs/config';
+import { z } from 'zod';
 
-export interface IWinstonLoggerConfig {
-  useFile: boolean;
-  filePath: string;
-  level: string;
-}
-
-export const WINSTON_LOGGER_CONFIG_TOKEN = 'winston-logger-configs-token';
-
-const winstonLoggerConfigSchema = Joi.object<IWinstonLoggerConfig>({
-  useFile: Joi.boolean().default(false),
-  filePath: Joi.string().required(),
-  level: Joi.string()
-    .valid('debug', 'verbose', 'log', 'warn', 'error')
-    .required(),
+const winstonLoggerConfigSchema = z.object({
+  useFile: z.coerce.boolean().default(false),
+  filePath: z.string().min(1),
+  level: z.enum(['debug', 'verbose', 'log', 'warn', 'error']),
 });
 
-export const winstonLoggerConfig = registerAs<
-  IWinstonLoggerConfig,
-  ConfigFactory<IWinstonLoggerConfig>
->(WINSTON_LOGGER_CONFIG_TOKEN, () => {
-  const { error, value } = winstonLoggerConfigSchema.validate(
-    {
-      useFile: process.env.LOG_USE_FILE,
-      filePath: process.env.LOG_FILE,
-      level: process.env.LOG_LEVEL,
-    },
-    {
-      allowUnknown: false,
-      abortEarly: false,
-    },
-  );
-
-  if (error) {
-    throw new Error(
-      `Winston logger config env validation error: ${error.message}`,
-    );
-  }
-
-  return value;
+export const winstonLoggerConfig = registerAs('winston-logger', () => {
+  return winstonLoggerConfigSchema.parse({
+    useFile: process.env.LOG_USE_FILE,
+    filePath: process.env.LOG_FILE,
+    level: process.env.LOG_LEVEL,
+  });
 });

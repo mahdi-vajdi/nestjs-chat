@@ -1,10 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ConfigService } from '@nestjs/config';
-import {
-  HTTP_CONFIG_TOKEN,
-  IHttpConfig,
-} from '@infrastructure/http/http.config';
+import { ConfigType } from '@nestjs/config';
+import { httpConfig } from '@infrastructure/http/http.config';
+import { wsConfig } from '@infrastructure/websocket/ws.config';
 import { INestApplication, Logger, LoggerService } from '@nestjs/common';
 import { LOGGER_PROVIDER } from '@infrastructure/logger/provider/logger.provider';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -38,7 +36,7 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  const configService = app.get(ConfigService);
+  const wsConf = app.get<ConfigType<typeof wsConfig>>(wsConfig.KEY);
   const logger = app.get<LoggerService>(LOGGER_PROVIDER);
   const bootstrapLogger = new Logger('Bootstrap');
 
@@ -50,7 +48,7 @@ async function bootstrap() {
   const redisDB0Provider =
     await app.resolve<IRedisProvider>(REDIS_DB0_PROVIDER);
   const redisIoAdapter = new RedisIoAdapter(
-    configService,
+    wsConf,
     app,
     redisDB0Provider,
     redisDB0Provider,
@@ -60,10 +58,10 @@ async function bootstrap() {
 
   app.enableShutdownHooks(['SIGINT', 'SIGTERM']);
 
-  const httpConfig = configService.get<IHttpConfig>(HTTP_CONFIG_TOKEN);
-  bootstrapLogger.log(`Starting app on port ${httpConfig.port}`);
+  const httpConf = app.get<ConfigType<typeof httpConfig>>(httpConfig.KEY);
+  bootstrapLogger.log(`Starting app on port ${httpConf.port}`);
 
-  await app.listen(httpConfig.port);
+  await app.listen(httpConf.port);
 }
 
 bootstrap();

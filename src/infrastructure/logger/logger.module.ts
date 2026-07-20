@@ -1,10 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import {
-  IWinstonLoggerConfig,
-  WINSTON_LOGGER_CONFIG_TOKEN,
-  winstonLoggerConfig,
-} from './winston/config/winston-logger.config';
+import { ConfigModule, ConfigType } from '@nestjs/config';
+import { winstonLoggerConfig } from './winston/config/winston-logger.config';
 import { WinstonModule } from 'nest-winston';
 import { format, transports } from 'winston';
 import { WinstonLoggerService } from './winston/winston-logger.service';
@@ -19,11 +15,9 @@ import { LOGGER_PROVIDER } from './provider/logger.provider';
     }),
     WinstonModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
-        const winstonConfig = configService.get<IWinstonLoggerConfig>(
-          WINSTON_LOGGER_CONFIG_TOKEN,
-        );
-
+      useFactory: async (
+        winstonConfig: ConfigType<typeof winstonLoggerConfig>,
+      ) => {
         if (winstonConfig.useFile)
           return {
             format: format.combine(
@@ -60,7 +54,7 @@ import { LOGGER_PROVIDER } from './provider/logger.provider';
           ],
         };
       },
-      inject: [ConfigService],
+      inject: [winstonLoggerConfig.KEY],
     }),
   ],
   providers: [

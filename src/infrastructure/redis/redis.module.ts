@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigType } from '@nestjs/config';
+import { redisConfig } from '@infrastructure/redis/configs/redis.config';
 import {
   REDIS_DB0_PROVIDER,
   REDIS_DB1_PROVIDER,
@@ -11,23 +12,23 @@ import { IORedisClient } from '@infrastructure/redis/ioredis/ioredis-client';
   providers: [
     {
       provide: REDIS_DB0_PROVIDER,
-      useFactory: async (configService: ConfigService) => {
-        const client = new IORedisClient(configService, 0);
+      useFactory: async (redisConf: ConfigType<typeof redisConfig>) => {
+        const client = new IORedisClient(redisConf, 0);
         await client.connect();
 
         return client;
       },
-      inject: [ConfigService],
+      inject: [redisConfig.KEY],
     },
     {
       provide: REDIS_DB1_PROVIDER,
-      useFactory: async (configService: ConfigService) => {
-        const client = new IORedisClient(configService, 1);
+      useFactory: async (redisConf: ConfigType<typeof redisConfig>) => {
+        const client = new IORedisClient(redisConf, 1);
         await client.connect();
 
         return client;
       },
-      inject: [ConfigService],
+      inject: [redisConfig.KEY],
     },
   ],
   exports: [REDIS_DB0_PROVIDER, REDIS_DB1_PROVIDER],

@@ -606,52 +606,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hapi/address@npm:^5.1.1":
-  version: 5.1.1
-  resolution: "@hapi/address@npm:5.1.1"
-  dependencies:
-    "@hapi/hoek": "npm:^11.0.2"
-  checksum: 10c0/78138effe1e9a36fd12eb42e24adf97f3ca94b9ab1f6db65e3136cf0e5cdbd1578c14adffde18a50d776db2f326a8cb3a16d783b6705b22571a603fa47c8c3d3
-  languageName: node
-  linkType: hard
-
-"@hapi/formula@npm:^3.0.2":
-  version: 3.0.2
-  resolution: "@hapi/formula@npm:3.0.2"
-  checksum: 10c0/794d30dd13ecc070b9d93e01dacad8175c270f89bcfaa92300f843b7666d915b319d0b792694385d79270c84b52f003a4310f117202303cce3069808751f7a41
-  languageName: node
-  linkType: hard
-
-"@hapi/hoek@npm:^11.0.2, @hapi/hoek@npm:^11.0.7":
-  version: 11.0.7
-  resolution: "@hapi/hoek@npm:11.0.7"
-  checksum: 10c0/39a4a3ae9526ed66509f6d03c6eb43179a2590df6e98443328c966cfa5e7cbb9d340f61fdbe0afe092662d5377d5a611c3303c808fee26a9c9cfd6bd3737dc1c
-  languageName: node
-  linkType: hard
-
-"@hapi/pinpoint@npm:^2.0.1":
-  version: 2.0.1
-  resolution: "@hapi/pinpoint@npm:2.0.1"
-  checksum: 10c0/b3072f2c57c9fa2e44d85168e253e331324158509e1c45dae2676f31555326410345fd2422f890c41201e2783c5e9bb8c7b0bdcf6abe01079742a943b0c300b9
-  languageName: node
-  linkType: hard
-
-"@hapi/tlds@npm:^1.1.1":
-  version: 1.1.7
-  resolution: "@hapi/tlds@npm:1.1.7"
-  checksum: 10c0/8429f08c83cd7d324f9b5a577442f78b2d721beba037f8a2a7f652707750800985e0f81302c4b98e9bc784717374005eb3758fb5af6dfb828c62fbb9a4f83a87
-  languageName: node
-  linkType: hard
-
-"@hapi/topo@npm:^6.0.2":
-  version: 6.0.2
-  resolution: "@hapi/topo@npm:6.0.2"
-  dependencies:
-    "@hapi/hoek": "npm:^11.0.2"
-  checksum: 10c0/5a0079805e9a542bdb852912ce6ed3221ddd0a58569354b3900e165faabe50fb1d2d488067db97c494194835684b055828b6267be3064ac42cf2ce28db02edfc
-  languageName: node
-  linkType: hard
-
 "@humanfs/core@npm:^0.19.2":
   version: 0.19.2
   resolution: "@humanfs/core@npm:0.19.2"
@@ -1734,13 +1688,6 @@ __metadata:
   version: 1.2.5
   resolution: "@sqltools/formatter@npm:1.2.5"
   checksum: 10c0/4b4fa62b8cd4880784b71cc5edd4a13da04fda0a915c14282765a8ec1a900a495e69b322704413e2052d221b5646d9fb0e20e87911f9a8f438f33180eecb11a4
-  languageName: node
-  linkType: hard
-
-"@standard-schema/spec@npm:^1.1.0":
-  version: 1.1.0
-  resolution: "@standard-schema/spec@npm:1.1.0"
-  checksum: 10c0/d90f55acde4b2deb983529c87e8025fa693de1a5e8b49ecc6eb84d1fd96328add0e03d7d551442156c7432fd78165b2c26ff561b970a9a881f046abb78d6a526
   languageName: node
   linkType: hard
 
@@ -3253,7 +3200,6 @@ __metadata:
     globals: "npm:^17.7.0"
     ioredis: "npm:^5.11.1"
     jest: "npm:^30.4.2"
-    joi: "npm:^18.2.3"
     nest-winston: "npm:^1.10.2"
     pg: "npm:^8.22.0"
     prettier: "npm:^3.9.1"
@@ -3273,6 +3219,7 @@ __metadata:
     uuid: "npm:^14.0.1"
     validator: "npm:^13.15.35"
     winston: "npm:^3.19.0"
+    zod: "npm:^4.4.3"
   languageName: unknown
   linkType: soft
 
@@ -5427,21 +5374,6 @@ __metadata:
   bin:
     jest: ./bin/jest.js
   checksum: 10c0/26a76eaabfc043abd8ee702b97f61ff968dde03412efdb4a69c22c99a5e4bf47788a3e45f75134aec1377a686a9d59d1e3bae85a816e409013475a80de1458ec
-  languageName: node
-  linkType: hard
-
-"joi@npm:^18.2.3":
-  version: 18.2.3
-  resolution: "joi@npm:18.2.3"
-  dependencies:
-    "@hapi/address": "npm:^5.1.1"
-    "@hapi/formula": "npm:^3.0.2"
-    "@hapi/hoek": "npm:^11.0.7"
-    "@hapi/pinpoint": "npm:^2.0.1"
-    "@hapi/tlds": "npm:^1.1.1"
-    "@hapi/topo": "npm:^6.0.2"
-    "@standard-schema/spec": "npm:^1.1.0"
-  checksum: 10c0/ccf2cba791968330208d05ab2e4459d1f9532a31fd5323795734184dfa628a9373bca4252fc0b636a36656c5b7be4a28e986715737a8a779b8103a28d9988cd2
   languageName: node
   linkType: hard
 
@@ -8225,5 +8157,12 @@ __metadata:
   version: 2.1.3
   resolution: "yoctocolors-cjs@npm:2.1.3"
   checksum: 10c0/584168ef98eb5d913473a4858dce128803c4a6cd87c0f09e954fa01126a59a33ab9e513b633ad9ab953786ed16efdd8c8700097a51635aafaeed3fef7712fa79
+  languageName: node
+  linkType: hard
+
+"zod@npm:^4.4.3":
+  version: 4.4.3
+  resolution: "zod@npm:4.4.3"
+  checksum: 10c0/7ea31b558e88f9faf44f31dd185e2e1cbf51fed3081787fb96cc2534749b50c0acfc6da7f0922a7353ed092dd358c7d50c28ea96c94d04af64191bd33152eca3
   languageName: node
   linkType: hard

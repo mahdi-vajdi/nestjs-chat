@@ -1,22 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { ConfigType } from '@nestjs/config';
 import { v4 as uuidV4 } from 'uuid';
-import {
-  AUTH_CONFIG_TOKEN,
-  IAuthConfig,
-} from '@auth/infrastructure/configs/auth.config';
+import { authConfig } from '@auth/infrastructure/configs/auth.config';
 
 @Injectable()
 export class TokenService {
-  private readonly authConfig: IAuthConfig;
-
   constructor(
-    private readonly configService: ConfigService,
+    @Inject(authConfig.KEY)
+    private readonly authConf: ConfigType<typeof authConfig>,
     private readonly jwtService: JwtService,
-  ) {
-    this.authConfig = this.configService.get<IAuthConfig>(AUTH_CONFIG_TOKEN);
-  }
+  ) {}
 
   async signAccessToken(userId: string, role: string): Promise<string> {
     return await this.jwtService.signAsync(
@@ -25,7 +19,7 @@ export class TokenService {
         role: role,
       },
       {
-        privateKey: this.authConfig.accessPrivateKey,
+        privateKey: this.authConf.accessPrivateKey,
         expiresIn: '1d',
       },
     );
@@ -40,7 +34,7 @@ export class TokenService {
         sub: userId,
       },
       {
-        privateKey: this.authConfig.refreshPrivateKey,
+        privateKey: this.authConf.refreshPrivateKey,
         expiresIn: '7d',
         jwtid: jti,
       },
@@ -51,13 +45,13 @@ export class TokenService {
 
   async verifyAccessToken<T extends object = any>(token: string): Promise<T> {
     return await this.jwtService.verifyAsync<T>(token, {
-      publicKey: this.authConfig.accessPublicKey,
+      publicKey: this.authConf.accessPublicKey,
     });
   }
 
   async verifyRefreshToken<T extends object = any>(token: string): Promise<T> {
     return await this.jwtService.verifyAsync<T>(token, {
-      publicKey: this.authConfig.refreshPublicKey,
+      publicKey: this.authConf.refreshPublicKey,
     });
   }
 }

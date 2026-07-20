@@ -18,6 +18,7 @@ import { DatabaseType } from '@infrastructure/database/database-type.enum';
 @Module({
   imports: [
     ConfigModule.forRoot({
+      isGlobal: true,
       envFilePath: ['.env'],
       load: [
         appConfig,
