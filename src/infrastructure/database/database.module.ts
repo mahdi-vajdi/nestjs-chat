@@ -3,10 +3,9 @@ import { ConfigModule, ConfigType } from '@nestjs/config';
 import { Logger as TypeOrmLogger } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from '../logger/logger.module';
-import { postgresConfig } from '@infrastructure/database/postgres/configs/postgres.config';
+import { postgresConfig } from '@infrastructure/database/postgres/config/postgres.config';
 import { DatabaseType } from './database-type.enum';
 import { LOGGER_PROVIDER } from '../logger/provider/logger.provider';
-import { env } from 'node:process';
 
 @Module({})
 export class DatabaseModule {
@@ -42,9 +41,15 @@ export class DatabaseModule {
           username: dbConfig.username,
           password: dbConfig.password,
           database: dbConfig.database,
+          schema: dbConfig.schema,
+          ssl: dbConfig.ssl ? { rejectUnauthorized: false } : false,
+          extra: {
+            max: dbConfig.poolSize,
+            application_name: dbConfig.applicationName,
+          },
           autoLoadEntities: true,
           migrations: ['dist/**/postgres/migrations/**/*.js'],
-          migrationsRun: env.NODE_ENV === 'development',
+          migrationsRun: false,
           migrationsTableName: 'typeorm_migrations',
           synchronize: false,
           logging: dbConfig.log,
