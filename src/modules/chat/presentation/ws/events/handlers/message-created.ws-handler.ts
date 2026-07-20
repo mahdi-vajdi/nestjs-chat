@@ -8,11 +8,7 @@ import {
   UserMessageCreatedEvent,
   UserMessageCreated,
 } from '@chat/presentation/ws/events/message-created.event';
-import { Inject } from '@nestjs/common';
-import {
-  CHAT_COMMAND_REPOSITORY_PORT,
-  ChatCommandRepositoryPort,
-} from '@chat/application/ports/chat-repository.port';
+import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
 
 @EventsHandler(MessageCreatedDomainEvent)
 export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreatedDomainEvent> {
@@ -22,8 +18,7 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
     private readonly chatWsGateway: ChatWsGateway,
     private readonly userIntegrationPort: UserIntegrationPort,
     private readonly queryBus: QueryBus,
-    @Inject(CHAT_COMMAND_REPOSITORY_PORT)
-    private readonly commandRepo: ChatCommandRepositoryPort,
+    private readonly commandRepo: ConversationRepositoryPort,
   ) {}
 
   async handle(event: MessageCreatedDomainEvent) {

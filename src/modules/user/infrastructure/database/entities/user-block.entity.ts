@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from '@user/infrastructure/postgres/entities/user.entity';
+import { User } from '@user/infrastructure/database/entities/user.entity';
 
 @Entity({ schema: 'user', name: 'user_blocks' })
 export class UserBlock {

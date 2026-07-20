@@ -1,11 +1,8 @@
+import { MessageReadDto } from '@chat/application/dtos/message-read.dto';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetUserConversationMessageListQuery } from './get-user-conversation-message-list.query';
-import { Inject, Logger } from '@nestjs/common';
-import {
-  CHAT_QUERY_REPOSITORY_PORT,
-  ChatQueryRepositoryPort,
-  MessageReadDto,
-} from '@chat/application/ports/chat-repository.port';
+import { Logger } from '@nestjs/common';
+import { ConversationReadRepositoryPort } from '@chat/application/ports/conversation-read-repository.port';
 import { Result } from '@common/result/result';
 import { PaginatedResult } from '@common/pagination/pagination.interface';
 
@@ -18,10 +15,7 @@ export class GetUserConversationMessageListHandler implements IQueryHandler<
     GetUserConversationMessageListHandler.name,
   );
 
-  constructor(
-    @Inject(CHAT_QUERY_REPOSITORY_PORT)
-    private readonly queryRepo: ChatQueryRepositoryPort,
-  ) {}
+  constructor(private readonly queryRepo: ConversationReadRepositoryPort) {}
 
   async execute(
     query: GetUserConversationMessageListQuery,

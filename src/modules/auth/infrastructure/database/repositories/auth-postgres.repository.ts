@@ -7,7 +7,7 @@ import { ErrorCode } from '@common/result/error';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { AuthRepositoryPort } from '@auth/application/ports/auth-repository.port';
 import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
-import { RefreshToken } from '@auth/infrastructure/postgres/entities/refresh-token.entity';
+import { RefreshToken } from '@auth/infrastructure/database/entities/refresh-token.entity';
 
 @Injectable()
 export class AuthPostgresRepository implements AuthRepositoryPort {

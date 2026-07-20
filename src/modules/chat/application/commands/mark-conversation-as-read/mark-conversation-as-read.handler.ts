@@ -1,10 +1,6 @@
 import { CommandHandler, ICommandHandler, EventPublisher } from '@nestjs/cqrs';
-import { Inject } from '@nestjs/common';
 import { MarkConversationAsReadCommand } from './mark-conversation-as-read.command';
-import {
-  CHAT_COMMAND_REPOSITORY_PORT,
-  ChatCommandRepositoryPort,
-} from '@chat/application/ports/chat-repository.port';
+import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
@@ -12,8 +8,7 @@ import { TryCatch } from '@common/decorators/try-catch.decorator';
 @CommandHandler(MarkConversationAsReadCommand)
 export class MarkConversationAsReadCommandHandler implements ICommandHandler<MarkConversationAsReadCommand> {
   constructor(
-    @Inject(CHAT_COMMAND_REPOSITORY_PORT)
-    private readonly chatCommandRepository: ChatCommandRepositoryPort,
+    private readonly chatCommandRepository: ConversationRepositoryPort,
     private readonly publisher: EventPublisher,
   ) {}
 

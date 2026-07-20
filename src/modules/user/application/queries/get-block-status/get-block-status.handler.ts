@@ -1,10 +1,6 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetBlockStatusQuery } from './get-block-status.query';
-import { Inject } from '@nestjs/common';
-import {
-  IUserReadRepositoryPort,
-  USER_READ_REPOSITORY_PORT,
-} from '@user/application/ports/user-read-repository.port';
+import { UserReadRepositoryPort } from '@user/application/ports/user-read-repository.port';
 import { Result } from '@common/result/result';
 import { GetBlockStatusResponse } from './get-block-status.response';
 
@@ -13,10 +9,7 @@ export class GetBlockStatusHandler implements IQueryHandler<
   GetBlockStatusQuery,
   Result<GetBlockStatusResponse>
 > {
-  constructor(
-    @Inject(USER_READ_REPOSITORY_PORT)
-    private readonly userRepository: IUserReadRepositoryPort,
-  ) {}
+  constructor(private readonly userRepository: UserReadRepositoryPort) {}
 
   async execute(
     query: GetBlockStatusQuery,

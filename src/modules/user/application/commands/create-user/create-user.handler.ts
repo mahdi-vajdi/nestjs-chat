@@ -1,10 +1,7 @@
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { CreateUserCommand } from './create-user.command';
-import { Inject, Logger } from '@nestjs/common';
-import {
-  IUserRepositoryPort,
-  USER_REPOSITORY_PORT,
-} from '@user/application/ports/user-repository.port';
+import { Logger } from '@nestjs/common';
+import { UserRepositoryPort } from '@user/application/ports/user-repository.port';
 import { Result } from '@common/result/result';
 import { UserEntity } from '@user/domain/models/user.model';
 import { ErrorCode } from '@common/result/error';
@@ -20,8 +17,7 @@ export class CreateUserHandler implements ICommandHandler<
   private readonly HASH_SALT = 10;
 
   constructor(
-    @Inject(USER_REPOSITORY_PORT)
-    private readonly userRepository: IUserRepositoryPort,
+    private readonly userRepository: UserRepositoryPort,
     private readonly publisher: EventPublisher,
   ) {}
 

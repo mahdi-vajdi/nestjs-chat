@@ -1,15 +1,12 @@
 import { CommandHandler, ICommandHandler, EventPublisher } from '@nestjs/cqrs';
 import { SignupCommand } from './signup.command';
-import { Inject, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { Result } from '@common/result/result';
 import { UserIntegrationPort } from '@auth/application/ports/user-integration.port';
 import { SignupResponse } from '@auth/presentation/http/dtos/signup.dto';
 import { ErrorCode } from '@common/result/error';
 import { TokenService } from '@auth/application/services/token.service';
-import {
-  AUTH_REPOSITORY_PORT,
-  AuthRepositoryPort,
-} from '@auth/application/ports/auth-repository.port';
+import { AuthRepositoryPort } from '@auth/application/ports/auth-repository.port';
 import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
 import * as bcrypt from 'bcrypt';
 
@@ -24,7 +21,6 @@ export class SignupHandler implements ICommandHandler<
   constructor(
     private readonly userIntegrationPort: UserIntegrationPort,
     private readonly tokenService: TokenService,
-    @Inject(AUTH_REPOSITORY_PORT)
     private readonly authRepository: AuthRepositoryPort,
     private readonly publisher: EventPublisher,
   ) {}

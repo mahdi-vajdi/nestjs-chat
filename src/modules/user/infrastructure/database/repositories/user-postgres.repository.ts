@@ -6,13 +6,13 @@ import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
-import { IUserRepositoryPort } from '@user/application/ports/user-repository.port';
+import { UserRepositoryPort } from '@user/application/ports/user-repository.port';
 import { UserEntity } from '@user/domain/models/user.model';
 import { UserExistsOptions } from '@user/application/ports/options/user-exists.options';
-import { UserBlock } from '@user/infrastructure/postgres/entities/user-block.entity';
+import { UserBlock } from '@user/infrastructure/database/entities/user-block.entity';
 
 @Injectable()
-export class UserPostgresRepository implements IUserRepositoryPort {
+export class UserPostgresRepository implements UserRepositoryPort {
   constructor(
     @InjectRepository(User, DatabaseType.POSTGRES)
     private readonly userRepository: Repository<User>,

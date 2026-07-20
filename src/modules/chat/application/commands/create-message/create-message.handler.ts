@@ -1,10 +1,7 @@
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { CreateMessageCommand } from './create-message.command';
-import { Inject, Logger } from '@nestjs/common';
-import {
-  CHAT_COMMAND_REPOSITORY_PORT,
-  ChatCommandRepositoryPort,
-} from '@chat/application/ports/chat-repository.port';
+import { Logger } from '@nestjs/common';
+import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
 import { Result } from '@common/result/result';
 import { MessageEntity } from '@chat/domain/models/message.entity';
 
@@ -16,8 +13,7 @@ export class CreateMessageHandler implements ICommandHandler<
   private readonly logger = new Logger(CreateMessageHandler.name);
 
   constructor(
-    @Inject(CHAT_COMMAND_REPOSITORY_PORT)
-    private readonly commandRepo: ChatCommandRepositoryPort,
+    private readonly commandRepo: ConversationRepositoryPort,
     private readonly publisher: EventPublisher,
   ) {}
 

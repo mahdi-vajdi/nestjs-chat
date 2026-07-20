@@ -1,20 +1,18 @@
+import { MessageReadDto } from '@chat/application/dtos/message-read.dto';
+import { ConversationReadDto } from '@chat/application/dtos/conversation-read.dto';
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
-import { Message } from '@chat/infrastructure/postgres/entities/message.entity';
-import {
-  ChatQueryRepositoryPort,
-  ConversationReadDto,
-  MessageReadDto,
-} from '@chat/application/ports/chat-repository.port';
-import { Conversation } from '@chat/infrastructure/postgres/entities/conversation.entity';
+import { Message } from '@chat/infrastructure/database/entities/message.entity';
+import { ConversationReadRepositoryPort } from '@chat/application/ports/conversation-read-repository.port';
+import { Conversation } from '@chat/infrastructure/database/entities/conversation.entity';
 import { Result } from '@common/result/result';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { GetUserConversationIdsOptions } from '@chat/application/ports/options/get-user-conversation-ids.options';
 import { GetUserConversationListOptions } from '@chat/application/ports/options/get-user-conversation-list.options';
-import { ConversationMember } from '@chat/infrastructure/postgres/entities/conversation-member.entity';
-import { DeletedMessage } from '@chat/infrastructure/postgres/entities/deleted-message.entity';
+import { ConversationMember } from '@chat/infrastructure/database/entities/conversation-member.entity';
+import { DeletedMessage } from '@chat/infrastructure/database/entities/deleted-message.entity';
 import { ErrorCode } from '@common/result/error';
 import {
   PaginationOptions,
@@ -23,7 +21,7 @@ import {
 import { PaginationHelper } from '@common/pagination/pagination.helper';
 
 @Injectable()
-export class ChatQueryPostgresRepository implements ChatQueryRepositoryPort {
+export class ConversationPostgresReadRepository implements ConversationReadRepositoryPort {
   constructor(
     @InjectRepository(Conversation, DatabaseType.POSTGRES)
     private readonly conversationRepository: Repository<Conversation>,

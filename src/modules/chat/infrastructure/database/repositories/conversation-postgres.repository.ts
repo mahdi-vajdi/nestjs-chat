@@ -2,18 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
-import { Message } from '@chat/infrastructure/postgres/entities/message.entity';
-import { ChatCommandRepositoryPort } from '@chat/application/ports/chat-repository.port';
-import { Conversation } from '@chat/infrastructure/postgres/entities/conversation.entity';
+import { Message } from '@chat/infrastructure/database/entities/message.entity';
+import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
+import { Conversation } from '@chat/infrastructure/database/entities/conversation.entity';
 import { Result } from '@common/result/result';
 import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { ConversationEntity } from '@chat/domain/models/conversation.model';
-import { ConversationMember } from '@chat/infrastructure/postgres/entities/conversation-member.entity';
+import { ConversationMember } from '@chat/infrastructure/database/entities/conversation-member.entity';
 import { MessageEntity } from '@chat/domain/models/message.entity';
-import { DeletedMessage } from '@chat/infrastructure/postgres/entities/deleted-message.entity';
+import { DeletedMessage } from '@chat/infrastructure/database/entities/deleted-message.entity';
 
 @Injectable()
-export class ChatCommandPostgresRepository implements ChatCommandRepositoryPort {
+export class ConversationPostgresRepository implements ConversationRepositoryPort {
   constructor(
     @InjectDataSource(DatabaseType.POSTGRES)
     private readonly dataSource: DataSource,

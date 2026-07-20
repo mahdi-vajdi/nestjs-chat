@@ -1,13 +1,10 @@
 import { CommandHandler, ICommandHandler, EventPublisher } from '@nestjs/cqrs';
 import { RefreshTokensCommand } from './refresh-tokens.command';
-import { Inject, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
 import { TokenService } from '@auth/application/services/token.service';
-import {
-  AUTH_REPOSITORY_PORT,
-  AuthRepositoryPort,
-} from '@auth/application/ports/auth-repository.port';
+import { AuthRepositoryPort } from '@auth/application/ports/auth-repository.port';
 import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
 import { RefreshTokensOutput } from '@auth/application/services/dtos/refresh-tokens.dto';
 import { RefreshTokenPayload } from '@auth/domain/types/refresh-token-payload.type';
@@ -23,7 +20,6 @@ export class RefreshTokensHandler implements ICommandHandler<
 
   constructor(
     private readonly tokenService: TokenService,
-    @Inject(AUTH_REPOSITORY_PORT)
     private readonly authRepository: AuthRepositoryPort,
     private readonly publisher: EventPublisher,
   ) {}

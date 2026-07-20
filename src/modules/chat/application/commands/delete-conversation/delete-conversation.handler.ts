@@ -1,10 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { DeleteConversationCommand } from './delete-conversation.command';
-import { Inject, Logger } from '@nestjs/common';
-import {
-  CHAT_COMMAND_REPOSITORY_PORT,
-  ChatCommandRepositoryPort,
-} from '@chat/application/ports/chat-repository.port';
+import { Logger } from '@nestjs/common';
+import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
 import { Result } from '@common/result/result';
 
 @CommandHandler(DeleteConversationCommand)
@@ -14,10 +11,7 @@ export class DeleteConversationHandler implements ICommandHandler<
 > {
   private readonly logger = new Logger(DeleteConversationHandler.name);
 
-  constructor(
-    @Inject(CHAT_COMMAND_REPOSITORY_PORT)
-    private readonly commandRepo: ChatCommandRepositoryPort,
-  ) {}
+  constructor(private readonly commandRepo: ConversationRepositoryPort) {}
 
   async execute(command: DeleteConversationCommand): Promise<Result<boolean>> {
     const { conversationId } = command;

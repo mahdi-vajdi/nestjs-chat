@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { UserRole } from '@user/domain/enums/user-role.enum';
 import { UserEntity } from '@user/domain/models/user.model';
-import { UserBlock } from '@user/infrastructure/postgres/entities/user-block.entity';
+import { UserBlock } from '@user/infrastructure/database/entities/user-block.entity';
 
 @Entity({ schema: 'user', name: 'users' })
 export class User {

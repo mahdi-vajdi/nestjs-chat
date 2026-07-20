@@ -6,12 +6,12 @@ import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { Result } from '@common/result/result';
 import { ErrorCode } from '@common/result/error';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
-import { IUserReadRepositoryPort } from '@user/application/ports/user-read-repository.port';
+import { UserReadRepositoryPort } from '@user/application/ports/user-read-repository.port';
 import { UserReadDto } from '@user/application/dtos/user-read.dto';
-import { UserBlock } from '@user/infrastructure/postgres/entities/user-block.entity';
+import { UserBlock } from '@user/infrastructure/database/entities/user-block.entity';
 
 @Injectable()
-export class UserPostgresReadRepository implements IUserReadRepositoryPort {
+export class UserPostgresReadRepository implements UserReadRepositoryPort {
   constructor(
     @InjectRepository(User, DatabaseType.POSTGRES)
     private readonly userRepository: Repository<User>,

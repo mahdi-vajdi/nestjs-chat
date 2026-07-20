@@ -1,10 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { ValidatePasswordQuery } from './validate-password.query';
-import { Inject, Logger } from '@nestjs/common';
-import {
-  IUserReadRepositoryPort,
-  USER_READ_REPOSITORY_PORT,
-} from '@user/application/ports/user-read-repository.port';
+import { Logger } from '@nestjs/common';
+import { UserReadRepositoryPort } from '@user/application/ports/user-read-repository.port';
 import { Result } from '@common/result/result';
 import { UserReadDto } from '@user/application/dtos/user-read.dto';
 import validator from 'validator';
@@ -18,10 +15,7 @@ export class ValidatePasswordHandler implements IQueryHandler<
 > {
   private readonly logger = new Logger(ValidatePasswordHandler.name);
 
-  constructor(
-    @Inject(USER_READ_REPOSITORY_PORT)
-    private readonly userRepository: IUserReadRepositoryPort,
-  ) {}
+  constructor(private readonly userRepository: UserReadRepositoryPort) {}
 
   async execute(query: ValidatePasswordQuery): Promise<Result<UserReadDto>> {
     let userRes: Result<UserReadDto>;

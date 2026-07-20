@@ -1,10 +1,7 @@
 import { CommandHandler, ICommandHandler, EventPublisher } from '@nestjs/cqrs';
 import { UnblockUserCommand } from './unblock-user.command';
-import { Inject, Logger } from '@nestjs/common';
-import {
-  IUserRepositoryPort,
-  USER_REPOSITORY_PORT,
-} from '@user/application/ports/user-repository.port';
+import { Logger } from '@nestjs/common';
+import { UserRepositoryPort } from '@user/application/ports/user-repository.port';
 import { Result } from '@common/result/result';
 
 @CommandHandler(UnblockUserCommand)
@@ -15,8 +12,7 @@ export class UnblockUserHandler implements ICommandHandler<
   private readonly logger = new Logger(UnblockUserHandler.name);
 
   constructor(
-    @Inject(USER_REPOSITORY_PORT)
-    private readonly userRepository: IUserRepositoryPort,
+    private readonly userRepository: UserRepositoryPort,
     private readonly publisher: EventPublisher,
   ) {}
 

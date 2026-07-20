@@ -10,9 +10,9 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { MessageType } from '@chat/domain/enums/chat-type.enum';
-import { Conversation } from '@chat/infrastructure/postgres/entities/conversation.entity';
+import { Conversation } from '@chat/infrastructure/database/entities/conversation.entity';
 import { MessageEntity } from '@chat/domain/models/message.entity';
-import { ConversationMember } from '@chat/infrastructure/postgres/entities/conversation-member.entity';
+import { ConversationMember } from '@chat/infrastructure/database/entities/conversation-member.entity';
 
 @Entity({ schema: 'chat', name: 'messages' })
 export class Message {

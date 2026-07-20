@@ -6,7 +6,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Message } from '@chat/infrastructure/postgres/entities/message.entity';
+import { Message } from '@chat/infrastructure/database/entities/message.entity';
 
 @Entity({
   schema: 'chat',

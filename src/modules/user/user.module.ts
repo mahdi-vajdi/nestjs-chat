@@ -3,8 +3,8 @@ import { AuthIntegrationPort } from '@user/application/ports/auth-integration.po
 import { AuthIntegrationAdapter } from '@user/infrastructure/adapters/auth-integration.adapter';
 import { UserHttpGuard } from '@user/presentation/http/guards/user-http.guard';
 import { UserHttpController } from '@user/presentation/http/user-http.controller';
-import { Module, forwardRef } from '@nestjs/common';
-import { UserDatabaseModule } from '@user/infrastructure/postgres/user-database.module';
+import { Module } from '@nestjs/common';
+import { UserDatabaseModule } from '@user/infrastructure/database/user-database.module';
 import { CqrsModule } from '@nestjs/cqrs';
 import { CreateUserHandler } from '@user/application/commands/create-user/create-user.handler';
 import { BlockUserHandler } from '@user/application/commands/block-user/block-user.handler';
@@ -17,7 +17,7 @@ import { GetBlockStatusHandler } from '@user/application/queries/get-block-statu
 import { GetBlockedUsersIdsHandler } from '@user/application/queries/get-blocked-users-ids/get-blocked-users-ids.handler';
 
 @Module({
-  imports: [UserDatabaseModule, forwardRef(() => AuthModule), CqrsModule],
+  imports: [UserDatabaseModule, AuthModule, CqrsModule],
   controllers: [UserHttpController],
   providers: [
     UserHttpGuard,

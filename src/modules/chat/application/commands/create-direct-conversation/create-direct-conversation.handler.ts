@@ -1,12 +1,8 @@
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { CreateDirectConversationCommand } from './create-direct-conversation.command';
-import { Inject, Logger } from '@nestjs/common';
-import {
-  CHAT_COMMAND_REPOSITORY_PORT,
-  CHAT_QUERY_REPOSITORY_PORT,
-  ChatCommandRepositoryPort,
-  ChatQueryRepositoryPort,
-} from '@chat/application/ports/chat-repository.port';
+import { Logger } from '@nestjs/common';
+import { ConversationReadRepositoryPort } from '@chat/application/ports/conversation-read-repository.port';
+import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
 import { UserIntegrationPort } from '@chat/application/ports/user-integration.port';
 import { Result } from '@common/result/result';
 import { ConversationEntity } from '@chat/domain/models/conversation.model';
@@ -20,10 +16,8 @@ export class CreateDirectConversationHandler implements ICommandHandler<
   private readonly logger = new Logger(CreateDirectConversationHandler.name);
 
   constructor(
-    @Inject(CHAT_COMMAND_REPOSITORY_PORT)
-    private readonly commandRepo: ChatCommandRepositoryPort,
-    @Inject(CHAT_QUERY_REPOSITORY_PORT)
-    private readonly queryRepo: ChatQueryRepositoryPort,
+    private readonly commandRepo: ConversationRepositoryPort,
+    private readonly queryRepo: ConversationReadRepositoryPort,
     private readonly userIntegrationPort: UserIntegrationPort,
     private readonly publisher: EventPublisher,
   ) {}
