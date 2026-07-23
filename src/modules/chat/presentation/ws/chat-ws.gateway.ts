@@ -16,11 +16,10 @@ import {
   WebSocketServer,
   WsException,
 } from '@nestjs/websockets';
-import { Logger, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
+import { Logger, UseFilters, UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ChatWsGuard } from '@modules/chat/presentation/ws/guards/chat-ws.guard';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { ValidationPipe } from '@common/validation/validation.pipe';
 import {
   GetUserConversationListRequest,
   UserConversationListItem,
@@ -112,7 +111,6 @@ export class ChatWsGateway
   }
 
   @SubscribeMessage('conversation.direct.create')
-  @UsePipes(new ValidationPipe(CreateConversationRequest, ['body'], 'ws'))
   async createDirectConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: CreateConversationRequest,
@@ -205,7 +203,6 @@ export class ChatWsGateway
   }
 
   @SubscribeMessage('conversation.list')
-  @UsePipes(new ValidationPipe(GetUserConversationListRequest, ['body'], 'ws'))
   async getUserConversationList(
     @MessageBody() data: GetUserConversationListRequest,
     @CurrentUserId() authUserId: string,
@@ -317,7 +314,6 @@ export class ChatWsGateway
   }
 
   @SubscribeMessage('conversation.message.create')
-  @UsePipes(new ValidationPipe(CreateMessageRequest, ['body'], 'ws'))
   async createMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: CreateMessageRequest,
@@ -368,9 +364,6 @@ export class ChatWsGateway
   }
 
   @SubscribeMessage('conversation.message.list')
-  @UsePipes(
-    new ValidationPipe(GetConversationMessageListRequest, ['body'], 'ws'),
-  )
   async getConversationMessageList(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: GetConversationMessageListRequest,

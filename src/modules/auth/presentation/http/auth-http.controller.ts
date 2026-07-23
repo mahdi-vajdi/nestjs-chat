@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UsePipes } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import {
   ApiBody,
   ApiOkResponse,
@@ -10,7 +10,6 @@ import {
   SignupRequestBody,
   SignupResponse,
 } from '@modules/auth/presentation/http/dtos/signup.dto';
-import { ValidationPipe } from '@common/validation/validation.pipe';
 import { CommandBus } from '@nestjs/cqrs';
 import { SignupCommand } from '@modules/auth/application/commands/signup/signup.command';
 import { SigninCommand } from '@modules/auth/application/commands/signin/signin.command';
@@ -25,7 +24,6 @@ export class AuthHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Post('signup')
-  @UsePipes(new ValidationPipe(SignupRequestBody, ['body'], 'http'))
   @ApiOperation({
     summary: 'Signup',
     description: 'Sign up and create a new user',

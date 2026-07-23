@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { ConfigType } from '@nestjs/config';
 import { httpConfig } from '@infrastructure/http/http.config';
 import { wsConfig } from '@infrastructure/websocket/ws.config';
-import { INestApplication, Logger } from '@nestjs/common';
+import { INestApplication, Logger, ValidationPipe } from '@nestjs/common';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import {
@@ -45,6 +45,12 @@ async function bootstrap() {
   app.enableCors();
   const httpAdapterHost = app.get(HttpAdapterHost);
   app.useGlobalFilters(new GlobalHttpExceptionFilter(httpAdapterHost));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
   setUpSwagger(app);
 
   // Set up adapter for socket gateway

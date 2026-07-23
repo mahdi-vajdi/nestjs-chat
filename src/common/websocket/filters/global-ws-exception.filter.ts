@@ -24,18 +24,14 @@ export class GlobalWsExceptionFilter extends BaseWsExceptionFilter {
     } else if (exception instanceof WsException) {
       const error = exception.getError();
       if (typeof error === 'string') {
-        response = { statusCode: 500, message: error };
-      } else if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error
-      ) {
+        response = { statusCode: 400, message: error };
+      } else if (typeof error === 'object' && error !== null) {
         response = {
-          statusCode: error['code'],
-          message: error['message'] || 'An error occurred',
+          statusCode: error['code'] || error['statusCode'] || 400,
+          message: error['message'] || error,
         };
       } else {
-        response = { statusCode: 500, message: 'An unexpected error occurred' };
+        response = { statusCode: 400, message: 'An unexpected error occurred' };
       }
     } else {
       response = { statusCode: 500, message: 'Internal server error' };

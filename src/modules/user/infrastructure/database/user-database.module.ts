@@ -7,6 +7,7 @@ import { UserPostgresReadRepository } from '@modules/user/infrastructure/databas
 import { UserRepositoryPort } from '@modules/user/application/ports/user-repository.port';
 import { UserReadRepositoryPort } from '@modules/user/application/ports/user-read-repository.port';
 import { UserBlock } from '@modules/user/infrastructure/database/entities/user-block.entity';
+
 @Module({
   imports: [TypeOrmModule.forFeature([User, UserBlock], DatabaseType.POSTGRES)],
   providers: [
