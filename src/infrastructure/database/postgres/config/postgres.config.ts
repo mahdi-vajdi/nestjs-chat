@@ -8,9 +8,13 @@ export const postgresConfigSchema = z.object({
   password: z.string().default(''),
   database: z.string().min(1),
   schema: z.string().default('public'),
-  log: z.coerce.boolean().default(false),
+  log: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .default(false),
   slowQueryLimit: z.coerce.number().default(1000), // Default to 1s
-  ssl: z.coerce.boolean().default(false),
+  ssl: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .default(false),
   applicationName: z.string().default('nestjs-chat'),
   poolSize: z.coerce.number().min(1).max(100).default(10),
 });
