@@ -1,7 +1,7 @@
 import { ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { VerifyAccessTokenQuery } from '@modules/auth/application/queries/verify-access-token/verify-access-token.query';
-import { BaseHttpAuthGuard } from '@common/guards/base-http-auth.guard';
+import { BaseHttpAuthGuard } from '@common/http/guards/base-http-auth.guard';
 
 @Injectable()
 export class AuthHttpGuard extends BaseHttpAuthGuard {

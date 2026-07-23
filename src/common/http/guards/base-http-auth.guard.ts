@@ -4,7 +4,7 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthenticatedRequest } from '../http/interfaces/authenticated-request.interface';
+import { AuthenticatedRequest } from '../interfaces/authenticated-request.interface';
 
 export abstract class BaseHttpAuthGuard implements CanActivate {
   protected abstract readonly logger: Logger;

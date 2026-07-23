@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AuthIntegrationPort } from '@modules/chat/application/ports/auth-integration.port';
-import { BaseWsAuthGuard } from '@common/guards/base-ws-auth.guard';
+import { BaseWsAuthGuard } from '@common/websocket/guards/base-ws-auth.guard';
 
 @Injectable()
 export class ChatWsGuard extends BaseWsAuthGuard {
