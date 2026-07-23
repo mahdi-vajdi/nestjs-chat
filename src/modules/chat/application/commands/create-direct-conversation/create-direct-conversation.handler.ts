@@ -4,14 +4,17 @@ import { Logger } from '@nestjs/common';
 import { ConversationReadRepositoryPort } from '@chat/application/ports/conversation-read-repository.port';
 import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
 import { UserIntegrationPort } from '@chat/application/ports/user-integration.port';
-import { Result } from '@common/result/result';
+import {
+  BlockedUserException,
+  ConversationAlreadyExistsException,
+  TargetUserNotFoundException,
+} from '@chat/domain/chat.exceptions';
 import { ConversationEntity } from '@chat/domain/models/conversation.model';
-import { ErrorCode } from '@common/result/error';
 
 @CommandHandler(CreateDirectConversationCommand)
 export class CreateDirectConversationHandler implements ICommandHandler<
   CreateDirectConversationCommand,
-  Result<ConversationEntity>
+  ConversationEntity
 > {
   private readonly logger = new Logger(CreateDirectConversationHandler.name);
 
@@ -24,43 +27,32 @@ export class CreateDirectConversationHandler implements ICommandHandler<
 
   async execute(
     command: CreateDirectConversationCommand,
-  ): Promise<Result<ConversationEntity>> {
+  ): Promise<ConversationEntity> {
     const { userId, targetUserId } = command;
 
-    const userExistsRes =
+    const userExists =
       await this.userIntegrationPort.doesUserExist(targetUserId);
-    if (userExistsRes.isError()) return Result.error(userExistsRes.error);
-    if (!userExistsRes.value) {
-      return Result.error('Target user does not exist', ErrorCode.NOT_FOUND);
+    if (!userExists) {
+      throw new TargetUserNotFoundException();
     }
 
-    const blockRelationRes = await this.userIntegrationPort.hasBlockRelation(
+    const isBlocked = await this.userIntegrationPort.hasBlockRelation(
       userId,
       targetUserId,
     );
-    if (blockRelationRes.isError()) return Result.error(blockRelationRes.error);
-    if (blockRelationRes.value) {
-      return Result.error(
-        'Cannot create conversation due to a block relation',
-        ErrorCode.VALIDATION_FAILURE,
-      );
+    if (isBlocked) {
+      throw new BlockedUserException();
     }
 
-    const conversationExistsRes = await this.queryRepo.conversationExists(
+    const conversationExists = await this.queryRepo.conversationExists(
       userId,
       targetUserId,
     );
-    if (conversationExistsRes.isError()) {
-      return Result.error(conversationExistsRes.error);
-    }
-    if (conversationExistsRes.value) {
+    if (conversationExists) {
       this.logger.log(
         `User ${userId} already has a direct conversation with ${targetUserId}. returning error.`,
       );
-      return Result.error(
-        'Conversation already exists.',
-        ErrorCode.VALIDATION_FAILURE,
-      );
+      throw new ConversationAlreadyExistsException();
     }
 
     this.logger.debug(
@@ -69,16 +61,15 @@ export class CreateDirectConversationHandler implements ICommandHandler<
 
     const conversation = ConversationEntity.createDirect(userId, targetUserId);
 
-    const saveRes = await this.commandRepo.saveConversation(conversation);
-    if (saveRes.isError()) {
-      return Result.error(saveRes.error);
-    }
+    const savedConversation =
+      await this.commandRepo.saveConversation(conversation);
 
-    const conversationRoot = this.publisher.mergeObjectContext(saveRes.value);
+    const conversationRoot =
+      this.publisher.mergeObjectContext(savedConversation);
     conversationRoot.commit();
 
     this.logger.log(`Created direct conversation: ${conversationRoot.id}`);
 
-    return Result.ok(conversationRoot);
+    return conversationRoot;
   }
 }

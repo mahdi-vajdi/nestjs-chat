@@ -1,13 +1,13 @@
-import { CommandHandler, ICommandHandler, EventPublisher } from '@nestjs/cqrs';
+import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { BlockUserCommand } from './block-user.command';
 import { Logger } from '@nestjs/common';
 import { UserRepositoryPort } from '@user/application/ports/user-repository.port';
-import { Result } from '@common/result/result';
+import { UserNotFoundException } from '@user/domain/user.exceptions';
 
 @CommandHandler(BlockUserCommand)
 export class BlockUserHandler implements ICommandHandler<
   BlockUserCommand,
-  Result<boolean>
+  boolean
 > {
   private readonly logger = new Logger(BlockUserHandler.name);
 
@@ -16,19 +16,19 @@ export class BlockUserHandler implements ICommandHandler<
     private readonly publisher: EventPublisher,
   ) {}
 
-  async execute(command: BlockUserCommand): Promise<Result<boolean>> {
+  async execute(command: BlockUserCommand): Promise<boolean> {
     this.logger.debug(
       `User ${command.blockerId} is blocking ${command.blockedId}`,
     );
 
     const blockerRes = await this.userRepository.getUserById(command.blockerId);
-    if (blockerRes.isError()) return Result.error(blockerRes.error);
+    if (!blockerRes) throw new UserNotFoundException(command.blockerId);
 
     const blockedRes = await this.userRepository.getUserById(command.blockedId);
-    if (blockedRes.isError()) return Result.error(blockedRes.error);
-    const blocked = blockedRes.value;
+    if (!blockedRes) throw new UserNotFoundException(command.blockedId);
+    const blocked = blockedRes;
 
-    const blocker = this.publisher.mergeObjectContext(blockerRes.value);
+    const blocker = this.publisher.mergeObjectContext(blockerRes);
     const originalLength = blocker.blockedUsers.length;
     blocker.blockUser(blocked);
 
@@ -36,16 +36,13 @@ export class BlockUserHandler implements ICommandHandler<
       this.logger.log(
         `User ${command.blockerId} has already blocked user ${command.blockedId}`,
       );
-      return Result.ok(false);
+      return false;
     }
 
-    const saveRes = await this.userRepository.save(blockerRes.value);
-    if (saveRes.isError()) {
-      return Result.error(saveRes.error);
-    }
+    await this.userRepository.save(blockerRes);
 
     blocker.commit();
 
-    return Result.ok(true);
+    return true;
   }
 }

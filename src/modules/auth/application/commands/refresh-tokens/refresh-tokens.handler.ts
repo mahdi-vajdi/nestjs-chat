@@ -1,8 +1,7 @@
-import { CommandHandler, ICommandHandler, EventPublisher } from '@nestjs/cqrs';
+import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { RefreshTokensCommand } from './refresh-tokens.command';
 import { Logger } from '@nestjs/common';
-import { Result } from '@common/result/result';
-import { ErrorCode } from '@common/result/error';
+
 import { TokenService } from '@auth/application/services/token.service';
 import { AuthRepositoryPort } from '@auth/application/ports/auth-repository.port';
 import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
@@ -10,10 +9,15 @@ import { RefreshTokensOutput } from '@auth/application/services/dtos/refresh-tok
 import { RefreshTokenPayload } from '@auth/domain/types/refresh-token-payload.type';
 import * as bcrypt from 'bcrypt';
 
+import {
+  InvalidRefreshTokenException,
+  TokenGenerationException,
+} from '@auth/domain/auth.exceptions';
+
 @CommandHandler(RefreshTokensCommand)
 export class RefreshTokensHandler implements ICommandHandler<
   RefreshTokensCommand,
-  Result<RefreshTokensOutput>
+  RefreshTokensOutput
 > {
   private readonly logger = new Logger(RefreshTokensHandler.name);
   private readonly HASH_SALT = 10;
@@ -24,9 +28,7 @@ export class RefreshTokensHandler implements ICommandHandler<
     private readonly publisher: EventPublisher,
   ) {}
 
-  async execute(
-    command: RefreshTokensCommand,
-  ): Promise<Result<RefreshTokensOutput>> {
+  async execute(command: RefreshTokensCommand): Promise<RefreshTokensOutput> {
     let payload: RefreshTokenPayload;
     try {
       // Verify the signature of the refresh token
@@ -34,25 +36,20 @@ export class RefreshTokensHandler implements ICommandHandler<
         command.refreshToken,
       );
     } catch {
-      return Result.error(
-        'Invalid refresh token signature',
-        ErrorCode.INVALID_ARGUMENT,
-      );
+      throw new InvalidRefreshTokenException('Invalid refresh token signature');
     }
 
     // Fetch from DB
-    const getRefreshTokenRes = await this.authRepository.getRefreshToken(
+    const currentTokenEntity = await this.authRepository.getRefreshToken(
       payload.jti,
       payload.sub,
     );
-    if (getRefreshTokenRes.isError()) {
+    if (!currentTokenEntity) {
       this.logger.error(
         `Error getting refresh token from DB for user ${payload.sub}`,
       );
-      return Result.error(getRefreshTokenRes.error);
+      throw new InvalidRefreshTokenException();
     }
-
-    const currentTokenEntity = getRefreshTokenRes.value;
 
     // Validate against hashed token
     const isRefreshTokenValid = await bcrypt.compare(
@@ -63,17 +60,14 @@ export class RefreshTokensHandler implements ICommandHandler<
       this.logger.error(
         `Invalid refresh token hash match for user ${payload.sub}`,
       );
-      return Result.error('Invalid refresh token', ErrorCode.INVALID_ARGUMENT);
+      throw new InvalidRefreshTokenException();
     }
 
     // Revoke/Delete old token
     const tokenToRevoke = this.publisher.mergeObjectContext(currentTokenEntity);
     tokenToRevoke.softDelete();
 
-    const deleteRes = await this.authRepository.save(tokenToRevoke);
-    if (deleteRes.isError()) {
-      return Result.error(deleteRes.error);
-    }
+    await this.authRepository.save(tokenToRevoke);
 
     // Generate and save new tokens
     const accessToken = await this.tokenService.signAccessToken(
@@ -95,20 +89,21 @@ export class RefreshTokensHandler implements ICommandHandler<
     );
 
     const newToken = this.publisher.mergeObjectContext(newRefreshTokenEntity);
-    const saveNewRes = await this.authRepository.save(newToken);
-    if (saveNewRes.isError()) {
+    try {
+      await this.authRepository.save(newToken);
+    } catch {
       // Fallback: restore the old one (as in original logic)
       tokenToRevoke.restore();
       await this.authRepository.save(tokenToRevoke);
-      return Result.error(saveNewRes.error);
+      throw new TokenGenerationException('Failed to save new refresh token');
     }
 
     tokenToRevoke.commit();
     newToken.commit();
 
-    return Result.ok({
+    return {
       accessToken,
       refreshToken: refreshTokenDto.token,
-    });
+    };
   }
 }

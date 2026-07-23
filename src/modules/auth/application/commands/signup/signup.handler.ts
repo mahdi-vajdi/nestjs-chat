@@ -1,19 +1,20 @@
-import { CommandHandler, ICommandHandler, EventPublisher } from '@nestjs/cqrs';
+import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { SignupCommand } from './signup.command';
 import { Logger } from '@nestjs/common';
-import { Result } from '@common/result/result';
-import { UserIntegrationPort } from '@auth/application/ports/user-integration.port';
-import { SignupResponse } from '@auth/presentation/http/dtos/signup.dto';
-import { ErrorCode } from '@common/result/error';
+
 import { TokenService } from '@auth/application/services/token.service';
 import { AuthRepositoryPort } from '@auth/application/ports/auth-repository.port';
 import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
+import { UserIntegrationPort } from '@auth/application/ports/user-integration.port';
+import { SignupResponse } from '@auth/presentation/http/dtos/signup.dto';
 import * as bcrypt from 'bcrypt';
+
+import { TokenGenerationException } from '@auth/domain/auth.exceptions';
 
 @CommandHandler(SignupCommand)
 export class SignupHandler implements ICommandHandler<
   SignupCommand,
-  Result<SignupResponse>
+  SignupResponse
 > {
   private readonly logger = new Logger(SignupHandler.name);
   private readonly HASH_SALT = 10;
@@ -25,7 +26,7 @@ export class SignupHandler implements ICommandHandler<
     private readonly publisher: EventPublisher,
   ) {}
 
-  async execute(command: SignupCommand): Promise<Result<SignupResponse>> {
+  async execute(command: SignupCommand): Promise<SignupResponse> {
     // Create the User
     const createUserRes = await this.userIntegrationPort.createUser({
       email: command.email,
@@ -37,11 +38,7 @@ export class SignupHandler implements ICommandHandler<
       role: 'USER',
     });
 
-    if (createUserRes.isError()) {
-      return Result.error(createUserRes.error);
-    }
-
-    const userId = createUserRes.value.id;
+    const userId = createUserRes.id;
 
     // Generate Tokens
     const accessToken = await this.tokenService.signAccessToken(userId, 'USER');
@@ -60,24 +57,24 @@ export class SignupHandler implements ICommandHandler<
 
     const refreshToken = this.publisher.mergeObjectContext(refreshTokenEntity);
 
-    const saveRes = await this.authRepository.save(refreshToken);
-    if (saveRes.isError()) {
+    try {
+      await this.authRepository.save(refreshToken);
+    } catch {
       this.logger.error(
         `Error saving refresh token during signup for user ${userId}`,
       );
-      return Result.error(
+      throw new TokenGenerationException(
         'Failed to create token; please sign in again',
-        ErrorCode.INTERNAL,
       );
     }
 
     refreshToken.commit();
 
-    return Result.ok({
+    return {
       id: userId,
       accessToken,
       refreshToken: refreshTokenDto.token,
-      createdAt: createUserRes.value.createdAt.toISOString(),
-    });
+      createdAt: createUserRes.createdAt.toISOString(),
+    };
   }
 }

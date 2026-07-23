@@ -1,5 +1,3 @@
-import { Result } from '@common/result/result';
-
 export interface AuthUser {
   id: string;
   role: string;
@@ -9,9 +7,9 @@ export interface AuthUser {
 }
 
 export abstract class UserIntegrationPort {
-  abstract createUser(data: any): Promise<Result<AuthUser>>;
+  abstract createUser(data: any): Promise<AuthUser>;
   abstract validatePassword(
     property: string,
     password: string,
-  ): Promise<Result<AuthUser>>;
+  ): Promise<AuthUser>;
 }

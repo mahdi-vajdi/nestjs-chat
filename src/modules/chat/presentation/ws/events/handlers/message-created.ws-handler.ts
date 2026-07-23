@@ -5,8 +5,8 @@ import { Logger } from '@nestjs/common';
 import { UserIntegrationPort } from '@chat/application/ports/user-integration.port';
 import { GetUserConversationQuery } from '@chat/application/queries/get-user-conversation/get-user-conversation.query';
 import {
-  UserMessageCreatedEvent,
   UserMessageCreated,
+  UserMessageCreatedEvent,
 } from '@chat/presentation/ws/events/message-created.event';
 import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
 
@@ -27,18 +27,17 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
     );
 
     // Get conversation to find target users
-    const conversationRes = await this.queryBus.execute(
-      new GetUserConversationQuery(event.conversationId, event.senderId),
-    );
-
-    if (conversationRes.isError()) {
+    let conversation;
+    try {
+      conversation = await this.queryBus.execute(
+        new GetUserConversationQuery(event.conversationId, event.senderId),
+      );
+    } catch {
       this.logger.error(
         `Could not find conversation for message ${event.messageId}`,
       );
       return;
     }
-
-    const conversation = conversationRes.value;
 
     const targetMember = conversation.members.find(
       (member) => member.userId !== event.senderId,
@@ -51,40 +50,39 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
       return;
     }
 
-    const [currentUserRes, targetUserRes] = await Promise.all([
-      this.userIntegrationPort.getUserById(event.senderId),
-      this.userIntegrationPort.getUserById(targetMember.userId),
-    ]);
+    try {
+      const [currentUser, targetUser] = await Promise.all([
+        this.userIntegrationPort.getUserById(event.senderId),
+        this.userIntegrationPort.getUserById(targetMember.userId),
+      ]);
 
-    if (currentUserRes.isError() || targetUserRes.isError()) {
+      let rooms = [`user-${targetUser.id}`];
+      rooms = rooms.filter((x) => !event.deletedForUserIds.includes(x));
+
+      await this.chatWsGateway.serverBroadcast<UserMessageCreated>(
+        this.chatWsGateway.server,
+        rooms,
+        new UserMessageCreatedEvent({
+          id: event.messageId,
+          seen: false,
+          createdAt: event.createdAt.toISOString(),
+          user: {
+            id: currentUser.id,
+            username: currentUser.username,
+            name: `${currentUser.firstName} ${currentUser.lastName}`,
+            avatar: currentUser.avatar,
+          },
+          content: event.text,
+          conversation: {
+            id: conversation.id,
+            name: conversation.id,
+            avatar: conversation.picture,
+            username: conversation.identifier,
+          },
+        }),
+      );
+    } catch {
       this.logger.error(`Could not fetch users for message broadcast`);
-      return;
     }
-
-    let rooms = [`user-${targetUserRes.value.id}`];
-    rooms = rooms.filter((x) => !event.deletedForUserIds.includes(x));
-
-    await this.chatWsGateway.serverBroadcast<UserMessageCreated>(
-      this.chatWsGateway.server,
-      rooms,
-      new UserMessageCreatedEvent({
-        id: event.messageId,
-        seen: false,
-        createdAt: event.createdAt.toISOString(),
-        user: {
-          id: currentUserRes.value.id,
-          username: currentUserRes.value.username,
-          name: `${currentUserRes.value.firstName} ${currentUserRes.value.lastName}`,
-          avatar: currentUserRes.value.avatar,
-        },
-        content: event.text,
-        conversation: {
-          id: conversation.id,
-          name: conversation.id,
-          avatar: conversation.picture,
-          username: conversation.identifier,
-        },
-      }),
-    );
   }
 }

@@ -5,8 +5,6 @@ import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { Message } from '@chat/infrastructure/database/entities/message.entity';
 import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
 import { Conversation } from '@chat/infrastructure/database/entities/conversation.entity';
-import { Result } from '@common/result/result';
-import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { ConversationEntity } from '@chat/domain/models/conversation.model';
 import { ConversationMember } from '@chat/infrastructure/database/entities/conversation-member.entity';
 import { MessageEntity } from '@chat/domain/models/message.entity';
@@ -19,10 +17,7 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
     private readonly dataSource: DataSource,
   ) {}
 
-  @TryCatch
-  async getConversationById(
-    id: string,
-  ): Promise<Result<ConversationEntity | null>> {
+  async getConversationById(id: string): Promise<ConversationEntity | null> {
     const conversation = await this.dataSource
       .getRepository(Conversation)
       .findOne({
@@ -31,16 +26,15 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
       });
 
     if (!conversation) {
-      return Result.ok(null);
+      return null;
     }
 
-    return Result.ok(Conversation.toDomain(conversation));
+    return Conversation.toDomain(conversation);
   }
 
-  @TryCatch
   async saveConversation(
     conversationEntity: ConversationEntity,
-  ): Promise<Result<ConversationEntity>> {
+  ): Promise<ConversationEntity> {
     const res = await this.dataSource.transaction(async (entityManager) => {
       // Save Conversation
       const conversationToSave = Conversation.fromDomain(conversationEntity);
@@ -59,13 +53,10 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
       return conversation;
     });
 
-    return Result.ok(Conversation.toDomain(res));
+    return Conversation.toDomain(res);
   }
 
-  @TryCatch
-  async saveMessage(
-    messageEntity: MessageEntity,
-  ): Promise<Result<MessageEntity>> {
+  async saveMessage(messageEntity: MessageEntity): Promise<MessageEntity> {
     const res = await this.dataSource.transaction(async (entityManager) => {
       const messageToSave = Message.fromDomain(messageEntity);
       const message = await entityManager.save(messageToSave);
@@ -113,11 +104,10 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
     // Restore the deletedForUserIds to the returned entity since we don't map it back natively in fromDomain
     messageEntity.deletedForUserIds.forEach((id) => entity.deleteForUser(id));
 
-    return Result.ok(entity);
+    return entity;
   }
 
-  @TryCatch
-  async deleteConversation(id: string): Promise<Result<boolean>> {
+  async deleteConversation(id: string): Promise<boolean> {
     const res = await this.dataSource.transaction(async (entityManager) => {
       const [, deleteConversation] = await Promise.all([
         entityManager
@@ -137,6 +127,6 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
       return deleteConversation.affected === 1;
     });
 
-    return Result.ok(res);
+    return res;
   }
 }

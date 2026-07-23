@@ -2,11 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
 import { Repository } from 'typeorm';
-import { TryCatch } from '@common/decorators/try-catch.decorator';
-import { Result } from '@common/result/result';
-import { ErrorCode } from '@common/result/error';
-import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { UserReadRepositoryPort } from '@user/application/ports/user-read-repository.port';
+import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { UserReadDto } from '@user/application/dtos/user-read.dto';
 import { UserBlock } from '@user/infrastructure/database/entities/user-block.entity';
 
@@ -33,52 +30,36 @@ export class UserPostgresReadRepository implements UserReadRepositoryPort {
     );
   }
 
-  @TryCatch
-  async getUserByEmail(email: string): Promise<Result<UserReadDto>> {
+  async getUserByEmail(email: string): Promise<UserReadDto | null> {
     const res = await this.userRepository
       .createQueryBuilder('u')
       .where('u.email = :email', { email })
       .getOne();
 
-    if (!res) {
-      return Result.error('User not found', ErrorCode.NOT_FOUND);
-    }
-
-    return Result.ok(this.mapToDto(res));
+    return res ? this.mapToDto(res) : null;
   }
 
-  @TryCatch
-  async getUserById(id: string): Promise<Result<UserReadDto>> {
+  async getUserById(id: string): Promise<UserReadDto | null> {
     const res = await this.userRepository
       .createQueryBuilder('u')
       .where('u.id = :id', { id })
       .getOne();
 
-    if (!res) {
-      return Result.error('User not found', ErrorCode.NOT_FOUND);
-    }
-
-    return Result.ok(this.mapToDto(res));
+    return res ? this.mapToDto(res) : null;
   }
 
-  @TryCatch
-  async getUserByUsername(username: string): Promise<Result<UserReadDto>> {
+  async getUserByUsername(username: string): Promise<UserReadDto | null> {
     const res = await this.userRepository
       .createQueryBuilder('u')
       .where('u.username = :username', { username })
       .getOne();
 
-    if (!res) {
-      return Result.error('User not found', ErrorCode.NOT_FOUND);
-    }
-
-    return Result.ok(this.mapToDto(res));
+    return res ? this.mapToDto(res) : null;
   }
 
-  @TryCatch
   async getUserIdsByNameOrUsername(
     nameOrUsernameFilter: string,
-  ): Promise<Result<string[]>> {
+  ): Promise<string[]> {
     const res = await this.userRepository
       .createQueryBuilder('u')
       .select('u.id', 'id')
@@ -90,51 +71,45 @@ export class UserPostgresReadRepository implements UserReadRepositoryPort {
       })
       .getRawMany();
 
-    return Result.ok(res.map((row) => row.id));
+    return res.map((row) => row.id);
   }
 
-  @TryCatch
-  async getUsersByIds(userIds: string[]): Promise<Result<UserReadDto[]>> {
-    if (!userIds || userIds.length === 0) return Result.ok([]);
+  async getUsersByIds(userIds: string[]): Promise<UserReadDto[]> {
+    if (!userIds || userIds.length === 0) return [];
 
     const res = await this.userRepository
       .createQueryBuilder('u')
       .where('u.id IN (:...userIds)', { userIds })
       .getMany();
 
-    return Result.ok(res.map((u) => this.mapToDto(u)));
+    return res.map((u) => this.mapToDto(u));
   }
 
-  @TryCatch
-  async getBlockStatus(
-    blockerId: string,
-    blockedId: string,
-  ): Promise<Result<boolean>> {
+  async getBlockStatus(blockerId: string, blockedId: string): Promise<boolean> {
     const res = await this.userBlockRepository
       .createQueryBuilder('ub')
       .where('ub.blocker_id = :blockerId', { blockerId })
       .andWhere('ub.blocked_id = :blocked_id', { blockedId })
       .getExists();
 
-    return Result.ok(res);
+    return res;
   }
 
-  @TryCatch
   async getBlockedUserIds(
     blockerId: string,
     blockedIds?: string[],
-  ): Promise<Result<string[]>> {
+  ): Promise<string[]> {
     const query = this.userBlockRepository
       .createQueryBuilder('ub')
       .select('ub.blocked_id', 'blockedId')
-      .where('ub.blocker_id = :userId', { blockerId });
+      .where('ub.blocker_id = :userId', { userId: blockerId }); // Fixed variable interpolation
 
     if (blockedIds?.length) {
-      query.andWhere('ub.blocked_id IN (:...blockedId)', { blockedIds });
+      query.andWhere('ub.blocked_id IN (:...blockedIds)', { blockedIds }); // Fixed s
     }
 
     const res = await query.getRawMany<{ blockedId: string }>();
 
-    return Result.ok(res.map((r) => r.blockedId));
+    return res.map((r) => r.blockedId);
   }
 }

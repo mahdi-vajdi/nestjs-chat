@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import {
-  UserIntegrationPort,
-  ChatUser,
   BlockStatus,
+  ChatUser,
+  UserIntegrationPort,
 } from '@chat/application/ports/user-integration.port';
 import { QueryBus } from '@nestjs/cqrs';
 import { GetUserByIdQuery } from '@user/application/queries/get-user-by-id/get-user-by-id.query';
@@ -10,74 +10,61 @@ import { GetBlockStatusQuery } from '@user/application/queries/get-block-status/
 import { GetUsersByIdsQuery } from '@user/application/queries/get-users-by-ids/get-users-by-ids.query';
 import { GetUserIdsByNameOrUsernameQuery } from '@user/application/queries/get-user-ids-by-name-or-username/get-user-ids-by-name-or-username.query';
 import { GetBlockedUsersIdsQuery } from '@user/application/queries/get-blocked-users-ids/get-blocked-users-ids.query';
-import { Result } from '@common/result/result';
-import { ErrorCode } from '@common/result/error';
+import { UserNotFoundException } from '@user/domain/user.exceptions';
 
 @Injectable()
 export class UserIntegrationAdapter implements UserIntegrationPort {
   constructor(private readonly queryBus: QueryBus) {}
 
-  async doesUserExist(userId: string): Promise<Result<boolean>> {
-    const userRes = await this.queryBus.execute(new GetUserByIdQuery(userId));
-    if (userRes.isError()) {
-      if (
-        userRes.error.message.includes('not found') ||
-        userRes.error.code === ErrorCode.NOT_FOUND
-      ) {
-        return Result.ok(false);
+  async doesUserExist(userId: string): Promise<boolean> {
+    try {
+      await this.queryBus.execute(new GetUserByIdQuery(userId));
+      return true;
+    } catch (e) {
+      if (e instanceof UserNotFoundException) {
+        return false;
       }
-      return Result.error(userRes.error);
+      throw e;
     }
-    return Result.ok(true);
   }
 
-  async hasBlockRelation(
-    userA: string,
-    userB: string,
-  ): Promise<Result<boolean>> {
+  async hasBlockRelation(userA: string, userB: string): Promise<boolean> {
     const res = await this.queryBus.execute(
       new GetBlockStatusQuery(userA, userB),
     );
-    if (res.isError()) {
-      return Result.error(res.error);
-    }
-    return Result.ok(res.value.isBlocked || res.value.isBlocker);
+    return res.isBlocked || res.isBlocker;
   }
 
-  async getUserById(userId: string): Promise<Result<ChatUser>> {
+  async getUserById(userId: string): Promise<ChatUser> {
     const res = await this.queryBus.execute(new GetUserByIdQuery(userId));
-    if (res.isError()) return Result.error(res.error);
-    return Result.ok({
-      id: res.value.id,
-      username: res.value.username,
-      firstName: res.value.firstName,
-      lastName: res.value.lastName,
-      avatar: res.value.avatar,
-    });
+    return {
+      id: res.id,
+      username: res.username,
+      firstName: res.firstName,
+      lastName: res.lastName,
+      avatar: res.avatar,
+    };
   }
 
-  async getUsersByIds(userIds: string[]): Promise<Result<ChatUser[]>> {
+  async getUsersByIds(userIds: string[]): Promise<ChatUser[]> {
     const res = await this.queryBus.execute(new GetUsersByIdsQuery(userIds));
-    if (res.isError()) return Result.error(res.error);
-    return Result.ok(
-      res.value.map((u) => ({
-        id: u.id,
-        username: u.username,
-        firstName: u.firstName,
-        lastName: u.lastName,
-        avatar: u.avatar,
-      })),
-    );
+    return res.map((u: any) => ({
+      id: u.id,
+      username: u.username,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      avatar: u.avatar,
+    }));
   }
 
-  async getUserIdsByNameOrUsername(filter: string): Promise<Result<string[]>> {
+  async getUserIdsByNameOrUsername(filter: string): Promise<string[]> {
     return this.queryBus.execute(new GetUserIdsByNameOrUsernameQuery(filter));
   }
 
   async getBlockedUsersIds(
     userId: string,
     targetUserIds: string[],
-  ): Promise<Result<string[]>> {
+  ): Promise<string[]> {
     return this.queryBus.execute(
       new GetBlockedUsersIdsQuery(userId, targetUserIds),
     );
@@ -86,7 +73,7 @@ export class UserIntegrationAdapter implements UserIntegrationPort {
   async getBlockStatus(
     userId: string,
     targetUserId: string,
-  ): Promise<Result<BlockStatus>> {
+  ): Promise<BlockStatus> {
     return this.queryBus.execute(new GetBlockStatusQuery(userId, targetUserId));
   }
 }

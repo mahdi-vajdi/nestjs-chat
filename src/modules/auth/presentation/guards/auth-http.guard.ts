@@ -9,7 +9,6 @@ import { Request } from 'express';
 import { QueryBus } from '@nestjs/cqrs';
 import { VerifyAccessTokenQuery } from '@auth/application/queries/verify-access-token/verify-access-token.query';
 import { AccessTokenPayload } from '@auth/domain/types/access-token-payload.type';
-import { Result } from '@common/result/result';
 
 @Injectable()
 export class AuthHttpGuard implements CanActivate {
@@ -28,21 +27,20 @@ export class AuthHttpGuard implements CanActivate {
       throw new UnauthorizedException('No access token was provided.');
     }
 
-    const verifyTokenRes = await this.queryBus.execute<
-      VerifyAccessTokenQuery,
-      Result<AccessTokenPayload>
-    >(new VerifyAccessTokenQuery(accessToken));
-    if (verifyTokenRes.isError()) {
-      this.logger.warn(
-        `Error verifying access token: ${verifyTokenRes.error.message}`,
-      );
+    try {
+      const verifyTokenRes = await this.queryBus.execute<
+        VerifyAccessTokenQuery,
+        AccessTokenPayload
+      >(new VerifyAccessTokenQuery(accessToken));
+
+      Object.assign(request, {
+        authUser: verifyTokenRes,
+        accessToken: accessToken,
+      });
+    } catch (e) {
+      this.logger.warn(`Error verifying access token: ${(e as any).message}`);
       throw new UnauthorizedException('Invalid access token.');
     }
-
-    Object.assign(request, {
-      authUser: verifyTokenRes.value,
-      accessToken: accessToken,
-    });
 
     // TODO: Check user role
 

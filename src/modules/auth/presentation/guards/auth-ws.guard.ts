@@ -5,13 +5,10 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { StdResponse } from '@common/std-response/std-response';
-import { Result } from '@common/result/result';
-import { ErrorCode } from '@common/result/error';
 import { QueryBus } from '@nestjs/cqrs';
 import { VerifyAccessTokenQuery } from '@auth/application/queries/verify-access-token/verify-access-token.query';
-import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { AccessTokenPayload } from '@auth/domain/types/access-token-payload.type';
+import { WsException } from '@nestjs/websockets';
 import { ClientData } from '@common/websocket/interfaces/client-data.interface';
 
 @Injectable()
@@ -49,54 +46,51 @@ export class AuthWsGuard implements CanActivate {
       client.data['authPromise'] = this.authenticateUser(client);
     }
 
-    const authRes: Result<AccessTokenPayload> =
-      await client.data['authPromise'];
-    if (authRes.isError()) {
-      this.logger.debug(`Error from authentication: ${authRes.error.message}`);
+    try {
+      const authRes = await client.data['authPromise'];
+      this.logger.debug(`User authenticated: ${authRes.sub}`);
+      return true;
+    } catch (e) {
+      this.logger.debug(`Error from authentication: ${(e as any).message}`);
       client.data['authPromise'] = null;
       if (typeof data.ack == 'function') {
-        data.ack(StdResponse.fromResult(authRes));
+        data.ack({ error: 'Unauthorized', statusCode: 401 }); // Using simple error instead of StdResponse
       }
       return false;
     }
-
-    this.logger.debug(`User authenticated: ${authRes.value.sub}`);
-    return true;
   }
 
-  @TryCatch
-  async authenticateUser(client: Socket): Promise<Result<AccessTokenPayload>> {
+  async authenticateUser(client: Socket): Promise<AccessTokenPayload> {
     if (client.data.authUser) {
       this.logger.verbose(
         `user ${client.data.authUser.userId} already authenticated`,
       );
-      return Result.ok(client.data.authUser);
+      return client.data.authUser;
     }
 
     const accessToken = this.extractToken(client);
     if (!accessToken) {
       this.logger.debug('token not provided');
-      return Result.error('Unauthorized', ErrorCode.UNAUTHENTICATED);
+      throw new WsException('Unauthorized');
     }
 
-    const verifyRes = await this.queryBus.execute<
-      VerifyAccessTokenQuery,
-      Result<AccessTokenPayload>
-    >(new VerifyAccessTokenQuery(accessToken));
-    if (verifyRes.isError()) {
-      this.logger.warn(
-        `Error verifying access token: ${verifyRes.error.message}`,
-      );
-      return Result.error('Unauthorized', ErrorCode.UNAUTHENTICATED);
+    try {
+      const verifyRes = await this.queryBus.execute<
+        VerifyAccessTokenQuery,
+        AccessTokenPayload
+      >(new VerifyAccessTokenQuery(accessToken));
+
+      Object.assign(client.data, {
+        authUser: verifyRes,
+        accessToken: accessToken,
+      });
+      client.data.authPromise = null;
+
+      return verifyRes;
+    } catch (e) {
+      this.logger.warn(`Error verifying access token: ${(e as any).message}`);
+      throw new WsException('Unauthorized');
     }
-
-    Object.assign(client.data, {
-      authUser: verifyRes.value,
-      accessToken: accessToken,
-    });
-    client.data.authPromise = null;
-
-    return Result.ok(verifyRes.value);
   }
 
   private extractToken(client: Socket): string {
@@ -119,11 +113,7 @@ export class AuthWsGuard implements CanActivate {
     data: any,
   ) {
     if (typeof data.ack == 'function') {
-      data.ack(
-        StdResponse.fromResult(
-          Result.error('Unauthorized', ErrorCode.UNAUTHENTICATED),
-        ),
-      );
+      data.ack({ error: 'Unauthorized', statusCode: 401 });
     }
 
     client.data = null;

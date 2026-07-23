@@ -7,16 +7,13 @@ import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { Message } from '@chat/infrastructure/database/entities/message.entity';
 import { ConversationReadRepositoryPort } from '@chat/application/ports/conversation-read-repository.port';
 import { Conversation } from '@chat/infrastructure/database/entities/conversation.entity';
-import { Result } from '@common/result/result';
-import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { GetUserConversationIdsOptions } from '@chat/application/ports/options/get-user-conversation-ids.options';
 import { GetUserConversationListOptions } from '@chat/application/ports/options/get-user-conversation-list.options';
 import { ConversationMember } from '@chat/infrastructure/database/entities/conversation-member.entity';
 import { DeletedMessage } from '@chat/infrastructure/database/entities/deleted-message.entity';
-import { ErrorCode } from '@common/result/error';
 import {
-  PaginationOptions,
   PaginatedResult,
+  PaginationOptions,
 } from '@common/pagination/pagination.interface';
 import { PaginationHelper } from '@common/pagination/pagination.helper';
 
@@ -33,11 +30,10 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
     private readonly dataSource: DataSource,
   ) {}
 
-  @TryCatch
   async conversationExists(
     userId: string,
     targetUserId: string,
-  ): Promise<Result<boolean>> {
+  ): Promise<boolean> {
     const res = await this.conversationRepository
       .createQueryBuilder('c')
       .innerJoin('c.conversationMembers', 'cm', 'cm.user_id = :userId', {
@@ -52,14 +48,13 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
       )
       .getExists();
 
-    return Result.ok(res);
+    return res;
   }
 
-  @TryCatch
   async getUserConversationList(
     userId: string,
     options: GetUserConversationListOptions,
-  ): Promise<Result<PaginatedResult<ConversationReadDto>>> {
+  ): Promise<PaginatedResult<ConversationReadDto>> {
     const query = this.conversationRepository
       .createQueryBuilder('c')
       .innerJoinAndSelect(
@@ -103,9 +98,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
     const [conversations, count] = await query.getManyAndCount();
 
     if (conversations.length === 0) {
-      return Result.ok(
-        PaginationHelper.createResult([], count, options.pagination),
-      );
+      return PaginationHelper.createResult([], count, options.pagination);
     }
 
     const conversationIds = conversations.map((c) => c.id);
@@ -196,16 +189,13 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
       });
     });
 
-    return Result.ok(
-      PaginationHelper.createResult(dtos, count, options.pagination),
-    );
+    return PaginationHelper.createResult(dtos, count, options.pagination);
   }
 
-  @TryCatch
   async getUserConversationIds(
     userId: string,
     options: GetUserConversationIdsOptions,
-  ): Promise<Result<string[]>> {
+  ): Promise<string[]> {
     const query = this.conversationRepository
       .createQueryBuilder('c')
       .select('c.id', 'id')
@@ -219,14 +209,13 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
 
     const res = await query.getMany().then((rows) => rows.map((c) => c.id));
 
-    return Result.ok(res);
+    return res;
   }
 
-  @TryCatch
   async getUserConversationById(
     conversationId: string,
     userId: string,
-  ): Promise<Result<ConversationReadDto>> {
+  ): Promise<ConversationReadDto | null> {
     const res = await this.conversationRepository
       .createQueryBuilder('c')
       .innerJoinAndSelect('c.conversationMembers', 'cm')
@@ -240,7 +229,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
       .getOne();
 
     if (!res) {
-      return Result.error('Conversation not found.', ErrorCode.NOT_FOUND);
+      return null;
     }
 
     const dto: ConversationReadDto = {
@@ -261,15 +250,14 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
       })),
     };
 
-    return Result.ok(dto);
+    return dto;
   }
 
-  @TryCatch
   async getUserConversationMessageList(
     conversationId: string,
     userId: string,
     pagination: PaginationOptions,
-  ): Promise<Result<PaginatedResult<MessageReadDto>>> {
+  ): Promise<PaginatedResult<MessageReadDto>> {
     const [messages, count] = await this.dataSource.transaction(
       async (entityManager) => {
         const queryRes = await entityManager
@@ -305,6 +293,6 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
       createdAt: m.created_at.toISOString(),
     }));
 
-    return Result.ok(PaginationHelper.createResult(dtos, count, pagination));
+    return PaginationHelper.createResult(dtos, count, pagination);
   }
 }

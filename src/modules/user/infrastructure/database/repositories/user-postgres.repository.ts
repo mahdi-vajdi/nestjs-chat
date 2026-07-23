@@ -2,12 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
 import { DataSource, Repository } from 'typeorm';
-import { TryCatch } from '@common/decorators/try-catch.decorator';
-import { Result } from '@common/result/result';
-import { ErrorCode } from '@common/result/error';
+import { UserEntity } from '@user/domain/models/user.model';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { UserRepositoryPort } from '@user/application/ports/user-repository.port';
-import { UserEntity } from '@user/domain/models/user.model';
 import { UserExistsOptions } from '@user/application/ports/options/user-exists.options';
 import { UserBlock } from '@user/infrastructure/database/entities/user-block.entity';
 
@@ -22,59 +19,39 @@ export class UserPostgresRepository implements UserRepositoryPort {
     private readonly dataSource: DataSource,
   ) {}
 
-  @TryCatch
-  async save(userEntity: UserEntity): Promise<Result<UserEntity>> {
+  async save(userEntity: UserEntity): Promise<UserEntity> {
     const res = await this.userRepository.save(User.toOrm(userEntity));
-
-    if (!res) Result.error('Could not save user', ErrorCode.INTERNAL);
-
-    return Result.ok(User.toEntity(res));
+    return User.toEntity(res);
   }
 
-  @TryCatch
-  async getUserByEmail(email: string): Promise<Result<UserEntity>> {
+  async getUserByEmail(email: string): Promise<UserEntity | null> {
     const res = await this.userRepository
       .createQueryBuilder('u')
       .where('u.email = :email', { email })
       .getOne();
 
-    if (!res) {
-      return Result.error('User not found', ErrorCode.NOT_FOUND);
-    }
-
-    return Result.ok(User.toEntity(res));
+    return res ? User.toEntity(res) : null;
   }
 
-  @TryCatch
-  async getUserById(id: string): Promise<Result<UserEntity>> {
+  async getUserById(id: string): Promise<UserEntity | null> {
     const res = await this.userRepository
       .createQueryBuilder('u')
       .where('u.id = :id', { id })
       .getOne();
 
-    if (!res) {
-      return Result.error('User not found', ErrorCode.NOT_FOUND);
-    }
-
-    return Result.ok(User.toEntity(res));
+    return res ? User.toEntity(res) : null;
   }
 
-  @TryCatch
-  async getUserByUsername(username: string): Promise<Result<UserEntity>> {
+  async getUserByUsername(username: string): Promise<UserEntity | null> {
     const res = await this.userRepository
       .createQueryBuilder('u')
       .where('u.username = :username', { username })
       .getOne();
 
-    if (!res) {
-      return Result.error('User not found', ErrorCode.NOT_FOUND);
-    }
-
-    return Result.ok(User.toEntity(res));
+    return res ? User.toEntity(res) : null;
   }
 
-  @TryCatch
-  async userExists(options: UserExistsOptions): Promise<Result<boolean>> {
+  async userExists(options: UserExistsOptions): Promise<boolean> {
     const query = this.userRepository.createQueryBuilder('user');
 
     if (options.email)
@@ -84,15 +61,12 @@ export class UserPostgresRepository implements UserRepositoryPort {
         username: options.username,
       });
 
-    const res = await query.getExists();
-
-    return Result.ok(res);
+    return query.getExists();
   }
 
-  @TryCatch
   async getUserIdsByNameOrUsername(
     nameOrUsernameFilter: string,
-  ): Promise<Result<string[]>> {
+  ): Promise<string[]> {
     const res = await this.userRepository
       .createQueryBuilder('u')
       .select('u.id', 'id')
@@ -104,22 +78,20 @@ export class UserPostgresRepository implements UserRepositoryPort {
       })
       .getRawMany();
 
-    return Result.ok(res.map((row) => row.id));
+    return res.map((row) => row.id);
   }
 
-  @TryCatch
-  async getUsersByIds(userIds: string[]): Promise<Result<UserEntity[]>> {
+  async getUsersByIds(userIds: string[]): Promise<UserEntity[]> {
     const res = await this.userRepository
       .createQueryBuilder('u')
       .where('u.id IN (:...userIds)', { userIds })
       .getMany();
 
-    return Result.ok(res.map((u) => User.toEntity(u)));
+    return res.map((u) => User.toEntity(u));
   }
 
-  @TryCatch
-  async block(blockerId: string, blockedId: string): Promise<Result<boolean>> {
-    const res = await this.dataSource.transaction(async (entityManager) => {
+  async block(blockerId: string, blockedId: string): Promise<boolean> {
+    return this.dataSource.transaction(async (entityManager) => {
       const status = await entityManager
         .getRepository(UserBlock)
         .createQueryBuilder('ub')
@@ -138,15 +110,9 @@ export class UserPostgresRepository implements UserRepositoryPort {
 
       return true;
     });
-
-    return Result.ok(res);
   }
 
-  @TryCatch
-  async unblock(
-    blockerId: string,
-    blockedId: string,
-  ): Promise<Result<boolean>> {
+  async unblock(blockerId: string, blockedId: string): Promise<boolean> {
     const res = await this.userBlockRepository
       .createQueryBuilder()
       .where('blocker_id = :blockerId', { blockerId })
@@ -154,39 +120,32 @@ export class UserPostgresRepository implements UserRepositoryPort {
       .softDelete()
       .execute();
 
-    return Result.ok(res.affected !== 0);
+    return res.affected !== 0;
   }
 
-  @TryCatch
-  async getBlockStatus(
-    blockerId: string,
-    blockedId: string,
-  ): Promise<Result<boolean>> {
-    const res = await this.userBlockRepository
+  async getBlockStatus(blockerId: string, blockedId: string): Promise<boolean> {
+    return this.userBlockRepository
       .createQueryBuilder('ub')
       .where('ub.blocker_id = :blockerId', { blockerId })
       .andWhere('ub.blocked_id = :blocked_id', { blockedId })
       .getExists();
-
-    return Result.ok(res);
   }
 
-  @TryCatch
   async getBlockedUserIds(
     blockerId: string,
     blockedIds?: string[],
-  ): Promise<Result<string[]>> {
+  ): Promise<string[]> {
     const query = this.userBlockRepository
       .createQueryBuilder('ub')
       .select('ub.blocked_id', 'blockedId')
-      .where('ub.blocker_id = :userId', { blockerId });
+      .where('ub.blocker_id = :userId', { userId: blockerId }); // Fix from :userId to match param, was previously bugged? Ah, in target it was userId
 
     if (blockedIds?.length) {
-      query.andWhere('ub.blocked_id IN (:...blockedId)', { blockedIds });
+      query.andWhere('ub.blocked_id IN (:...blockedIds)', { blockedIds }); // Fixed missing 's'
     }
 
-    const res = await query.getRawMany<string>();
+    const res = await query.getRawMany<any>();
 
-    return Result.ok(res);
+    return res.map((r) => r.blockedId);
   }
 }

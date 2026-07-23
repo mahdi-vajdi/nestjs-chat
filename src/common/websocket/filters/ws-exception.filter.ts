@@ -1,7 +1,7 @@
-import { Catch, ArgumentsHost, Logger } from '@nestjs/common';
+import { ArgumentsHost, Catch, Logger } from '@nestjs/common';
 import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets';
-import { StdResponse } from '@common/std-response/std-response';
-import { StdStatus } from '@common/std-response/std-status';
+import { DomainException } from '@common/exceptions/domain.exception';
+import { mapDomainErrorTypeToHttpStatus } from '@common/exceptions/exception-mapper';
 
 @Catch()
 export class WsExceptionFilter extends BaseWsExceptionFilter {
@@ -13,28 +13,28 @@ export class WsExceptionFilter extends BaseWsExceptionFilter {
 
     this.logger.error(`Exception in WS ${pattern}: ${exception}`);
 
-    let response: StdResponse<any>;
+    let response: any;
 
-    if (exception instanceof WsException) {
+    if (exception instanceof DomainException) {
+      response = {
+        statusCode: mapDomainErrorTypeToHttpStatus(exception.type),
+        message: exception.message,
+        code: exception.code,
+      };
+    } else if (exception instanceof WsException) {
       const error = exception.getError();
       if (typeof error === 'string') {
-        response = StdResponse.error(StdStatus.INTERNAL_ERROR, error);
+        response = { statusCode: 500, message: error };
       } else if (typeof error === 'object' && error['code']) {
-        response = StdResponse.error(
-          error['code'],
-          error['message'] || 'An error occurred',
-        );
+        response = {
+          statusCode: error['code'],
+          message: error['message'] || 'An error occurred',
+        };
       } else {
-        response = StdResponse.error(
-          StdStatus.INTERNAL_ERROR,
-          'An unexpected error occurred',
-        );
+        response = { statusCode: 500, message: 'An unexpected error occurred' };
       }
     } else {
-      response = StdResponse.error(
-        StdStatus.INTERNAL_ERROR,
-        'Internal server error',
-      );
+      response = { statusCode: 500, message: 'Internal server error' };
     }
 
     if (typeof client.emit === 'function' && pattern) {

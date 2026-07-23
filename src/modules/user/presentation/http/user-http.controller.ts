@@ -1,14 +1,13 @@
 import {
   Body,
+  ConflictException,
   Controller,
   Delete,
   Param,
   Post,
-  Res,
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
-import { BaseHttpController } from '@common/http/base-http-controller';
 import {
   BlockRequestBody,
   BlockResponse,
@@ -17,14 +16,10 @@ import { CommandBus } from '@nestjs/cqrs';
 import { BlockUserCommand } from '@user/application/commands/block-user/block-user.command';
 import { UnblockUserCommand } from '@user/application/commands/unblock-user/unblock-user.command';
 import { CurrentUserId } from '@common/http/decorators/current-user-id.decorator';
-import { Response } from 'express';
-import { Result } from '@common/result/result';
-import { ErrorCode } from '@common/result/error';
 import {
   UnblockRequestParams,
   UnblockResponse,
 } from '@user/presentation/http/dtos/unblock.dto';
-import { HttpStatus } from '@nestjs/common/enums/http-status.enum';
 import {
   ApiConflictResponse,
   ApiNoContentResponse,
@@ -37,10 +32,8 @@ import { UserHttpGuard } from '@user/presentation/http/guards/user-http.guard';
 
 @Controller('user')
 @ApiTags('User')
-export class UserHttpController extends BaseHttpController {
-  constructor(private readonly commandBus: CommandBus) {
-    super();
-  }
+export class UserHttpController {
+  constructor(private readonly commandBus: CommandBus) {}
 
   @ApiOperation({
     summary: 'Block',
@@ -59,26 +52,17 @@ export class UserHttpController extends BaseHttpController {
   @UsePipes(new ValidationPipe(BlockRequestBody, ['body'], 'http'))
   async block(
     @Body() body: BlockRequestBody,
-    @Res() response: Response,
     @CurrentUserId() authUserId: string,
-  ): Promise<void> {
-    const res = await this.commandBus.execute(
+  ): Promise<BlockResponse> {
+    const success = await this.commandBus.execute(
       new BlockUserCommand(authUserId, body.targetUserId),
     );
-    if (res.isError()) {
-      this.respond(response, res);
-      return;
+
+    if (success === false) {
+      throw new ConflictException('User is already blocked');
     }
 
-    if (res.value == false) {
-      this.respond(
-        response,
-        Result.error('User is already blocked', ErrorCode.ALREADY_EXISTS),
-      );
-      return;
-    }
-
-    this.respond(response, Result.ok<BlockResponse>({}));
+    return {};
   }
 
   @ApiOperation({
@@ -95,26 +79,12 @@ export class UserHttpController extends BaseHttpController {
   @UsePipes(new ValidationPipe(UnblockRequestParams, ['body'], 'http'))
   async unblock(
     @Param() params: UnblockRequestParams,
-    @Res() response: Response,
     @CurrentUserId() authUserId: string,
-  ): Promise<void> {
-    const res = await this.commandBus.execute(
+  ): Promise<UnblockResponse> {
+    await this.commandBus.execute(
       new UnblockUserCommand(authUserId, params.targetUserId),
     );
-    if (res.isError()) {
-      this.respond(response, res);
-      return;
-    }
 
-    if (res.value === false) {
-      this.respond(
-        response,
-        Result.ok<UnblockResponse>({}),
-        HttpStatus.NO_CONTENT,
-      );
-      return;
-    }
-
-    this.respond(response, Result.ok<UnblockResponse>({}));
+    return {};
   }
 }

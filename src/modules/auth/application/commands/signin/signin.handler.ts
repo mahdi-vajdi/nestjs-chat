@@ -1,19 +1,19 @@
-import { CommandHandler, ICommandHandler, EventPublisher } from '@nestjs/cqrs';
+import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { SigninCommand } from './signin.command';
 import { Logger } from '@nestjs/common';
-import { Result } from '@common/result/result';
-import { UserIntegrationPort } from '@auth/application/ports/user-integration.port';
-import { SigninResponse } from '@auth/presentation/http/dtos/signin.dto';
-import { ErrorCode } from '@common/result/error';
+
 import { TokenService } from '@auth/application/services/token.service';
 import { AuthRepositoryPort } from '@auth/application/ports/auth-repository.port';
 import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
+import { UserIntegrationPort } from '@auth/application/ports/user-integration.port';
+import { SigninResponse } from '@auth/presentation/http/dtos/signin.dto';
 import * as bcrypt from 'bcrypt';
+import { TokenGenerationException } from '@auth/domain/auth.exceptions';
 
 @CommandHandler(SigninCommand)
 export class SigninHandler implements ICommandHandler<
   SigninCommand,
-  Result<SigninResponse>
+  SigninResponse
 > {
   private readonly logger = new Logger(SigninHandler.name);
   private readonly HASH_SALT = 10;
@@ -25,20 +25,12 @@ export class SigninHandler implements ICommandHandler<
     private readonly publisher: EventPublisher,
   ) {}
 
-  async execute(command: SigninCommand): Promise<Result<SigninResponse>> {
+  async execute(command: SigninCommand): Promise<SigninResponse> {
     //Validate Credentials
-    const validateRes = await this.userIntegrationPort.validatePassword(
+    const user = await this.userIntegrationPort.validatePassword(
       command.property,
       command.password,
     );
-    if (validateRes.isError()) {
-      if (validateRes.error.code == ErrorCode.INTERNAL) {
-        return Result.error('Something went wrong. Please try again.');
-      }
-      return Result.error('Invalid Credentials', ErrorCode.UNAUTHENTICATED);
-    }
-
-    const user = validateRes.value;
 
     // Generate Tokens
     const accessToken = await this.tokenService.signAccessToken(
@@ -60,20 +52,20 @@ export class SigninHandler implements ICommandHandler<
 
     const rtDomain = this.publisher.mergeObjectContext(refreshTokenEntity);
 
-    const saveRes = await this.authRepository.save(rtDomain);
-    if (saveRes.isError()) {
+    try {
+      await this.authRepository.save(rtDomain);
+    } catch {
       this.logger.error(
         `Error saving refresh token during signin for user ${user.id}`,
       );
-      return Result.error(
+      throw new TokenGenerationException(
         'Failed to create token; please sign in again',
-        ErrorCode.INTERNAL,
       );
     }
 
     rtDomain.commit();
 
-    return Result.ok({
+    return {
       user: {
         id: user.id,
         firstName: user.firstName,
@@ -84,6 +76,6 @@ export class SigninHandler implements ICommandHandler<
         accessToken,
         refreshToken: refreshTokenDto.token,
       },
-    });
+    };
   }
 }

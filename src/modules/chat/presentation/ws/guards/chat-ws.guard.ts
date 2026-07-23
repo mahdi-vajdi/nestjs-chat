@@ -6,13 +6,10 @@ import {
 } from '@nestjs/common';
 import { Socket } from 'socket.io';
 
-import { Result } from '@common/result/result';
-import { ErrorCode } from '@common/result/error';
 import {
   AuthIntegrationPort,
   ValidatedTokenPayload,
 } from '@chat/application/ports/auth-integration.port';
-import { TryCatch } from '@common/decorators/try-catch.decorator';
 import { ClientData } from '@common/websocket/interfaces/client-data.interface';
 import { WsException } from '@nestjs/websockets';
 
@@ -50,53 +47,48 @@ export class ChatWsGuard implements CanActivate {
       client.data['authPromise'] = this.authenticateUser(client);
     }
 
-    const authRes: Result<ValidatedTokenPayload> =
-      await client.data['authPromise'];
-    if (authRes.isError()) {
-      this.logger.debug(`Error from authentication: ${authRes.error.message}`);
+    try {
+      const authPayload = await client.data['authPromise'];
+      this.logger.debug(`User authenticated: ${authPayload.sub}`);
+      return true;
+    } catch (e) {
+      this.logger.debug(`Error from authentication: ${(e as Error).message}`);
       client.data['authPromise'] = null;
       throw new WsException({
-        code: ErrorCode.UNAUTHENTICATED,
-        message: authRes.error.message,
+        code: 'UNAUTHENTICATED',
+        message: (e as Error).message,
       });
     }
-
-    this.logger.debug(`User authenticated: ${authRes.value.sub}`);
-    return true;
   }
 
-  @TryCatch
-  async authenticateUser(
-    client: Socket,
-  ): Promise<Result<ValidatedTokenPayload>> {
+  async authenticateUser(client: Socket): Promise<ValidatedTokenPayload> {
     if (client.data.authUser) {
       this.logger.verbose(
         `user ${client.data.authUser.sub} already authenticated`,
       );
-      return Result.ok(client.data.authUser);
+      return client.data.authUser;
     }
 
     const accessToken = this.extractToken(client);
     if (!accessToken) {
       this.logger.debug('token not provided');
-      return Result.error('Unauthorized', ErrorCode.UNAUTHENTICATED);
+      throw new Error('Unauthorized');
     }
 
-    const verifyRes = await this.authIntegrationPort.verifyToken(accessToken);
-    if (verifyRes.isError()) {
-      this.logger.warn(
-        `Error verifying access token: ${verifyRes.error.message}`,
-      );
-      return Result.error('Unauthorized', ErrorCode.UNAUTHENTICATED);
+    try {
+      const verifyRes = await this.authIntegrationPort.verifyToken(accessToken);
+
+      Object.assign(client.data, {
+        authUser: verifyRes,
+        accessToken: accessToken,
+      });
+      client.data.authPromise = null;
+
+      return verifyRes;
+    } catch (e) {
+      this.logger.warn(`Error verifying access token: ${(e as Error).message}`);
+      throw new Error('Unauthorized', { cause: e });
     }
-
-    Object.assign(client.data, {
-      authUser: verifyRes.value,
-      accessToken: accessToken,
-    });
-    client.data.authPromise = null;
-
-    return Result.ok(verifyRes.value);
   }
 
   private extractToken(client: Socket): string {
@@ -118,7 +110,7 @@ export class ChatWsGuard implements CanActivate {
     client.data = null;
     client.disconnect(true);
     throw new WsException({
-      code: ErrorCode.UNAUTHENTICATED,
+      code: 'UNAUTHENTICATED',
       message: 'Unauthorized',
     });
   }

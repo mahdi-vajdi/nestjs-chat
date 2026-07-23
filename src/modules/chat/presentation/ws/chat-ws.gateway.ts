@@ -14,12 +14,11 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  WsException,
 } from '@nestjs/websockets';
-import { Logger, UseGuards, UsePipes, UseFilters } from '@nestjs/common';
+import { Logger, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ChatWsGuard } from '@chat/presentation/ws/guards/chat-ws.guard';
-import { Result } from '@common/result/result';
-import { ValidatedTokenPayload } from '@chat/application/ports/auth-integration.port';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ValidationPipe } from '@common/validation/validation.pipe';
 import {
@@ -28,28 +27,15 @@ import {
 } from '@chat/presentation/ws/dtos/get-user-conversation-list.dto';
 import { PaginationHelper } from '@common/pagination/pagination.helper';
 import { UserIntegrationPort } from '@chat/application/ports/user-integration.port';
-import { StdResponse } from '@common/std-response/std-response';
 import { CurrentWsUserId } from '@common/websocket/decorators/current-ws-user-id.decorator';
 import { ConversationType } from '@chat/domain/enums/conversation-type.enum';
-import {
-  CreateConversationRequest,
-  CreateConversationResponse,
-} from '@chat/presentation/ws/dtos/create-conversation.dto';
+import { CreateConversationRequest } from '@chat/presentation/ws/dtos/create-conversation.dto';
 import { MessageType } from '@chat/domain/enums/chat-type.enum';
 import { BaseWsGateway } from '@common/websocket/base-ws.gateway';
 import { ConversationCreatedEvent } from '@chat/presentation/ws/events/conversation-created.event';
-import { ErrorCode } from '@common/result/error';
-import { PaginatedResult } from '@common/pagination/pagination.interface';
-import {
-  CreateMessageRequest,
-  CreateMessageResponseResponse,
-} from '@chat/presentation/ws/dtos/create-message.dto';
-import { StdStatus } from '@common/std-response/std-status';
+import { CreateMessageRequest } from '@chat/presentation/ws/dtos/create-message.dto';
 import { MarkConversationAsReadCommand } from '@chat/application/commands/mark-conversation-as-read/mark-conversation-as-read.command';
-import {
-  GetConversationMessageListRequest,
-  GetConversationMessageListResponse,
-} from '@chat/presentation/ws/dtos/get-conversation-message-list.dto';
+import { GetConversationMessageListRequest } from '@chat/presentation/ws/dtos/get-conversation-message-list.dto';
 import { MessageSeenEvent } from '@chat/presentation/ws/events/message-seen.event';
 
 import { WsExceptionFilter } from '@common/websocket/filters/ws-exception.filter';
@@ -89,41 +75,32 @@ export class ChatWsGateway
       client.data['authPromise'] = this.chatWsGuard.authenticateUser(client);
     }
 
-    const authRes: Result<ValidatedTokenPayload> =
-      await client.data['authPromise'];
-    if (authRes.isError()) {
+    try {
+      const authPayload = await client.data['authPromise'];
+
+      const conversationIds = await this.queryBus.execute(
+        new GetUserConversationIdsQuery(authPayload.sub, {}),
+      );
+
       this.logger.debug(
-        `Error from authentication: ${authRes.error.message}. disconnecting...`,
+        `Joining user ${authPayload.sub} to conversations: ${conversationIds}`,
       );
-      client.emit('appError', authRes.error.message);
-      client.disconnect(true);
-      return;
-    }
+      client.join(conversationIds);
 
-    const conversationIdsRes = await this.queryBus.execute(
-      new GetUserConversationIdsQuery(authRes.value.sub, {}),
-    );
-    if (conversationIdsRes.isError()) {
-      this.logger.error(
-        `Error fetching conversation IDs for user ${authRes.value.sub}. disconnecting...`,
+      const userEventsRoom = `user-${authPayload.sub}`;
+      this.logger.debug(
+        `Joining user ${authPayload.sub} to room ${userEventsRoom}`,
       );
-      client.emit('error.internal', authRes.error);
+      client.join(userEventsRoom);
+
+      this.logger.log(`Client authorized: ${authPayload.sub}`);
+    } catch (e) {
+      this.logger.debug(
+        `Error during connection: ${(e as Error).message}. disconnecting...`,
+      );
+      client.emit('appError', (e as Error).message);
       client.disconnect(true);
-      return;
     }
-
-    this.logger.debug(
-      `Joining user ${authRes.value.sub} to conversations: ${conversationIdsRes.value}`,
-    );
-    client.join(conversationIdsRes.value);
-
-    const userEventsRoom = `user-${authRes.value.sub}`;
-    this.logger.debug(
-      `Joining user ${authRes.value.sub} to room ${userEventsRoom}`,
-    );
-    client.join(userEventsRoom);
-
-    this.logger.log(`Client authorized: ${authRes.value.sub}`);
   }
 
   handleDisconnect(client: Socket): void {
@@ -142,111 +119,90 @@ export class ChatWsGateway
     @MessageBody() data: CreateConversationRequest,
     @CurrentWsUserId() authUserId: string,
   ): Promise<any> {
-    const [currentUserRes, targetUserRes] = await Promise.all([
+    const [currentUser, targetUser] = await Promise.all([
       this.userIntegrationPort.getUserById(authUserId),
       this.userIntegrationPort.getUserById(data.targetUserId),
     ]);
-    if (currentUserRes.isError()) {
-      return StdResponse.fromResult(currentUserRes);
-    }
-    if (targetUserRes.isError()) {
-      return StdResponse.fromResult(targetUserRes);
+
+    const blockStatus = await this.userIntegrationPort.getBlockStatus(
+      authUserId,
+      targetUser.id,
+    );
+    if (blockStatus.isBlocker) {
+      throw new WsException('You have blocked this user.');
     }
 
-    const blockStatusRes = await this.userIntegrationPort.getBlockStatus(
-      authUserId,
-      targetUserRes.value.id,
+    const createConversation = await this.commandBus.execute(
+      new CreateDirectConversationCommand(currentUser.id, data.targetUserId),
     );
-    if (blockStatusRes.isError()) {
-      return StdResponse.fromResult(blockStatusRes);
-    }
-    if (blockStatusRes.value.isBlocker) {
-      return StdResponse.fromResult(
-        Result.error(
-          'You have blocked this user.',
-          ErrorCode.VALIDATION_FAILURE,
+
+    let createMessage;
+    try {
+      createMessage = await this.commandBus.execute(
+        new CreateMessageCommand(
+          data.content,
+          MessageType.TEXT,
+          currentUser.id,
+          createConversation.id,
+          blockStatus.isBlocked ? [targetUser.id] : [],
         ),
       );
-    }
-
-    const createConversationRes = await this.commandBus.execute(
-      new CreateDirectConversationCommand(
-        currentUserRes.value.id,
-        data.targetUserId,
-      ),
-    );
-    if (createConversationRes.isError()) {
-      return StdResponse.fromResult(createConversationRes);
-    }
-
-    const createMessageRes = await this.commandBus.execute(
-      new CreateMessageCommand(
-        data.content,
-        MessageType.TEXT,
-        currentUserRes.value.id,
-        createConversationRes.value.id,
-        blockStatusRes.value.isBlocked ? [targetUserRes.value.id] : [],
-      ),
-    );
-
-    if (createMessageRes.isError()) {
+    } catch (e) {
       await this.commandBus.execute(
-        new DeleteConversationCommand(createConversationRes.value.id),
+        new DeleteConversationCommand(createConversation.id),
       );
-      return StdResponse.fromResult(createMessageRes);
+      throw e;
     }
 
-    const userIds = [targetUserRes.value.id];
+    const userIds = [targetUser.id];
     const rooms = userIds
-      .filter(
-        (userId) => !createMessageRes.value.deletedForUserIds.includes(userId),
-      )
+      .filter((userId) => !createMessage.deletedForUserIds.includes(userId))
       .map((userId) => `user-${userId}`);
     this.logger.debug(
       `broadcasting 'UserChatCreated' event to the rooms: ${rooms}`,
     );
     this.logger.log(
-      `user ${currentUserRes.value.id} joined to room ${createMessageRes.value.conversation.id}`,
+      `user ${currentUser.id} joined to room ${createMessage.conversation.id}`,
     );
     await this.broadcast(
       client,
       rooms,
       new ConversationCreatedEvent({
-        id: createMessageRes.value.conversationId,
-        name: `${targetUserRes.value.firstName} ${targetUserRes.value.lastName}`,
-        avatar: targetUserRes.value.avatar,
-        username: targetUserRes.value.username,
+        id: createMessage.conversationId,
+        name: `${targetUser.firstName} ${targetUser.lastName}`,
+        avatar: targetUser.avatar,
+        username: targetUser.username,
         notSeenCount: 1,
         lastMessage: {
-          id: createMessageRes.value.id,
-          content: createMessageRes.value.text,
-          createdAt: createMessageRes.value.createdAt.toISOString(),
+          id: createMessage.id,
+          content: createMessage.text,
+          createdAt: createMessage.createdAt.toISOString(),
           seen: false,
           user: {
-            id: currentUserRes.value.id,
-            name: `${currentUserRes.value.firstName} ${currentUserRes.value.lastName}`,
+            id: currentUser.id,
+            name: `${currentUser.firstName} ${currentUser.lastName}`,
           },
         },
       }),
     );
 
-    return StdResponse.success<CreateConversationResponse>({
-      id: createConversationRes.value.id,
-      username: createConversationRes.value.identifier,
-      createdAt: createMessageRes.value.createdAt.toISOString(),
-      avatar: createConversationRes.value.picture,
-      name: `${targetUserRes.value.firstName} ${targetUserRes.value.lastName}`,
+    return {
+      id: createConversation.id,
+      username: createConversation.identifier,
+      createdAt: createMessage.createdAt.toISOString(),
+      avatar: createConversation.picture,
+      name: `${targetUser.firstName} ${targetUser.lastName}`,
       chat: {
-        id: createMessageRes.value.id,
-        createdAt: createMessageRes.value.createdAt.toISOString(),
+        id: createMessage.id,
+        createdAt: createMessage.createdAt.toISOString(),
         seen: false,
-        content: createMessageRes.value.text,
+        content: createMessage.text,
         user: {
-          id: currentUserRes.value.id,
-          name: `${currentUserRes.value.firstName} ${currentUserRes.value.lastName}`,
+          id: currentUser.id,
+          name: `${currentUser.firstName} ${currentUser.lastName}`,
         },
       },
-    });
+    };
   }
 
   @SubscribeMessage('conversation.list')
@@ -259,12 +215,8 @@ export class ChatWsGateway
 
     let filteredUserIds: string[] = [];
     if (data.filter) {
-      const userIdsRes =
+      filteredUserIds =
         await this.userIntegrationPort.getUserIdsByNameOrUsername(data.filter);
-      if (userIdsRes.isError()) {
-        return StdResponse.fromResult(userIdsRes);
-      }
-      filteredUserIds = userIdsRes.value;
     }
 
     if (data.targetUserId) {
@@ -272,14 +224,10 @@ export class ChatWsGateway
     }
 
     if (data.filter && filteredUserIds.length === 0) {
-      return StdResponse.fromResult(
-        Result.ok<PaginatedResult<UserConversationListItem>>(
-          PaginationHelper.createResult([], 0, pagination),
-        ),
-      );
+      return PaginationHelper.createResult([], 0, pagination);
     }
 
-    const conversationListRes = await this.queryBus.execute(
+    const conversationList = await this.queryBus.execute(
       new GetUserConversationListQuery(authUserId, {
         pagination,
         filterUserIds: filteredUserIds.filter(
@@ -288,28 +236,21 @@ export class ChatWsGateway
         withLastMessage: true,
       }),
     );
-    if (conversationListRes.isError()) {
-      return StdResponse.fromResult(conversationListRes);
-    }
 
-    const conversationsUserIds = conversationListRes.value.data
+    const conversationsUserIds = conversationList.data
       .map((c) => c.lastMessage?.senderId)
       .filter((id) => id != null);
-    const allUsersInvolved = conversationListRes.value.data.flatMap((c) =>
+    const allUsersInvolved = conversationList.data.flatMap((c) =>
       c.members.map((m) => m.userId),
     );
     allUsersInvolved.push(...conversationsUserIds);
     const uniqueUserIds = Array.from(new Set(allUsersInvolved)) as string[];
 
-    const usersRes =
-      await this.userIntegrationPort.getUsersByIds(uniqueUserIds);
-    if (usersRes.isError()) {
-      return usersRes;
-    }
+    const users = await this.userIntegrationPort.getUsersByIds(uniqueUserIds);
 
-    return StdResponse.success<PaginatedResult<UserConversationListItem>>({
-      meta: conversationListRes.value.meta,
-      data: conversationListRes.value.data.map((item) => {
+    return {
+      meta: conversationList.meta,
+      data: conversationList.data.map((item) => {
         const currentMember = item.members.find((m) => m.userId == authUserId);
         const conversation: UserConversationListItem = {
           id: item.id,
@@ -333,9 +274,7 @@ export class ChatWsGateway
             (cm) => cm.userId != authUserId,
           );
           if (otherMember) {
-            const otherUser = usersRes.value.find(
-              (u) => u.id == otherMember.userId,
-            );
+            const otherUser = users.find((u) => u.id == otherMember.userId);
             if (otherUser) {
               conversation.title = `${otherUser.firstName} ${otherUser.lastName}`;
               conversation.identifier = otherUser.username;
@@ -344,7 +283,7 @@ export class ChatWsGateway
           }
 
           if (conversation.lastMessage) {
-            const sender = usersRes.value.find(
+            const sender = users.find(
               (user) => user.id === item.lastMessage.senderId,
             );
             if (sender) {
@@ -375,7 +314,7 @@ export class ChatWsGateway
 
         return conversation;
       }),
-    });
+    };
   }
 
   @SubscribeMessage('conversation.message.create')
@@ -385,62 +324,48 @@ export class ChatWsGateway
     @MessageBody() data: CreateMessageRequest,
     @CurrentWsUserId() authUserId: string,
   ): Promise<any> {
-    const conversationRes = await this.queryBus.execute(
+    const conversation = await this.queryBus.execute(
       new GetUserConversationQuery(data.conversationId, authUserId),
     );
-    if (conversationRes.isError()) {
-      return StdResponse.fromResult(conversationRes);
-    }
 
-    const targetMember = conversationRes.value.members.find(
+    const targetMember = conversation.members.find(
       (member) => member.userId !== authUserId,
     );
     if (!targetMember) {
-      return StdResponse.error(StdStatus.NOT_FOUND, 'Conversation not found');
+      throw new WsException('Conversation not found');
     }
 
-    const [currentUserRes, targetUserRes, blockStatusRes] = await Promise.all([
+    const [currentUser, targetUser, blockStatus] = await Promise.all([
       this.userIntegrationPort.getUserById(authUserId),
       this.userIntegrationPort.getUserById(targetMember.userId),
       this.userIntegrationPort.getBlockStatus(authUserId, targetMember.userId),
     ]);
-    if (targetUserRes.isError()) {
-      return StdResponse.fromResult(targetUserRes);
-    }
-    if (blockStatusRes.isError()) {
-      return StdResponse.fromResult(blockStatusRes);
-    }
-
-    if (blockStatusRes.value.isBlocker) {
-      return StdResponse.error(
-        StdStatus.VALIDATION_FAILURE,
+    if (blockStatus.isBlocker) {
+      throw new WsException(
         'You need to unblock the user before sending a message.',
       );
     }
 
-    const createMessageRes = await this.commandBus.execute(
+    const createMessage = await this.commandBus.execute(
       new CreateMessageCommand(
         data.text,
         MessageType.TEXT,
         authUserId,
-        conversationRes.value.id,
-        blockStatusRes.value.isBlocked ? [targetUserRes.value.id] : [],
+        conversation.id,
+        blockStatus.isBlocked ? [targetUser.id] : [],
       ),
     );
-    if (createMessageRes.isError()) {
-      return StdResponse.fromResult(createMessageRes);
-    }
 
-    return StdResponse.success<CreateMessageResponseResponse>({
-      id: createMessageRes.value.id,
-      createdAt: createMessageRes.value.createdAt.toISOString(),
+    return {
+      id: createMessage.id,
+      createdAt: createMessage.createdAt.toISOString(),
       seen: false,
       user: {
-        id: currentUserRes.value.id,
-        name: `${currentUserRes.value.firstName} ${currentUserRes.value.lastName}`,
+        id: currentUser.id,
+        name: `${currentUser.firstName} ${currentUser.lastName}`,
       },
-      content: createMessageRes.value.text,
-    });
+      content: createMessage.text,
+    };
   }
 
   @SubscribeMessage('conversation.message.list')
@@ -452,92 +377,81 @@ export class ChatWsGateway
     @MessageBody() data: GetConversationMessageListRequest,
     @CurrentWsUserId() authUserId: string,
   ): Promise<any> {
-    const conversationRes = await this.queryBus.execute(
+    const conversation = await this.queryBus.execute(
       new GetUserConversationQuery(data.conversationId, authUserId),
     );
-    if (conversationRes.isError()) {
-      return StdResponse.fromResult(conversationRes);
-    }
 
     const pagination = PaginationHelper.parse(data.page, data.pageSize);
 
-    const messageListRes = await this.queryBus.execute(
+    const messageList = await this.queryBus.execute(
       new GetUserConversationMessageListQuery(
         data.conversationId,
         authUserId,
         pagination,
       ),
     );
-    if (messageListRes.isError()) {
-      return StdResponse.fromResult(messageListRes);
-    }
 
-    let userIds = messageListRes.value.data.map((message) => message.senderId);
-    userIds.push(
-      ...conversationRes.value.members.map((member) => member.userId),
-    );
+    let userIds = messageList.data.map((message) => message.senderId);
+    userIds.push(...conversation.members.map((member) => member.userId));
     userIds = Array.from(new Set(userIds));
 
-    const usersRes = await this.userIntegrationPort.getUsersByIds(userIds);
-    if (usersRes.isError()) {
-      return StdResponse.fromResult(usersRes);
-    }
+    const users = await this.userIntegrationPort.getUsersByIds(userIds);
 
-    const blockedUserIdsRes = await this.userIntegrationPort.getBlockedUsersIds(
+    const blockedUserIds = await this.userIntegrationPort.getBlockedUsersIds(
       authUserId,
-      usersRes.value.map((user) => user.id),
+      users.map((user) => user.id),
     );
 
-    if (messageListRes.value.data.length) {
+    if (messageList.data.length) {
       await this.commandBus.execute(
         new MarkConversationAsReadCommand(
-          conversationRes.value.id,
+          conversation.id,
           authUserId,
-          messageListRes.value.data[0].id,
+          messageList.data[0].id,
         ),
       );
 
       await this.broadcast(
         client,
-        conversationRes.value.members
+        conversation.members
           .filter((member) => member.userId !== authUserId)
           .map((member) => `user-${member.userId}`),
         new MessageSeenEvent({
-          conversationId: conversationRes.value.id,
-          messageId: messageListRes.value.data[0].id,
+          conversationId: conversation.id,
+          messageId: messageList.data[0].id,
         }),
       );
     }
 
-    return StdResponse.success<GetConversationMessageListResponse>({
-      id: conversationRes.value.id,
+    return {
+      id: conversation.id,
       name:
-        conversationRes.value.type == ConversationType.DIRECT
-          ? usersRes.value.find((m) => m.id != authUserId)?.firstName
-          : conversationRes.value.title,
+        conversation.type == ConversationType.DIRECT
+          ? users.find((m) => m.id != authUserId)?.firstName
+          : conversation.title,
       avatar:
-        conversationRes.value.type == ConversationType.DIRECT
-          ? usersRes.value.find((m) => m.id != authUserId)?.avatar
-          : conversationRes.value.title,
+        conversation.type == ConversationType.DIRECT
+          ? users.find((m) => m.id != authUserId)?.avatar
+          : conversation.title,
       username:
-        conversationRes.value.type == ConversationType.DIRECT
-          ? usersRes.value.find((m) => m.id != authUserId)?.username
-          : conversationRes.value.identifier,
-      members: usersRes.value
+        conversation.type == ConversationType.DIRECT
+          ? users.find((m) => m.id != authUserId)?.username
+          : conversation.identifier,
+      members: users
         .filter((user) => user.id != authUserId)
         .map((m) => ({
           id: m.id,
           avatar: m.avatar,
           username: m.username,
           name: m.firstName,
-          isBlocked: blockedUserIdsRes.value.includes(m.id),
+          isBlocked: blockedUserIds.includes(m.id),
         })),
       messages: {
-        total: messageListRes.value.meta.total,
-        page: messageListRes.value.meta.page,
-        pageSize: messageListRes.value.meta.pageSize,
-        list: messageListRes.value.data.map((item) => {
-          const user = usersRes.value.find((u) => u.id == item.senderId);
+        total: messageList.meta.total,
+        page: messageList.meta.page,
+        pageSize: messageList.meta.pageSize,
+        list: messageList.data.map((item) => {
+          const user = users.find((u) => u.id == item.senderId);
           const message = {
             id: item.id,
             content: item.text,
@@ -552,7 +466,7 @@ export class ChatWsGateway
           };
 
           if (message.user.id === authUserId) {
-            const otherMember = conversationRes.value.members.find(
+            const otherMember = conversation.members.find(
               (m) => m.userId !== authUserId,
             );
             if (item.createdAt < otherMember.lastSeenMessage.createdAt) {
@@ -563,6 +477,6 @@ export class ChatWsGateway
           return message;
         }),
       },
-    });
+    };
   }
 }

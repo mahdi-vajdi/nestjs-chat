@@ -11,6 +11,7 @@ import {
   REDIS_DB0_PROVIDER,
 } from '@infrastructure/redis/providers/redis.provider';
 import { RedisIoAdapter } from '@infrastructure/websocket/adapter/redis/redis-io.adapter';
+import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
 
 function setUpSwagger(app: INestApplication) {
   const swaggerConfig = new DocumentBuilder()
@@ -42,6 +43,7 @@ async function bootstrap() {
 
   app.useLogger(logger);
   app.enableCors();
+  app.useGlobalFilters(new AllExceptionsFilter());
   setUpSwagger(app);
 
   // Set up adapter for socket gateway

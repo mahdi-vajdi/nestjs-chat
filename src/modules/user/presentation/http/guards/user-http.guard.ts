@@ -23,19 +23,20 @@ export class UserHttpGuard implements CanActivate {
       throw new UnauthorizedException('No access token was provided.');
     }
 
-    const verifyTokenRes =
-      await this.authIntegrationPort.verifyToken(accessToken);
-    if (verifyTokenRes.isError()) {
+    try {
+      const verifyTokenRes =
+        await this.authIntegrationPort.verifyToken(accessToken);
+
+      Object.assign(request, {
+        authUser: verifyTokenRes,
+        accessToken: accessToken,
+      });
+    } catch (error) {
       this.logger.warn(
-        `Error verifying access token: ${verifyTokenRes.error.message}`,
+        `Error verifying access token: ${(error as any).message}`,
       );
       throw new UnauthorizedException('Invalid access token.');
     }
-
-    Object.assign(request, {
-      authUser: verifyTokenRes.value,
-      accessToken: accessToken,
-    });
 
     return true;
   }

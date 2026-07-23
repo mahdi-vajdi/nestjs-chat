@@ -4,7 +4,6 @@ import { INestApplication, Logger } from '@nestjs/common';
 import { wsConfig } from '@infrastructure/websocket/ws.config';
 import { ConfigType } from '@nestjs/config';
 import { IRedisProvider } from '@infrastructure/redis/providers/redis.provider';
-import { TryCatch } from '@common/decorators/try-catch.decorator';
 
 export class RedisIoAdapter extends IoAdapter {
   private readonly logger = new Logger(RedisIoAdapter.name);
@@ -19,7 +18,6 @@ export class RedisIoAdapter extends IoAdapter {
     super(app);
   }
 
-  @TryCatch
   async connectToRedis(): Promise<void> {
     this.adapterConstructor = createAdapter(
       this.redisProviderPub.getClient(),

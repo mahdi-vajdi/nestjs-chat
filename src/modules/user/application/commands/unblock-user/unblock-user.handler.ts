@@ -1,13 +1,13 @@
-import { CommandHandler, ICommandHandler, EventPublisher } from '@nestjs/cqrs';
+import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { UnblockUserCommand } from './unblock-user.command';
 import { Logger } from '@nestjs/common';
 import { UserRepositoryPort } from '@user/application/ports/user-repository.port';
-import { Result } from '@common/result/result';
+import { UserNotFoundException } from '@user/domain/user.exceptions';
 
 @CommandHandler(UnblockUserCommand)
 export class UnblockUserHandler implements ICommandHandler<
   UnblockUserCommand,
-  Result<boolean>
+  boolean
 > {
   private readonly logger = new Logger(UnblockUserHandler.name);
 
@@ -16,7 +16,7 @@ export class UnblockUserHandler implements ICommandHandler<
     private readonly publisher: EventPublisher,
   ) {}
 
-  async execute(command: UnblockUserCommand): Promise<Result<boolean>> {
+  async execute(command: UnblockUserCommand): Promise<boolean> {
     this.logger.debug(
       `User ${command.unblockerId} is unblocking ${command.unblockedId}`,
     );
@@ -24,9 +24,9 @@ export class UnblockUserHandler implements ICommandHandler<
     const unblockerRes = await this.userRepository.getUserById(
       command.unblockerId,
     );
-    if (unblockerRes.isError()) return Result.error(unblockerRes.error);
+    if (!unblockerRes) throw new UserNotFoundException(command.unblockerId);
 
-    const unblocker = this.publisher.mergeObjectContext(unblockerRes.value);
+    const unblocker = this.publisher.mergeObjectContext(unblockerRes);
     const originalLength = unblocker.blockedUsers.length;
     unblocker.unblockUser({ id: command.unblockedId }); // Only need ID for unblocking
 
@@ -34,19 +34,13 @@ export class UnblockUserHandler implements ICommandHandler<
       this.logger.log(
         `User ${command.unblockedId} was not blocked by ${command.unblockerId}`,
       );
-      return Result.ok(false);
+      return false;
     }
 
-    const saveRes = await this.userRepository.unblock(
-      command.unblockerId,
-      command.unblockedId,
-    );
-    if (saveRes.isError()) {
-      return Result.error(saveRes.error);
-    }
+    await this.userRepository.unblock(command.unblockerId, command.unblockedId);
 
     unblocker.commit();
 
-    return Result.ok(true);
+    return true;
   }
 }

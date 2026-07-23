@@ -1,6 +1,4 @@
-import { Body, Controller, Post, Res, UsePipes } from '@nestjs/common';
-import { BaseHttpController } from '@common/http/base-http-controller';
-import { Response } from 'express';
+import { Body, Controller, Post, UsePipes } from '@nestjs/common';
 import {
   ApiBody,
   ApiOkResponse,
@@ -16,7 +14,6 @@ import { ValidationPipe } from '@common/validation/validation.pipe';
 import { CommandBus } from '@nestjs/cqrs';
 import { SignupCommand } from '@auth/application/commands/signup/signup.command';
 import { SigninCommand } from '@auth/application/commands/signin/signin.command';
-import { Result } from '@common/result/result';
 import {
   SigninRequestBody,
   SigninResponse,
@@ -24,10 +21,8 @@ import {
 
 @Controller('v1/auth')
 @ApiTags('Auth')
-export class AuthHttpController extends BaseHttpController {
-  constructor(private readonly commandBus: CommandBus) {
-    super();
-  }
+export class AuthHttpController {
+  constructor(private readonly commandBus: CommandBus) {}
 
   @Post('signup')
   @UsePipes(new ValidationPipe(SignupRequestBody, ['body'], 'http'))
@@ -37,14 +32,8 @@ export class AuthHttpController extends BaseHttpController {
   })
   @ApiBody({ type: SignupRequestBody })
   @ApiResponse({ type: SignupResponse })
-  async signup(
-    @Res() response: Response,
-    @Body() body: SignupRequestBody,
-  ): Promise<void> {
-    const res = await this.commandBus.execute<
-      SignupCommand,
-      Result<SignupResponse>
-    >(
+  async signup(@Body() body: SignupRequestBody): Promise<SignupResponse> {
+    return this.commandBus.execute(
       new SignupCommand(
         body.email,
         body.password,
@@ -52,7 +41,6 @@ export class AuthHttpController extends BaseHttpController {
         body.lastName,
       ),
     );
-    this.respond(response, res);
   }
 
   @Post('signin')
@@ -61,14 +49,9 @@ export class AuthHttpController extends BaseHttpController {
     description: 'Provide credentials and get user info and tokens',
   })
   @ApiOkResponse({ type: SigninResponse })
-  async signin(
-    @Body() body: SigninRequestBody,
-    @Res() response: Response,
-  ): Promise<void> {
-    const res = await this.commandBus.execute<
-      SigninCommand,
-      Result<SigninResponse>
-    >(new SigninCommand(body.property, body.password));
-    this.respond(response, res);
+  async signin(@Body() body: SigninRequestBody): Promise<SigninResponse> {
+    return this.commandBus.execute(
+      new SigninCommand(body.property, body.password),
+    );
   }
 }

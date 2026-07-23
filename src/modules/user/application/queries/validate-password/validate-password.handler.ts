@@ -2,23 +2,26 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { ValidatePasswordQuery } from './validate-password.query';
 import { Logger } from '@nestjs/common';
 import { UserReadRepositoryPort } from '@user/application/ports/user-read-repository.port';
-import { Result } from '@common/result/result';
+
 import { UserReadDto } from '@user/application/dtos/user-read.dto';
 import validator from 'validator';
 import * as bcrypt from 'bcrypt';
-import { ErrorCode } from '@common/result/error';
+import {
+  InvalidCredentialsException,
+  UserNotFoundException,
+} from '@user/domain/user.exceptions';
 
 @QueryHandler(ValidatePasswordQuery)
 export class ValidatePasswordHandler implements IQueryHandler<
   ValidatePasswordQuery,
-  Result<UserReadDto>
+  UserReadDto
 > {
   private readonly logger = new Logger(ValidatePasswordHandler.name);
 
   constructor(private readonly userRepository: UserReadRepositoryPort) {}
 
-  async execute(query: ValidatePasswordQuery): Promise<Result<UserReadDto>> {
-    let userRes: Result<UserReadDto>;
+  async execute(query: ValidatePasswordQuery): Promise<UserReadDto> {
+    let userRes: UserReadDto | null;
 
     const isEmail = validator.isEmail(query.property);
     if (isEmail) {
@@ -27,24 +30,20 @@ export class ValidatePasswordHandler implements IQueryHandler<
       userRes = await this.userRepository.getUserByUsername(query.property);
     }
 
-    if (userRes.isError()) {
-      this.logger.error(
-        `Failed to get user by property ${query.property}: ${userRes.error.message}`,
-      );
-      return Result.error(userRes.error);
+    if (!userRes) {
+      this.logger.error(`Failed to get user by property ${query.property}`);
+      throw new UserNotFoundException(query.property);
     }
 
     const passwordMatches = await bcrypt.compare(
       query.password,
-      userRes.value.password,
+      userRes.password,
     );
+
     if (!passwordMatches) {
-      return Result.error(
-        'Username or password combination is invalid',
-        ErrorCode.VALIDATION_FAILURE,
-      );
+      throw new InvalidCredentialsException();
     }
 
-    return Result.ok(userRes.value);
+    return userRes;
   }
 }

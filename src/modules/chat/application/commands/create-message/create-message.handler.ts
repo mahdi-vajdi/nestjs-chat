@@ -2,13 +2,12 @@ import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { CreateMessageCommand } from './create-message.command';
 import { Logger } from '@nestjs/common';
 import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
-import { Result } from '@common/result/result';
 import { MessageEntity } from '@chat/domain/models/message.entity';
 
 @CommandHandler(CreateMessageCommand)
 export class CreateMessageHandler implements ICommandHandler<
   CreateMessageCommand,
-  Result<MessageEntity>
+  MessageEntity
 > {
   private readonly logger = new Logger(CreateMessageHandler.name);
 
@@ -17,7 +16,7 @@ export class CreateMessageHandler implements ICommandHandler<
     private readonly publisher: EventPublisher,
   ) {}
 
-  async execute(command: CreateMessageCommand): Promise<Result<MessageEntity>> {
+  async execute(command: CreateMessageCommand): Promise<MessageEntity> {
     const { text, type, senderId, conversationId, deletedForUserIds } = command;
 
     const message = this.publisher.mergeObjectContext(
@@ -30,15 +29,12 @@ export class CreateMessageHandler implements ICommandHandler<
       ),
     );
 
-    const saveRes = await this.commandRepo.saveMessage(message);
-    if (saveRes.isError()) {
-      return Result.error(saveRes.error);
-    }
+    const savedMessage = await this.commandRepo.saveMessage(message);
 
     message.commit();
 
-    this.logger.log(`Created message: ${saveRes.value.id}`);
+    this.logger.log(`Created message: ${savedMessage.id}`);
 
-    return Result.ok(saveRes.value);
+    return savedMessage;
   }
 }

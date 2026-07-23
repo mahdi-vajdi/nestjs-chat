@@ -1,5 +1,3 @@
-import { Result } from '@common/result/result';
-
 export interface ValidatedTokenPayload {
   sub: string;
   role: string;
@@ -7,5 +5,5 @@ export interface ValidatedTokenPayload {
 }
 
 export abstract class AuthIntegrationPort {
-  abstract verifyToken(token: string): Promise<Result<ValidatedTokenPayload>>;
+  abstract verifyToken(token: string): Promise<ValidatedTokenPayload>;
 }

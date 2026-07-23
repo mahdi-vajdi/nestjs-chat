@@ -1,24 +1,21 @@
-import { TryCatch } from '@common/decorators/try-catch.decorator';
-import { Socket, Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { inspect } from 'node:util';
 import { BaseWsEvent } from '@common/websocket/base-ws-event';
-import { Result } from '@common/result/result';
 import { Logger } from '@nestjs/common';
 
 export abstract class BaseWsGateway {
   abstract getLogger(): Logger;
 
-  @TryCatch
   async broadcast<T>(
     client: Socket,
     rooms: string[],
     event: BaseWsEvent<T>,
-  ): Promise<Result<boolean>> {
+  ): Promise<boolean> {
     if (rooms.length === 0) {
       this.getLogger().log(
         `Rooms are empty; Skipping broadcast for event ${event.eventName}`,
       );
-      return Result.ok(false);
+      return false;
     }
 
     this.getLogger().debug(
@@ -26,20 +23,19 @@ export abstract class BaseWsGateway {
     );
     client.broadcast.to(rooms).emit(event.eventName, event.data);
 
-    return Result.ok(true);
+    return true;
   }
 
-  @TryCatch
   async serverBroadcast<T>(
     server: Server,
     rooms: string[],
     event: BaseWsEvent<T>,
-  ): Promise<Result<boolean>> {
+  ): Promise<boolean> {
     if (rooms.length === 0) {
       this.getLogger().log(
         `Rooms are empty; Skipping server broadcast for event ${event.eventName}`,
       );
-      return Result.ok(false);
+      return false;
     }
 
     this.getLogger().debug(
@@ -47,6 +43,6 @@ export abstract class BaseWsGateway {
     );
     server.to(rooms).emit(event.eventName, event.data);
 
-    return Result.ok(true);
+    return true;
   }
 }

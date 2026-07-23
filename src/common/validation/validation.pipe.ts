@@ -8,10 +8,7 @@ import {
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate, ValidationError } from 'class-validator';
-import { StdResponse } from '@common/std-response/std-response';
 import { ValidationFailure } from './validation-failure';
-import { Result } from '@common/result/result';
-import { ErrorCode } from '@common/result/error';
 import { WsException } from '@nestjs/websockets';
 
 @Injectable()
@@ -46,13 +43,10 @@ export class ValidationPipe implements PipeTransform {
     const errors = await validate(newValue);
 
     if (errors.length > 0) {
-      const response = StdResponse.fromResult(
-        Result.error(
-          'Validation Error',
-          ErrorCode.INVALID_ARGUMENT,
-          this.formatErrors(errors),
-        ),
-      );
+      const response = {
+        message: 'Validation Error',
+        errors: this.formatErrors(errors),
+      };
 
       if (this.transport === 'http') {
         throw new BadRequestException(response);
