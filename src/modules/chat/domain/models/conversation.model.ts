@@ -1,7 +1,7 @@
 import { SoftDeletableEntity } from '@common/entities/soft-deletable-entity.interface';
-import { MessageEntity } from '@chat/domain/models/message.entity';
-import { ConversationType } from '@chat/domain/enums/conversation-type.enum';
-import { ConversationMemberEntity } from '@chat/domain/models/conversation-member.model';
+import { MessageEntity } from '@modules/chat/domain/models/message.entity';
+import { ConversationType } from '@modules/chat/domain/enums/conversation-type.enum';
+import { ConversationMemberEntity } from '@modules/chat/domain/models/conversation-member.model';
 import { v7 as uuidv7 } from 'uuid';
 
 import { AggregateRoot } from '@common/domain/aggregate-root';

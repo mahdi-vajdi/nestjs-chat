@@ -1,15 +1,15 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { ValidatePasswordQuery } from './validate-password.query';
 import { Logger } from '@nestjs/common';
-import { UserReadRepositoryPort } from '@user/application/ports/user-read-repository.port';
+import { UserReadRepositoryPort } from '@modules/user/application/ports/user-read-repository.port';
 
-import { UserReadDto } from '@user/application/dtos/user-read.dto';
+import { UserReadDto } from '@modules/user/application/dtos/user-read.dto';
 import validator from 'validator';
 import * as bcrypt from 'bcrypt';
 import {
   InvalidCredentialsException,
   UserNotFoundException,
-} from '@user/domain/user.exceptions';
+} from '@modules/user/domain/user.exceptions';
 
 @QueryHandler(ValidatePasswordQuery)
 export class ValidatePasswordHandler implements IQueryHandler<

@@ -1,4 +1,4 @@
-import { MessageReadDto } from '@chat/application/dtos/message-read.dto';
+import { MessageReadDto } from '@modules/chat/application/dtos/message-read.dto';
 
 export interface ConversationMemberReadDto {
   id: string;

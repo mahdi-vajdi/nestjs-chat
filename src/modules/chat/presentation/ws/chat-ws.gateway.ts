@@ -1,10 +1,10 @@
-import { GetUserConversationIdsQuery } from '@chat/application/queries/get-user-conversation-ids/get-user-conversation-ids.query';
-import { CreateDirectConversationCommand } from '@chat/application/commands/create-direct-conversation/create-direct-conversation.command';
-import { CreateMessageCommand } from '@chat/application/commands/create-message/create-message.command';
-import { DeleteConversationCommand } from '@chat/application/commands/delete-conversation/delete-conversation.command';
-import { GetUserConversationListQuery } from '@chat/application/queries/get-user-conversation-list/get-user-conversation-list.query';
-import { GetUserConversationQuery } from '@chat/application/queries/get-user-conversation/get-user-conversation.query';
-import { GetUserConversationMessageListQuery } from '@chat/application/queries/get-user-conversation-message-list/get-user-conversation-message-list.query';
+import { GetUserConversationIdsQuery } from '@modules/chat/application/queries/get-user-conversation-ids/get-user-conversation-ids.query';
+import { CreateDirectConversationCommand } from '@modules/chat/application/commands/create-direct-conversation/create-direct-conversation.command';
+import { CreateMessageCommand } from '@modules/chat/application/commands/create-message/create-message.command';
+import { DeleteConversationCommand } from '@modules/chat/application/commands/delete-conversation/delete-conversation.command';
+import { GetUserConversationListQuery } from '@modules/chat/application/queries/get-user-conversation-list/get-user-conversation-list.query';
+import { GetUserConversationQuery } from '@modules/chat/application/queries/get-user-conversation/get-user-conversation.query';
+import { GetUserConversationMessageListQuery } from '@modules/chat/application/queries/get-user-conversation-message-list/get-user-conversation-message-list.query';
 import {
   ConnectedSocket,
   MessageBody,
@@ -18,25 +18,25 @@ import {
 } from '@nestjs/websockets';
 import { Logger, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { ChatWsGuard } from '@chat/presentation/ws/guards/chat-ws.guard';
+import { ChatWsGuard } from '@modules/chat/presentation/ws/guards/chat-ws.guard';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ValidationPipe } from '@common/validation/validation.pipe';
 import {
   GetUserConversationListRequest,
   UserConversationListItem,
-} from '@chat/presentation/ws/dtos/get-user-conversation-list.dto';
+} from '@modules/chat/presentation/ws/dtos/get-user-conversation-list.dto';
 import { PaginationHelper } from '@common/pagination/pagination.helper';
-import { UserIntegrationPort } from '@chat/application/ports/user-integration.port';
+import { UserIntegrationPort } from '@modules/chat/application/ports/user-integration.port';
 import { CurrentWsUserId } from '@common/websocket/decorators/current-ws-user-id.decorator';
-import { ConversationType } from '@chat/domain/enums/conversation-type.enum';
-import { CreateConversationRequest } from '@chat/presentation/ws/dtos/create-conversation.dto';
-import { MessageType } from '@chat/domain/enums/chat-type.enum';
+import { ConversationType } from '@modules/chat/domain/enums/conversation-type.enum';
+import { CreateConversationRequest } from '@modules/chat/presentation/ws/dtos/create-conversation.dto';
+import { MessageType } from '@modules/chat/domain/enums/chat-type.enum';
 import { BaseWsGateway } from '@common/websocket/base-ws.gateway';
-import { ConversationCreatedEvent } from '@chat/presentation/ws/events/conversation-created.event';
-import { CreateMessageRequest } from '@chat/presentation/ws/dtos/create-message.dto';
-import { MarkConversationAsReadCommand } from '@chat/application/commands/mark-conversation-as-read/mark-conversation-as-read.command';
-import { GetConversationMessageListRequest } from '@chat/presentation/ws/dtos/get-conversation-message-list.dto';
-import { MessageSeenEvent } from '@chat/presentation/ws/events/message-seen.event';
+import { ConversationCreatedEvent } from '@modules/chat/presentation/ws/events/conversation-created.event';
+import { CreateMessageRequest } from '@modules/chat/presentation/ws/dtos/create-message.dto';
+import { MarkConversationAsReadCommand } from '@modules/chat/application/commands/mark-conversation-as-read/mark-conversation-as-read.command';
+import { GetConversationMessageListRequest } from '@modules/chat/presentation/ws/dtos/get-conversation-message-list.dto';
+import { MessageSeenEvent } from '@modules/chat/presentation/ws/events/message-seen.event';
 
 import { WsExceptionFilter } from '@common/websocket/filters/ws-exception.filter';
 

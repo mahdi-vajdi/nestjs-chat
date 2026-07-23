@@ -3,14 +3,14 @@ import {
   BlockStatus,
   ChatUser,
   UserIntegrationPort,
-} from '@chat/application/ports/user-integration.port';
+} from '@modules/chat/application/ports/user-integration.port';
 import { QueryBus } from '@nestjs/cqrs';
-import { GetUserByIdQuery } from '@user/application/queries/get-user-by-id/get-user-by-id.query';
-import { GetBlockStatusQuery } from '@user/application/queries/get-block-status/get-block-status.query';
-import { GetUsersByIdsQuery } from '@user/application/queries/get-users-by-ids/get-users-by-ids.query';
-import { GetUserIdsByNameOrUsernameQuery } from '@user/application/queries/get-user-ids-by-name-or-username/get-user-ids-by-name-or-username.query';
-import { GetBlockedUsersIdsQuery } from '@user/application/queries/get-blocked-users-ids/get-blocked-users-ids.query';
-import { UserNotFoundException } from '@user/domain/user.exceptions';
+import { GetUserByIdQuery } from '@modules/user/application/queries/get-user-by-id/get-user-by-id.query';
+import { GetBlockStatusQuery } from '@modules/user/application/queries/get-block-status/get-block-status.query';
+import { GetUsersByIdsQuery } from '@modules/user/application/queries/get-users-by-ids/get-users-by-ids.query';
+import { GetUserIdsByNameOrUsernameQuery } from '@modules/user/application/queries/get-user-ids-by-name-or-username/get-user-ids-by-name-or-username.query';
+import { GetBlockedUsersIdsQuery } from '@modules/user/application/queries/get-blocked-users-ids/get-blocked-users-ids.query';
+import { UserNotFoundException } from '@modules/user/domain/user.exceptions';
 
 @Injectable()
 export class UserIntegrationAdapter implements UserIntegrationPort {

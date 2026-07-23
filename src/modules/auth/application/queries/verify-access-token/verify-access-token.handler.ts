@@ -1,7 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { VerifyAccessTokenQuery } from './verify-access-token.query';
-import { AccessTokenPayload } from '@auth/domain/types/access-token-payload.type';
-import { TokenService } from '@auth/application/services/token.service';
+import { AccessTokenPayload } from '@modules/auth/domain/types/access-token-payload.type';
+import { TokenService } from '@modules/auth/application/services/token.service';
 import { UnauthorizedException } from '@nestjs/common';
 
 @QueryHandler(VerifyAccessTokenQuery)

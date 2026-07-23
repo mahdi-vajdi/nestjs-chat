@@ -1,11 +1,11 @@
-import { MessageType } from '@chat/domain/enums/chat-type.enum';
+import { MessageType } from '@modules/chat/domain/enums/chat-type.enum';
 import { SoftDeletableEntity } from '@common/entities/soft-deletable-entity.interface';
-import { ConversationEntity } from '@chat/domain/models/conversation.model';
-import { ConversationMemberEntity } from '@chat/domain/models/conversation-member.model';
+import { ConversationEntity } from '@modules/chat/domain/models/conversation.model';
+import { ConversationMemberEntity } from '@modules/chat/domain/models/conversation-member.model';
 import { v7 as uuidv7 } from 'uuid';
 
 import { AggregateRoot } from '@common/domain/aggregate-root';
-import { MessageCreatedDomainEvent } from '@chat/domain/events/message-created.domain-event';
+import { MessageCreatedDomainEvent } from '@modules/chat/domain/events/message-created.domain-event';
 
 export class MessageEntity
   extends AggregateRoot<string>

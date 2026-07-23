@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
 import { Repository } from 'typeorm';
-import { UserReadRepositoryPort } from '@user/application/ports/user-read-repository.port';
+import { UserReadRepositoryPort } from '@modules/user/application/ports/user-read-repository.port';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
-import { UserReadDto } from '@user/application/dtos/user-read.dto';
-import { UserBlock } from '@user/infrastructure/database/entities/user-block.entity';
+import { UserReadDto } from '@modules/user/application/dtos/user-read.dto';
+import { UserBlock } from '@modules/user/infrastructure/database/entities/user-block.entity';
 
 @Injectable()
 export class UserPostgresReadRepository implements UserReadRepositoryPort {

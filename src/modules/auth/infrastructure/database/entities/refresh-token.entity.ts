@@ -7,7 +7,7 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
+import { RefreshTokenEntity } from '@modules/auth/domain/models/refresh-token.entity';
 
 @Entity({ schema: 'auth', name: 'refresh_tokens' })
 export class RefreshToken {

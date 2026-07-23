@@ -26,14 +26,8 @@
       "@infrastructure/*": [
         "src/infrastructure/*"
       ],
-      "@user/*": [
-        "src/modules/user/*"
-      ],
-      "@auth/*": [
-        "src/modules/auth/*"
-      ],
-      "@chat/*": [
-        "src/modules/chat/*"
+      "@modules/*": [
+        "src/modules/*"
       ]
     }
   }

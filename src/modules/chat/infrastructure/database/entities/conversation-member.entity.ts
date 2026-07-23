@@ -9,9 +9,9 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Conversation } from '@chat/infrastructure/database/entities/conversation.entity';
-import { Message } from '@chat/infrastructure/database/entities/message.entity';
-import { ConversationMemberEntity } from '@chat/domain/models/conversation-member.model';
+import { Conversation } from '@modules/chat/infrastructure/database/entities/conversation.entity';
+import { Message } from '@modules/chat/infrastructure/database/entities/message.entity';
+import { ConversationMemberEntity } from '@modules/chat/domain/models/conversation-member.model';
 
 @Entity({ schema: 'chat', name: 'conversation_members' })
 export class ConversationMember {

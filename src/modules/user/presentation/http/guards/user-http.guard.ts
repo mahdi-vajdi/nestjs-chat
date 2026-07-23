@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthIntegrationPort } from '@user/application/ports/auth-integration.port';
+import { AuthIntegrationPort } from '@modules/user/application/ports/auth-integration.port';
 
 @Injectable()
 export class UserHttpGuard implements CanActivate {

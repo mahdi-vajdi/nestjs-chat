@@ -1,6 +1,6 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetBlockedUsersIdsQuery } from './get-blocked-users-ids.query';
-import { UserReadRepositoryPort } from '@user/application/ports/user-read-repository.port';
+import { UserReadRepositoryPort } from '@modules/user/application/ports/user-read-repository.port';
 
 @QueryHandler(GetBlockedUsersIdsQuery)
 export class GetBlockedUsersIdsHandler implements IQueryHandler<

@@ -1,14 +1,14 @@
 import { EventsHandler, IEventHandler, QueryBus } from '@nestjs/cqrs';
-import { MessageCreatedDomainEvent } from '@chat/domain/events/message-created.domain-event';
-import { ChatWsGateway } from '@chat/presentation/ws/chat-ws.gateway';
+import { MessageCreatedDomainEvent } from '@modules/chat/domain/events/message-created.domain-event';
+import { ChatWsGateway } from '@modules/chat/presentation/ws/chat-ws.gateway';
 import { Logger } from '@nestjs/common';
-import { UserIntegrationPort } from '@chat/application/ports/user-integration.port';
-import { GetUserConversationQuery } from '@chat/application/queries/get-user-conversation/get-user-conversation.query';
+import { UserIntegrationPort } from '@modules/chat/application/ports/user-integration.port';
+import { GetUserConversationQuery } from '@modules/chat/application/queries/get-user-conversation/get-user-conversation.query';
 import {
   UserMessageCreated,
   UserMessageCreatedEvent,
-} from '@chat/presentation/ws/events/message-created.event';
-import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
+} from '@modules/chat/presentation/ws/events/message-created.event';
+import { ConversationRepositoryPort } from '@modules/chat/application/ports/conversation-repository.port';
 
 @EventsHandler(MessageCreatedDomainEvent)
 export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreatedDomainEvent> {

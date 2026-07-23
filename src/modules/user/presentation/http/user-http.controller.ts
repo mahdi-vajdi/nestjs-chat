@@ -11,15 +11,15 @@ import {
 import {
   BlockRequestBody,
   BlockResponse,
-} from '@user/presentation/http/dtos/block.dto';
+} from '@modules/user/presentation/http/dtos/block.dto';
 import { CommandBus } from '@nestjs/cqrs';
-import { BlockUserCommand } from '@user/application/commands/block-user/block-user.command';
-import { UnblockUserCommand } from '@user/application/commands/unblock-user/unblock-user.command';
+import { BlockUserCommand } from '@modules/user/application/commands/block-user/block-user.command';
+import { UnblockUserCommand } from '@modules/user/application/commands/unblock-user/unblock-user.command';
 import { CurrentUserId } from '@common/http/decorators/current-user-id.decorator';
 import {
   UnblockRequestParams,
   UnblockResponse,
-} from '@user/presentation/http/dtos/unblock.dto';
+} from '@modules/user/presentation/http/dtos/unblock.dto';
 import {
   ApiConflictResponse,
   ApiNoContentResponse,
@@ -28,7 +28,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ValidationPipe } from '@common/validation/validation.pipe';
-import { UserHttpGuard } from '@user/presentation/http/guards/user-http.guard';
+import { UserHttpGuard } from '@modules/user/presentation/http/guards/user-http.guard';
 
 @Controller('user')
 @ApiTags('User')

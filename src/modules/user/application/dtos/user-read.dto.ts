@@ -1,4 +1,4 @@
-import { UserRole } from '@user/domain/enums/user-role.enum';
+import { UserRole } from '@modules/user/domain/enums/user-role.enum';
 
 export class UserReadDto {
   constructor(

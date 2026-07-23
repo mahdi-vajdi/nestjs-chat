@@ -1,4 +1,4 @@
-import { MessageType } from '@chat/domain/enums/chat-type.enum';
+import { MessageType } from '@modules/chat/domain/enums/chat-type.enum';
 
 export class CreateMessageCommand {
   constructor(

@@ -1,4 +1,4 @@
-import { AuthRepositoryPort } from '@auth/application/ports/auth-repository.port';
+import { AuthRepositoryPort } from '@modules/auth/application/ports/auth-repository.port';
 import { Module } from '@nestjs/common';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { TypeOrmModule } from '@nestjs/typeorm';

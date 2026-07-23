@@ -1,9 +1,9 @@
-import { ConversationReadDto } from '@chat/application/dtos/conversation-read.dto';
+import { ConversationReadDto } from '@modules/chat/application/dtos/conversation-read.dto';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetUserConversationQuery } from './get-user-conversation.query';
 import { Logger } from '@nestjs/common';
-import { ConversationReadRepositoryPort } from '@chat/application/ports/conversation-read-repository.port';
-import { ConversationNotFoundException } from '@chat/domain/chat.exceptions';
+import { ConversationReadRepositoryPort } from '@modules/chat/application/ports/conversation-read-repository.port';
+import { ConversationNotFoundException } from '@modules/chat/domain/chat.exceptions';
 
 @QueryHandler(GetUserConversationQuery)
 export class GetUserConversationHandler implements IQueryHandler<

@@ -1,8 +1,8 @@
-import { ConversationReadDto } from '@chat/application/dtos/conversation-read.dto';
+import { ConversationReadDto } from '@modules/chat/application/dtos/conversation-read.dto';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetUserConversationListQuery } from './get-user-conversation-list.query';
 import { Logger } from '@nestjs/common';
-import { ConversationReadRepositoryPort } from '@chat/application/ports/conversation-read-repository.port';
+import { ConversationReadRepositoryPort } from '@modules/chat/application/ports/conversation-read-repository.port';
 import { PaginatedResult } from '@common/pagination/pagination.interface';
 
 @QueryHandler(GetUserConversationListQuery)

@@ -1,10 +1,10 @@
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { CreateUserCommand } from './create-user.command';
 import { Logger } from '@nestjs/common';
-import { UserRepositoryPort } from '@user/application/ports/user-repository.port';
+import { UserRepositoryPort } from '@modules/user/application/ports/user-repository.port';
 
-import { UserEntity } from '@user/domain/models/user.model';
-import { UserAlreadyExistsException } from '@user/domain/user.exceptions';
+import { UserEntity } from '@modules/user/domain/models/user.model';
+import { UserAlreadyExistsException } from '@modules/user/domain/user.exceptions';
 import * as crypto from 'node:crypto';
 import * as bcrypt from 'bcrypt';
 

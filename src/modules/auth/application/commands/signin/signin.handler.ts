@@ -2,13 +2,13 @@ import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { SigninCommand } from './signin.command';
 import { Logger } from '@nestjs/common';
 
-import { TokenService } from '@auth/application/services/token.service';
-import { AuthRepositoryPort } from '@auth/application/ports/auth-repository.port';
-import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
-import { UserIntegrationPort } from '@auth/application/ports/user-integration.port';
-import { SigninResponse } from '@auth/presentation/http/dtos/signin.dto';
+import { TokenService } from '@modules/auth/application/services/token.service';
+import { AuthRepositoryPort } from '@modules/auth/application/ports/auth-repository.port';
+import { RefreshTokenEntity } from '@modules/auth/domain/models/refresh-token.entity';
+import { UserIntegrationPort } from '@modules/auth/application/ports/user-integration.port';
+import { SigninResponse } from '@modules/auth/presentation/http/dtos/signin.dto';
 import * as bcrypt from 'bcrypt';
-import { TokenGenerationException } from '@auth/domain/auth.exceptions';
+import { TokenGenerationException } from '@modules/auth/domain/auth.exceptions';
 
 @CommandHandler(SigninCommand)
 export class SigninHandler implements ICommandHandler<

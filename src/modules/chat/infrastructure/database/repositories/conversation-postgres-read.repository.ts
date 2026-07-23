@@ -1,16 +1,16 @@
-import { MessageReadDto } from '@chat/application/dtos/message-read.dto';
-import { ConversationReadDto } from '@chat/application/dtos/conversation-read.dto';
+import { MessageReadDto } from '@modules/chat/application/dtos/message-read.dto';
+import { ConversationReadDto } from '@modules/chat/application/dtos/conversation-read.dto';
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
-import { Message } from '@chat/infrastructure/database/entities/message.entity';
-import { ConversationReadRepositoryPort } from '@chat/application/ports/conversation-read-repository.port';
-import { Conversation } from '@chat/infrastructure/database/entities/conversation.entity';
-import { GetUserConversationIdsOptions } from '@chat/application/ports/options/get-user-conversation-ids.options';
-import { GetUserConversationListOptions } from '@chat/application/ports/options/get-user-conversation-list.options';
-import { ConversationMember } from '@chat/infrastructure/database/entities/conversation-member.entity';
-import { DeletedMessage } from '@chat/infrastructure/database/entities/deleted-message.entity';
+import { Message } from '@modules/chat/infrastructure/database/entities/message.entity';
+import { ConversationReadRepositoryPort } from '@modules/chat/application/ports/conversation-read-repository.port';
+import { Conversation } from '@modules/chat/infrastructure/database/entities/conversation.entity';
+import { GetUserConversationIdsOptions } from '@modules/chat/application/ports/options/get-user-conversation-ids.options';
+import { GetUserConversationListOptions } from '@modules/chat/application/ports/options/get-user-conversation-list.options';
+import { ConversationMember } from '@modules/chat/infrastructure/database/entities/conversation-member.entity';
+import { DeletedMessage } from '@modules/chat/infrastructure/database/entities/deleted-message.entity';
 import {
   PaginatedResult,
   PaginationOptions,

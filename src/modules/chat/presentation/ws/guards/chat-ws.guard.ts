@@ -9,7 +9,7 @@ import { Socket } from 'socket.io';
 import {
   AuthIntegrationPort,
   ValidatedTokenPayload,
-} from '@chat/application/ports/auth-integration.port';
+} from '@modules/chat/application/ports/auth-integration.port';
 import { ClientData } from '@common/websocket/interfaces/client-data.interface';
 import { WsException } from '@nestjs/websockets';
 

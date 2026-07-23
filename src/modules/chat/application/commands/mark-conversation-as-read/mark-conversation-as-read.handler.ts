@@ -1,7 +1,7 @@
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { MarkConversationAsReadCommand } from './mark-conversation-as-read.command';
-import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
-import { ConversationNotFoundException } from '@chat/domain/chat.exceptions';
+import { ConversationRepositoryPort } from '@modules/chat/application/ports/conversation-repository.port';
+import { ConversationNotFoundException } from '@modules/chat/domain/chat.exceptions';
 
 @CommandHandler(MarkConversationAsReadCommand)
 export class MarkConversationAsReadCommandHandler implements ICommandHandler<MarkConversationAsReadCommand> {

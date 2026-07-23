@@ -1,4 +1,4 @@
-import { GetUserConversationListOptions } from '@chat/application/ports/options/get-user-conversation-list.options';
+import { GetUserConversationListOptions } from '@modules/chat/application/ports/options/get-user-conversation-list.options';
 
 export class GetUserConversationListQuery {
   constructor(

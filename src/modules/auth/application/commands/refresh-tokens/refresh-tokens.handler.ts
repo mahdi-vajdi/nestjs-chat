@@ -2,17 +2,17 @@ import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { RefreshTokensCommand } from './refresh-tokens.command';
 import { Logger } from '@nestjs/common';
 
-import { TokenService } from '@auth/application/services/token.service';
-import { AuthRepositoryPort } from '@auth/application/ports/auth-repository.port';
-import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
-import { RefreshTokensOutput } from '@auth/application/services/dtos/refresh-tokens.dto';
-import { RefreshTokenPayload } from '@auth/domain/types/refresh-token-payload.type';
+import { TokenService } from '@modules/auth/application/services/token.service';
+import { AuthRepositoryPort } from '@modules/auth/application/ports/auth-repository.port';
+import { RefreshTokenEntity } from '@modules/auth/domain/models/refresh-token.entity';
+import { RefreshTokensOutput } from '@modules/auth/application/services/dtos/refresh-tokens.dto';
+import { RefreshTokenPayload } from '@modules/auth/domain/types/refresh-token-payload.type';
 import * as bcrypt from 'bcrypt';
 
 import {
   InvalidRefreshTokenException,
   TokenGenerationException,
-} from '@auth/domain/auth.exceptions';
+} from '@modules/auth/domain/auth.exceptions';
 
 @CommandHandler(RefreshTokensCommand)
 export class RefreshTokensHandler implements ICommandHandler<

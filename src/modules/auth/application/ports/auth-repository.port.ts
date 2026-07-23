@@ -1,4 +1,4 @@
-import { RefreshTokenEntity } from '@auth/domain/models/refresh-token.entity';
+import { RefreshTokenEntity } from '@modules/auth/domain/models/refresh-token.entity';
 
 export abstract class AuthRepositoryPort {
   abstract getRefreshToken(

@@ -1,7 +1,7 @@
 import { Entity } from '@common/domain/entity';
 import { SoftDeletableEntity } from '@common/entities/soft-deletable-entity.interface';
-import { MessageEntity } from '@chat/domain/models/message.entity';
-import { ConversationEntity } from '@chat/domain/models/conversation.model';
+import { MessageEntity } from '@modules/chat/domain/models/message.entity';
+import { ConversationEntity } from '@modules/chat/domain/models/conversation.model';
 import { v7 as uuidv7 } from 'uuid';
 
 export class ConversationMemberEntity

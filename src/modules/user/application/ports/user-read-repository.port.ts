@@ -1,4 +1,4 @@
-import { UserReadDto } from '@user/application/dtos/user-read.dto';
+import { UserReadDto } from '@modules/user/application/dtos/user-read.dto';
 
 export abstract class UserReadRepositoryPort {
   abstract getUserById(id: string): Promise<UserReadDto | null>;

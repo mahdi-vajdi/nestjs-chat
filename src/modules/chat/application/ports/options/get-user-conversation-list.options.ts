@@ -1,4 +1,4 @@
-import { ConversationType } from '@chat/domain/enums/conversation-type.enum';
+import { ConversationType } from '@modules/chat/domain/enums/conversation-type.enum';
 import { PaginationOptions } from '@common/pagination/pagination.interface';
 
 export class GetUserConversationListOptions {

@@ -9,15 +9,15 @@ import {
 import {
   SignupRequestBody,
   SignupResponse,
-} from '@auth/presentation/http/dtos/signup.dto';
+} from '@modules/auth/presentation/http/dtos/signup.dto';
 import { ValidationPipe } from '@common/validation/validation.pipe';
 import { CommandBus } from '@nestjs/cqrs';
-import { SignupCommand } from '@auth/application/commands/signup/signup.command';
-import { SigninCommand } from '@auth/application/commands/signin/signin.command';
+import { SignupCommand } from '@modules/auth/application/commands/signup/signup.command';
+import { SigninCommand } from '@modules/auth/application/commands/signin/signin.command';
 import {
   SigninRequestBody,
   SigninResponse,
-} from '@auth/presentation/http/dtos/signin.dto';
+} from '@modules/auth/presentation/http/dtos/signin.dto';
 
 @Controller('v1/auth')
 @ApiTags('Auth')

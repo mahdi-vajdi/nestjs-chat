@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { DeleteConversationCommand } from './delete-conversation.command';
 import { Logger } from '@nestjs/common';
-import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
+import { ConversationRepositoryPort } from '@modules/chat/application/ports/conversation-repository.port';
 
 @CommandHandler(DeleteConversationCommand)
 export class DeleteConversationHandler implements ICommandHandler<

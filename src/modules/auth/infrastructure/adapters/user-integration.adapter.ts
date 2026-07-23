@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import {
   AuthUser,
   UserIntegrationPort,
-} from '@auth/application/ports/user-integration.port';
+} from '@modules/auth/application/ports/user-integration.port';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { CreateUserCommand } from '@user/application/commands/create-user/create-user.command';
-import { ValidatePasswordQuery } from '@user/application/queries/validate-password/validate-password.query';
+import { CreateUserCommand } from '@modules/user/application/commands/create-user/create-user.command';
+import { ValidatePasswordQuery } from '@modules/user/application/queries/validate-password/validate-password.query';
 
 @Injectable()
 export class UserIntegrationAdapter implements UserIntegrationPort {

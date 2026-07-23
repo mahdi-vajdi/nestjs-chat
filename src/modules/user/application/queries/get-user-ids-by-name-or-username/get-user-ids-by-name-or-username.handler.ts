@@ -1,7 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetUserIdsByNameOrUsernameQuery } from './get-user-ids-by-name-or-username.query';
 import { Logger } from '@nestjs/common';
-import { UserReadRepositoryPort } from '@user/application/ports/user-read-repository.port';
+import { UserReadRepositoryPort } from '@modules/user/application/ports/user-read-repository.port';
 
 @QueryHandler(GetUserIdsByNameOrUsernameQuery)
 export class GetUserIdsByNameOrUsernameHandler implements IQueryHandler<

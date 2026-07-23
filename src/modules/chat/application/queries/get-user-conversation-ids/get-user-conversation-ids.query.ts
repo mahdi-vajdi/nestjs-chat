@@ -1,4 +1,4 @@
-import { GetUserConversationIdsOptions } from '@chat/application/ports/options/get-user-conversation-ids.options';
+import { GetUserConversationIdsOptions } from '@modules/chat/application/ports/options/get-user-conversation-ids.options';
 
 export class GetUserConversationIdsQuery {
   constructor(

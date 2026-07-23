@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import {
   AuthIntegrationPort,
   ValidatedTokenPayload,
-} from '@chat/application/ports/auth-integration.port';
+} from '@modules/chat/application/ports/auth-integration.port';
 import { QueryBus } from '@nestjs/cqrs';
-import { VerifyAccessTokenQuery } from '@auth/application/queries/verify-access-token/verify-access-token.query';
-import { AccessTokenPayload } from '@auth/domain/types/access-token-payload.type';
+import { VerifyAccessTokenQuery } from '@modules/auth/application/queries/verify-access-token/verify-access-token.query';
+import { AccessTokenPayload } from '@modules/auth/domain/types/access-token-payload.type';
 
 @Injectable()
 export class AuthIntegrationAdapter implements AuthIntegrationPort {

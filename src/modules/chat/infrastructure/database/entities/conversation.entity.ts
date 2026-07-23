@@ -8,10 +8,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ConversationType } from '@chat/domain/enums/conversation-type.enum';
-import { Message } from '@chat/infrastructure/database/entities/message.entity';
-import { ConversationEntity } from '@chat/domain/models/conversation.model';
-import { ConversationMember } from '@chat/infrastructure/database/entities/conversation-member.entity';
+import { ConversationType } from '@modules/chat/domain/enums/conversation-type.enum';
+import { Message } from '@modules/chat/infrastructure/database/entities/message.entity';
+import { ConversationEntity } from '@modules/chat/domain/models/conversation.model';
+import { ConversationMember } from '@modules/chat/infrastructure/database/entities/conversation-member.entity';
 
 @Entity({ schema: 'chat', name: 'conversations' })
 export class Conversation {

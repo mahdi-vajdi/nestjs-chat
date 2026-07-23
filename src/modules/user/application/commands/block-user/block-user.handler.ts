@@ -1,8 +1,8 @@
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { BlockUserCommand } from './block-user.command';
 import { Logger } from '@nestjs/common';
-import { UserRepositoryPort } from '@user/application/ports/user-repository.port';
-import { UserNotFoundException } from '@user/domain/user.exceptions';
+import { UserRepositoryPort } from '@modules/user/application/ports/user-repository.port';
+import { UserNotFoundException } from '@modules/user/domain/user.exceptions';
 
 @CommandHandler(BlockUserCommand)
 export class BlockUserHandler implements ICommandHandler<

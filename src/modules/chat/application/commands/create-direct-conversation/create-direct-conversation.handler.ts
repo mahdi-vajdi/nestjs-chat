@@ -1,15 +1,15 @@
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { CreateDirectConversationCommand } from './create-direct-conversation.command';
 import { Logger } from '@nestjs/common';
-import { ConversationReadRepositoryPort } from '@chat/application/ports/conversation-read-repository.port';
-import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
-import { UserIntegrationPort } from '@chat/application/ports/user-integration.port';
+import { ConversationReadRepositoryPort } from '@modules/chat/application/ports/conversation-read-repository.port';
+import { ConversationRepositoryPort } from '@modules/chat/application/ports/conversation-repository.port';
+import { UserIntegrationPort } from '@modules/chat/application/ports/user-integration.port';
 import {
   BlockedUserException,
   ConversationAlreadyExistsException,
   TargetUserNotFoundException,
-} from '@chat/domain/chat.exceptions';
-import { ConversationEntity } from '@chat/domain/models/conversation.model';
+} from '@modules/chat/domain/chat.exceptions';
+import { ConversationEntity } from '@modules/chat/domain/models/conversation.model';
 
 @CommandHandler(CreateDirectConversationCommand)
 export class CreateDirectConversationHandler implements ICommandHandler<

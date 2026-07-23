@@ -1,8 +1,8 @@
 import { AggregateRoot } from '@common/domain/aggregate-root';
-import { UserRole } from '@user/domain/enums/user-role.enum';
-import { UserCreatedEvent } from '@user/domain/events/user-created.event';
-import { UserBlockedEvent } from '@user/domain/events/user-blocked.event';
-import { UserUnblockedEvent } from '@user/domain/events/user-unblocked.event';
+import { UserRole } from '@modules/user/domain/enums/user-role.enum';
+import { UserCreatedEvent } from '@modules/user/domain/events/user-created.event';
+import { UserBlockedEvent } from '@modules/user/domain/events/user-blocked.event';
+import { UserUnblockedEvent } from '@modules/user/domain/events/user-unblocked.event';
 import { v7 as uuidv7 } from 'uuid';
 
 export class UserEntity extends AggregateRoot<string> {

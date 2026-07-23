@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigType } from '@nestjs/config';
 import { v4 as uuidV4 } from 'uuid';
-import { authConfig } from '@auth/infrastructure/configs/auth.config';
+import { authConfig } from '@modules/auth/infrastructure/configs/auth.config';
 
 @Injectable()
 export class TokenService {

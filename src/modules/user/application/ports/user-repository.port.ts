@@ -1,5 +1,5 @@
-import { UserEntity } from '@user/domain/models/user.model';
-import { UserExistsOptions } from '@user/application/ports/options/user-exists.options';
+import { UserEntity } from '@modules/user/domain/models/user.model';
+import { UserExistsOptions } from '@modules/user/application/ports/options/user-exists.options';
 
 export abstract class UserRepositoryPort {
   abstract userExists(data: UserExistsOptions): Promise<boolean>;

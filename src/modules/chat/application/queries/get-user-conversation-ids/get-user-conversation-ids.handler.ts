@@ -1,7 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetUserConversationIdsQuery } from './get-user-conversation-ids.query';
 import { Logger } from '@nestjs/common';
-import { ConversationReadRepositoryPort } from '@chat/application/ports/conversation-read-repository.port';
+import { ConversationReadRepositoryPort } from '@modules/chat/application/ports/conversation-read-repository.port';
 
 @QueryHandler(GetUserConversationIdsQuery)
 export class GetUserConversationIdsHandler implements IQueryHandler<

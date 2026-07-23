@@ -1,9 +1,9 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetUserByIdQuery } from './get-user-by-id.query';
 import { Logger } from '@nestjs/common';
-import { UserReadRepositoryPort } from '@user/application/ports/user-read-repository.port';
-import { UserNotFoundException } from '@user/domain/user.exceptions';
-import { UserReadDto } from '@user/application/dtos/user-read.dto';
+import { UserReadRepositoryPort } from '@modules/user/application/ports/user-read-repository.port';
+import { UserNotFoundException } from '@modules/user/domain/user.exceptions';
+import { UserReadDto } from '@modules/user/application/dtos/user-read.dto';
 
 @QueryHandler(GetUserByIdQuery)
 export class GetUserByIdHandler implements IQueryHandler<

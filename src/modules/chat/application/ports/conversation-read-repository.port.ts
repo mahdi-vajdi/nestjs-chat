@@ -1,11 +1,11 @@
-import { GetUserConversationIdsOptions } from '@chat/application/ports/options/get-user-conversation-ids.options';
-import { GetUserConversationListOptions } from '@chat/application/ports/options/get-user-conversation-list.options';
+import { GetUserConversationIdsOptions } from '@modules/chat/application/ports/options/get-user-conversation-ids.options';
+import { GetUserConversationListOptions } from '@modules/chat/application/ports/options/get-user-conversation-list.options';
 import {
   PaginatedResult,
   PaginationOptions,
 } from '@common/pagination/pagination.interface';
-import { ConversationReadDto } from '@chat/application/dtos/conversation-read.dto';
-import { MessageReadDto } from '@chat/application/dtos/message-read.dto';
+import { ConversationReadDto } from '@modules/chat/application/dtos/conversation-read.dto';
+import { MessageReadDto } from '@modules/chat/application/dtos/message-read.dto';
 
 export abstract class ConversationReadRepositoryPort {
   abstract getUserConversationById(

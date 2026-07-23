@@ -1,8 +1,8 @@
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { CreateMessageCommand } from './create-message.command';
 import { Logger } from '@nestjs/common';
-import { ConversationRepositoryPort } from '@chat/application/ports/conversation-repository.port';
-import { MessageEntity } from '@chat/domain/models/message.entity';
+import { ConversationRepositoryPort } from '@modules/chat/application/ports/conversation-repository.port';
+import { MessageEntity } from '@modules/chat/domain/models/message.entity';
 
 @CommandHandler(CreateMessageCommand)
 export class CreateMessageHandler implements ICommandHandler<
