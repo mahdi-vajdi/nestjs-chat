@@ -11,11 +11,11 @@ export class MessageEntity
   extends AggregateRoot<string>
   implements SoftDeletableEntity
 {
-  private _text: string;
-  private _type: MessageType;
-  private _senderId: string;
-  private _conversationId: string;
-  private _deletedForUserIds: string[];
+  private readonly _text: string;
+  private readonly _type: MessageType;
+  private readonly _senderId: string;
+  private readonly _conversationId: string;
+  private readonly _deletedForUserIds: string[];
   private _deletedAt?: Date;
 
   // Transient properties

@@ -8,8 +8,8 @@ export class ConversationMemberEntity
   extends Entity<string>
   implements SoftDeletableEntity
 {
-  private _userId: string;
-  private _conversationId: string;
+  private readonly _userId: string;
+  private readonly _conversationId: string;
   private _lastSeenMessageId?: string;
   private _lastMessageId?: string;
   private _deletedAt?: Date;

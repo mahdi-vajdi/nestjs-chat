@@ -10,32 +10,9 @@ import { UserIntegrationPort } from '@modules/chat/application/ports/user-integr
 import { UserIntegrationAdapter } from '@modules/chat/infrastructure/adapters/user-integration.adapter';
 import { CqrsModule } from '@nestjs/cqrs';
 
-// Handlers
-import { CreateDirectConversationHandler } from './application/commands/create-direct-conversation/create-direct-conversation.handler';
-import { CreateMessageHandler } from './application/commands/create-message/create-message.handler';
-import { DeleteConversationHandler } from './application/commands/delete-conversation/delete-conversation.handler';
-import { MarkConversationAsReadCommandHandler } from './application/commands/mark-conversation-as-read/mark-conversation-as-read.handler';
-import { MessageCreatedWsEventHandler } from './presentation/ws/events/handlers/message-created.ws-handler';
-import { GetUserConversationListHandler } from './application/queries/get-user-conversation-list/get-user-conversation-list.handler';
-import { GetUserConversationIdsHandler } from './application/queries/get-user-conversation-ids/get-user-conversation-ids.handler';
-import { GetUserConversationHandler } from './application/queries/get-user-conversation/get-user-conversation.handler';
-import { GetUserConversationMessageListHandler } from './application/queries/get-user-conversation-message-list/get-user-conversation-message-list.handler';
-
-const CommandHandlers = [
-  CreateDirectConversationHandler,
-  CreateMessageHandler,
-  DeleteConversationHandler,
-  MarkConversationAsReadCommandHandler,
-];
-
-const EventHandlers = [MessageCreatedWsEventHandler];
-
-const QueryHandlers = [
-  GetUserConversationListHandler,
-  GetUserConversationIdsHandler,
-  GetUserConversationHandler,
-  GetUserConversationMessageListHandler,
-];
+import { CommandHandlers } from './application/commands';
+import { QueryHandlers } from './application/queries';
+import { EventHandlers } from './presentation/ws/events/handlers';
 
 @Module({
   imports: [CqrsModule, ChatDatabaseModule, UserModule, AuthModule],

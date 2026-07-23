@@ -10,10 +10,10 @@ export class ConversationEntity
   extends AggregateRoot<string>
   implements SoftDeletableEntity
 {
-  private _title: string | null;
-  private _picture: string | null;
-  private _identifier: string | null;
-  private _type: ConversationType;
+  private readonly _title: string | null;
+  private readonly _picture: string | null;
+  private readonly _identifier: string | null;
+  private readonly _type: ConversationType;
   private _deletedAt?: Date;
 
   // Domain associations

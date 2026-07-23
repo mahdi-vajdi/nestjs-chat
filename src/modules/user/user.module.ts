@@ -6,15 +6,8 @@ import { UserHttpController } from '@modules/user/presentation/http/user-http.co
 import { Module } from '@nestjs/common';
 import { UserDatabaseModule } from '@modules/user/infrastructure/database/user-database.module';
 import { CqrsModule } from '@nestjs/cqrs';
-import { CreateUserHandler } from '@modules/user/application/commands/create-user/create-user.handler';
-import { BlockUserHandler } from '@modules/user/application/commands/block-user/block-user.handler';
-import { UnblockUserHandler } from '@modules/user/application/commands/unblock-user/unblock-user.handler';
-import { GetUserIdsByNameOrUsernameHandler } from '@modules/user/application/queries/get-user-ids-by-name-or-username/get-user-ids-by-name-or-username.handler';
-import { GetUserByIdHandler } from '@modules/user/application/queries/get-user-by-id/get-user-by-id.handler';
-import { GetUsersByIdsHandler } from '@modules/user/application/queries/get-users-by-ids/get-users-by-ids.handler';
-import { ValidatePasswordHandler } from '@modules/user/application/queries/validate-password/validate-password.handler';
-import { GetBlockStatusHandler } from '@modules/user/application/queries/get-block-status/get-block-status.handler';
-import { GetBlockedUsersIdsHandler } from '@modules/user/application/queries/get-blocked-users-ids/get-blocked-users-ids.handler';
+import { CommandHandlers } from './application/commands';
+import { QueryHandlers } from './application/queries';
 
 @Module({
   imports: [UserDatabaseModule, AuthModule, CqrsModule],
@@ -22,15 +15,8 @@ import { GetBlockedUsersIdsHandler } from '@modules/user/application/queries/get
   providers: [
     UserHttpGuard,
     { provide: AuthIntegrationPort, useClass: AuthIntegrationAdapter },
-    CreateUserHandler,
-    BlockUserHandler,
-    UnblockUserHandler,
-    GetUserIdsByNameOrUsernameHandler,
-    GetUserByIdHandler,
-    GetUsersByIdsHandler,
-    ValidatePasswordHandler,
-    GetBlockStatusHandler,
-    GetBlockedUsersIdsHandler,
+    ...CommandHandlers,
+    ...QueryHandlers,
   ],
 })
 export class UserModule {}

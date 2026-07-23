@@ -1,5 +1,5 @@
 import { EventsHandler, IEventHandler, QueryBus } from '@nestjs/cqrs';
-import { MessageCreatedDomainEvent } from '@modules/chat/domain/events/message-created.domain-event';
+import { MessageCreatedDomainEvent } from '@modules/chat/contracts/events';
 import { ChatWsGateway } from '@modules/chat/presentation/ws/chat-ws.gateway';
 import { Logger } from '@nestjs/common';
 import { UserIntegrationPort } from '@modules/chat/application/ports/user-integration.port';

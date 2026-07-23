@@ -7,10 +7,8 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
-import { SignupHandler } from '@modules/auth/application/commands/signup/signup.handler';
-import { SigninHandler } from '@modules/auth/application/commands/signin/signin.handler';
-import { RefreshTokensHandler } from '@modules/auth/application/commands/refresh-tokens/refresh-tokens.handler';
-import { VerifyAccessTokenHandler } from '@modules/auth/application/queries/verify-access-token/verify-access-token.handler';
+import { CommandHandlers } from './application/commands';
+import { QueryHandlers } from './application/queries';
 import { TokenService } from '@modules/auth/application/services/token.service';
 import { AuthDatabaseModule } from '@modules/auth/infrastructure/database/auth-database.module';
 import { authConfig } from '@modules/auth/infrastructure/configs/auth.config';
@@ -37,10 +35,8 @@ import { authConfig } from '@modules/auth/infrastructure/configs/auth.config';
   controllers: [AuthHttpController],
   providers: [
     TokenService,
-    SignupHandler,
-    SigninHandler,
-    RefreshTokensHandler,
-    VerifyAccessTokenHandler,
+    ...CommandHandlers,
+    ...QueryHandlers,
     AuthHttpGuard,
     AuthWsGuard,
     { provide: UserIntegrationPort, useClass: UserIntegrationAdapter },
