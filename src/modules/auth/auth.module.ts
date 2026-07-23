@@ -13,11 +13,12 @@ import { RefreshTokensHandler } from '@auth/application/commands/refresh-tokens/
 import { VerifyAccessTokenHandler } from '@auth/application/queries/verify-access-token/verify-access-token.handler';
 import { TokenService } from '@auth/application/services/token.service';
 import { AuthDatabaseModule } from '@auth/infrastructure/database/auth-database.module';
+import { authConfig } from '@auth/infrastructure/configs/auth.config';
 
 @Module({
   imports: [
     CqrsModule,
-    ConfigModule,
+    ConfigModule.forFeature(authConfig),
     AuthDatabaseModule,
     JwtModule.register({
       signOptions: {

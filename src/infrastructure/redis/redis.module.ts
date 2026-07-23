@@ -8,7 +8,7 @@ import {
 import { IORedisClient } from '@infrastructure/redis/ioredis/ioredis-client';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule.forFeature(redisConfig)],
   providers: [
     {
       provide: REDIS_DB0_PROVIDER,

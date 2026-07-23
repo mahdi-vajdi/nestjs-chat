@@ -8,13 +8,9 @@ import { LOGGER_PROVIDER } from './provider/logger.provider';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      envFilePath: ['.env'],
-      load: [winstonLoggerConfig],
-      cache: true,
-    }),
+    ConfigModule.forFeature(winstonLoggerConfig),
     WinstonModule.forRootAsync({
-      imports: [ConfigModule],
+      imports: [ConfigModule.forFeature(winstonLoggerConfig)],
       useFactory: async (
         winstonConfig: ConfigType<typeof winstonLoggerConfig>,
       ) => {

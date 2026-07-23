@@ -28,7 +28,7 @@ export class DatabaseModule {
   private static getPostgresConnection(): DynamicModule {
     return TypeOrmModule.forRootAsync({
       name: DatabaseType.POSTGRES,
-      imports: [ConfigModule, LoggerModule],
+      imports: [ConfigModule.forFeature(postgresConfig), LoggerModule],
       useFactory: async (
         dbConfig: ConfigType<typeof postgresConfig>,
         logger: TypeOrmLogger,
