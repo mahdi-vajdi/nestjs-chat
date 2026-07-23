@@ -37,10 +37,10 @@ import { CreateMessageRequest } from '@modules/chat/presentation/ws/dtos/create-
 import { MarkConversationAsReadCommand } from '@modules/chat/application/commands/mark-conversation-as-read/mark-conversation-as-read.command';
 import { GetConversationMessageListRequest } from '@modules/chat/presentation/ws/dtos/get-conversation-message-list.dto';
 import { MessageSeenEvent } from '@modules/chat/presentation/ws/events/message-seen.event';
-import { WsExceptionFilter } from '@common/websocket/filters/ws-exception.filter';
+import { GlobalWsExceptionFilter } from '@common/websocket/filters/global-ws-exception.filter';
 
 @UseGuards(ChatWsGuard)
-@UseFilters(new WsExceptionFilter())
+@UseFilters(new GlobalWsExceptionFilter())
 @WebSocketGateway({ namespace: 'chat', cors: '*' })
 export class ChatWsGateway
   extends BaseWsGateway

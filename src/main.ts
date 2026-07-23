@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigType } from '@nestjs/config';
 import { httpConfig } from '@infrastructure/http/http.config';
@@ -11,7 +11,7 @@ import {
   REDIS_DB0_PROVIDER,
 } from '@infrastructure/redis/providers/redis.provider';
 import { RedisIoAdapter } from '@infrastructure/websocket/adapter/redis/redis-io.adapter';
-import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
+import { GlobalHttpExceptionFilter } from '@common/http/filters/global-http-exception.filter';
 
 function setUpSwagger(app: INestApplication) {
   const swaggerConfig = new DocumentBuilder()
@@ -43,7 +43,8 @@ async function bootstrap() {
 
   app.useLogger(logger);
   app.enableCors();
-  app.useGlobalFilters(new AllExceptionsFilter());
+  const httpAdapterHost = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new GlobalHttpExceptionFilter(httpAdapterHost));
   setUpSwagger(app);
 
   // Set up adapter for socket gateway

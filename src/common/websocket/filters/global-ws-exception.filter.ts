@@ -4,8 +4,8 @@ import { DomainException } from '@common/exceptions/domain.exception';
 import { mapDomainErrorTypeToHttpStatus } from '@common/exceptions/exception-mapper';
 
 @Catch()
-export class WsExceptionFilter extends BaseWsExceptionFilter {
-  private readonly logger = new Logger(WsExceptionFilter.name);
+export class GlobalWsExceptionFilter extends BaseWsExceptionFilter {
+  private readonly logger = new Logger(GlobalWsExceptionFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost) {
     const client = host.switchToWs().getClient();
@@ -25,7 +25,11 @@ export class WsExceptionFilter extends BaseWsExceptionFilter {
       const error = exception.getError();
       if (typeof error === 'string') {
         response = { statusCode: 500, message: error };
-      } else if (typeof error === 'object' && error['code']) {
+      } else if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error
+      ) {
         response = {
           statusCode: error['code'],
           message: error['message'] || 'An error occurred',
@@ -38,9 +42,6 @@ export class WsExceptionFilter extends BaseWsExceptionFilter {
     }
 
     if (typeof client.emit === 'function' && pattern) {
-      // Return error using event acknowledgement if possible, otherwise emit to socket
-      // Actually standard NestJS acknowledgement via exception filter:
-      // In NestJS WS, returning from a filter doesn't trigger the ack. We must call the callback directly if it exists in args.
       const args = host.getArgs();
       const callback = args[args.length - 1];
       if (typeof callback === 'function') {
