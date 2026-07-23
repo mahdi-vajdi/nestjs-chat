@@ -11,7 +11,7 @@ import { CommandHandlers } from './application/commands';
 import { QueryHandlers } from './application/queries';
 import { TokenService } from '@modules/auth/application/services/token.service';
 import { AuthDatabaseModule } from '@modules/auth/infrastructure/database/auth-database.module';
-import { authConfig } from '@modules/auth/infrastructure/configs/auth.config';
+import { authConfig } from '@modules/auth/infrastructure/config/auth.config';
 
 @Module({
   imports: [

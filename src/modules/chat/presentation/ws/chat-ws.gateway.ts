@@ -27,7 +27,7 @@ import {
 } from '@modules/chat/presentation/ws/dtos/get-user-conversation-list.dto';
 import { PaginationHelper } from '@common/pagination/pagination.helper';
 import { UserIntegrationPort } from '@modules/chat/application/ports/user-integration.port';
-import { CurrentWsUserId } from '@common/websocket/decorators/current-ws-user-id.decorator';
+import { CurrentUserId } from '@common/decorators/current-user-id.decorator';
 import { ConversationType } from '@modules/chat/domain/enums/conversation-type.enum';
 import { CreateConversationRequest } from '@modules/chat/presentation/ws/dtos/create-conversation.dto';
 import { MessageType } from '@modules/chat/domain/enums/chat-type.enum';
@@ -37,7 +37,6 @@ import { CreateMessageRequest } from '@modules/chat/presentation/ws/dtos/create-
 import { MarkConversationAsReadCommand } from '@modules/chat/application/commands/mark-conversation-as-read/mark-conversation-as-read.command';
 import { GetConversationMessageListRequest } from '@modules/chat/presentation/ws/dtos/get-conversation-message-list.dto';
 import { MessageSeenEvent } from '@modules/chat/presentation/ws/events/message-seen.event';
-
 import { WsExceptionFilter } from '@common/websocket/filters/ws-exception.filter';
 
 @UseGuards(ChatWsGuard)
@@ -117,7 +116,7 @@ export class ChatWsGateway
   async createDirectConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: CreateConversationRequest,
-    @CurrentWsUserId() authUserId: string,
+    @CurrentUserId() authUserId: string,
   ): Promise<any> {
     const [currentUser, targetUser] = await Promise.all([
       this.userIntegrationPort.getUserById(authUserId),
@@ -209,7 +208,7 @@ export class ChatWsGateway
   @UsePipes(new ValidationPipe(GetUserConversationListRequest, ['body'], 'ws'))
   async getUserConversationList(
     @MessageBody() data: GetUserConversationListRequest,
-    @CurrentWsUserId() authUserId: string,
+    @CurrentUserId() authUserId: string,
   ): Promise<any> {
     const pagination = PaginationHelper.parse(data.page, data.pageSize);
 
@@ -322,7 +321,7 @@ export class ChatWsGateway
   async createMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: CreateMessageRequest,
-    @CurrentWsUserId() authUserId: string,
+    @CurrentUserId() authUserId: string,
   ): Promise<any> {
     const conversation = await this.queryBus.execute(
       new GetUserConversationQuery(data.conversationId, authUserId),
@@ -375,7 +374,7 @@ export class ChatWsGateway
   async getConversationMessageList(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: GetConversationMessageListRequest,
-    @CurrentWsUserId() authUserId: string,
+    @CurrentUserId() authUserId: string,
   ): Promise<any> {
     const conversation = await this.queryBus.execute(
       new GetUserConversationQuery(data.conversationId, authUserId),

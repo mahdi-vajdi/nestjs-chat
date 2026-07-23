@@ -15,7 +15,7 @@ import {
 import { CommandBus } from '@nestjs/cqrs';
 import { BlockUserCommand } from '@modules/user/application/commands/block-user/block-user.command';
 import { UnblockUserCommand } from '@modules/user/application/commands/unblock-user/unblock-user.command';
-import { CurrentUserId } from '@common/http/decorators/current-user-id.decorator';
+import { CurrentUserId } from '@common/decorators/current-user-id.decorator';
 import {
   UnblockRequestParams,
   UnblockResponse,
