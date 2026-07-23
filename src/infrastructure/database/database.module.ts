@@ -1,11 +1,11 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigType } from '@nestjs/config';
-import { Logger as TypeOrmLogger } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from '../logger/logger.module';
 import { postgresConfig } from '@infrastructure/database/postgres/config/postgres.config';
 import { DatabaseType } from './database-type.enum';
-import { LOGGER_PROVIDER } from '../logger/provider/logger.provider';
+import { PinoLogger } from 'nestjs-pino';
+import { TypeOrmLoggerAdapter } from './typeorm-logger.adapter';
 
 @Module({})
 export class DatabaseModule {
@@ -31,7 +31,7 @@ export class DatabaseModule {
       imports: [ConfigModule.forFeature(postgresConfig), LoggerModule],
       useFactory: async (
         dbConfig: ConfigType<typeof postgresConfig>,
-        logger: TypeOrmLogger,
+        logger: PinoLogger,
       ) => {
         return {
           name: DatabaseType.POSTGRES, // Do not delete. Used in application shutdown.
@@ -53,11 +53,11 @@ export class DatabaseModule {
           migrationsTableName: 'typeorm_migrations',
           synchronize: false,
           logging: dbConfig.log,
-          logger: logger,
+          logger: new TypeOrmLoggerAdapter(logger),
           maxQueryExecutionTime: dbConfig.slowQueryLimit,
         };
       },
-      inject: [postgresConfig.KEY, LOGGER_PROVIDER],
+      inject: [postgresConfig.KEY, PinoLogger],
     });
   }
 }

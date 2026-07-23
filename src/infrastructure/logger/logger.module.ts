@@ -1,64 +1,35 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigType } from '@nestjs/config';
-import { winstonLoggerConfig } from './winston/config/winston-logger.config';
-import { WinstonModule } from 'nest-winston';
-import { format, transports } from 'winston';
-import { WinstonLoggerService } from './winston/winston-logger.service';
-import { LOGGER_PROVIDER } from './provider/logger.provider';
+import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
+import { loggerConfig } from './config/logger.config';
+import { ConfigurableModuleClass } from './logger.module-definition';
 
 @Module({
   imports: [
-    ConfigModule.forFeature(winstonLoggerConfig),
-    WinstonModule.forRootAsync({
-      imports: [ConfigModule.forFeature(winstonLoggerConfig)],
-      useFactory: async (
-        winstonConfig: ConfigType<typeof winstonLoggerConfig>,
-      ) => {
-        if (winstonConfig.useFile)
-          return {
-            format: format.combine(
-              format.timestamp(),
-              format.ms(),
-              format.json(),
-            ),
-            transports: [
-              new transports.File({
-                level: winstonConfig.level,
-                filename: winstonConfig.filePath,
-                maxFiles: 1,
-                tailable: true,
-              }),
-              new transports.Console({
-                level: winstonConfig.level,
-              }),
-            ],
-          };
-
-        return {
-          format: format.combine(
-            format.ms(),
-            format.timestamp(),
-            format.colorize({
-              all: true,
-            }),
-            format.simple(),
-          ),
-          transports: [
-            new transports.Console({
-              level: winstonConfig.level,
-            }),
-          ],
+    PinoLoggerModule.forRootAsync({
+      imports: [ConfigModule.forFeature(loggerConfig)],
+      inject: [loggerConfig.KEY],
+      useFactory: (config: ConfigType<typeof loggerConfig>) => {
+        const pinoHttp: any = {
+          level: config.level,
         };
+
+        if (config.useFile) {
+          pinoHttp.transport = {
+            target: 'pino/file',
+            options: { destination: config.filePath },
+          };
+        } else {
+          pinoHttp.transport = {
+            target: 'pino-pretty',
+            options: { colorize: true, singleLine: true },
+          };
+        }
+
+        return { pinoHttp };
       },
-      inject: [winstonLoggerConfig.KEY],
     }),
   ],
-  providers: [
-    {
-      provide: LOGGER_PROVIDER,
-      useClass: WinstonLoggerService,
-    },
-  ],
-  exports: [LOGGER_PROVIDER],
+  exports: [PinoLoggerModule],
 })
-export class LoggerModule {}
+export class LoggerModule extends ConfigurableModuleClass {}

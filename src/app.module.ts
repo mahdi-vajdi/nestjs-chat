@@ -20,7 +20,7 @@ import { DatabaseType } from '@infrastructure/database/database-type.enum';
       cache: true,
     }),
     DatabaseModule.register(DatabaseType.POSTGRES),
-    LoggerModule,
+    LoggerModule.forRoot({ isGlobal: true }),
     RedisModule,
     UserModule,
     AuthModule,

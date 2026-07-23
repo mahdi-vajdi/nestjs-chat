@@ -3,8 +3,8 @@ import { AppModule } from './app.module';
 import { ConfigType } from '@nestjs/config';
 import { httpConfig } from '@infrastructure/http/http.config';
 import { wsConfig } from '@infrastructure/websocket/ws.config';
-import { INestApplication, Logger, LoggerService } from '@nestjs/common';
-import { LOGGER_PROVIDER } from '@infrastructure/logger/provider/logger.provider';
+import { INestApplication, Logger } from '@nestjs/common';
+import { Logger as PinoLogger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import {
   IRedisProvider,
@@ -38,7 +38,7 @@ async function bootstrap() {
   });
 
   const wsConf = app.get<ConfigType<typeof wsConfig>>(wsConfig.KEY);
-  const logger = app.get<LoggerService>(LOGGER_PROVIDER);
+  const logger = app.get(PinoLogger);
   const bootstrapLogger = new Logger('Bootstrap');
 
   app.useLogger(logger);
