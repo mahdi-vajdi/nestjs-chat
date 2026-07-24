@@ -36,6 +36,7 @@ import { CreateMessageRequest } from '@modules/chat/presentation/ws/dtos/create-
 import { MarkConversationAsReadCommand } from '@modules/chat/application/commands/mark-conversation-as-read/mark-conversation-as-read.command';
 import { GetConversationMessageListRequest } from '@modules/chat/presentation/ws/dtos/get-conversation-message-list.dto';
 import { MessageSeenEvent } from '@modules/chat/presentation/ws/events/message-seen.event';
+import { MarkMessageSeenRequest } from '@modules/chat/presentation/ws/dtos/mark-message-seen.dto';
 import { GlobalWsExceptionFilter } from '@common/websocket/filters/global-ws-exception.filter';
 
 @UseGuards(ChatWsGuard)
@@ -394,27 +395,6 @@ export class ChatWsGateway
       users.map((user) => user.id),
     );
 
-    if (messageList.data.length) {
-      await this.commandBus.execute(
-        new MarkConversationAsReadCommand(
-          conversation.id,
-          authUserId,
-          messageList.data[0].id,
-        ),
-      );
-
-      await this.broadcast(
-        client,
-        conversation.members
-          .filter((member) => member.userId !== authUserId)
-          .map((member) => `user-${member.userId}`),
-        new MessageSeenEvent({
-          conversationId: conversation.id,
-          messageId: messageList.data[0].id,
-        }),
-      );
-    }
-
     return {
       id: conversation.id,
       name:
@@ -470,5 +450,43 @@ export class ChatWsGateway
         }),
       },
     };
+  }
+
+  @SubscribeMessage('conversation.message.markSeen')
+  async markMessageAsSeen(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: MarkMessageSeenRequest,
+    @CurrentUserId() authUserId: string,
+  ): Promise<void> {
+    const conversation = await this.queryBus.execute(
+      new GetUserConversationQuery(data.conversationId, authUserId),
+    );
+
+    // Verify user is a member of the conversation
+    const isMember = conversation.members.some((m) => m.userId === authUserId);
+    if (!isMember) {
+      throw new WsException('Conversation not found or access denied');
+    }
+
+    // Execute the command to update the read status in the DB
+    await this.commandBus.execute(
+      new MarkConversationAsReadCommand(
+        conversation.id,
+        authUserId,
+        data.messageId,
+      ),
+    );
+
+    // Broadcast the event to other members of the conversation
+    await this.broadcast(
+      client,
+      conversation.members
+        .filter((member) => member.userId !== authUserId)
+        .map((member) => `user-${member.userId}`),
+      new MessageSeenEvent({
+        conversationId: conversation.id,
+        messageId: data.messageId,
+      }),
+    );
   }
 }
