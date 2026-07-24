@@ -3,7 +3,7 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import { INestApplication, Logger } from '@nestjs/common';
 import { wsConfig } from '@infrastructure/websocket/ws.config';
 import { ConfigType } from '@nestjs/config';
-import { IRedisProvider } from '@infrastructure/redis/providers/redis.provider';
+import { RedisProvider } from '@infrastructure/redis/redis.provider';
 
 export class RedisIoAdapter extends IoAdapter {
   private readonly logger = new Logger(RedisIoAdapter.name);
@@ -12,17 +12,16 @@ export class RedisIoAdapter extends IoAdapter {
   constructor(
     private readonly socketConfig: ConfigType<typeof wsConfig>,
     readonly app: INestApplication,
-    private readonly redisProviderPub: IRedisProvider,
-    private readonly redisProviderSub: IRedisProvider,
+    private readonly redisProvider: RedisProvider,
   ) {
     super(app);
   }
 
   async connectToRedis(): Promise<void> {
-    this.adapterConstructor = createAdapter(
-      this.redisProviderPub.getClient(),
-      this.redisProviderSub.getClient().duplicate(),
-    );
+    const pubClient = this.redisProvider.getClient();
+    const subClient = pubClient.duplicate();
+
+    this.adapterConstructor = createAdapter(pubClient, subClient);
   }
 
   override createIOServer(port: number, options?: any): any {

@@ -1,12 +1,12 @@
-import { IRedisProvider } from '@infrastructure/redis/providers/redis.provider';
+import { RedisProvider } from '@infrastructure/redis/redis.provider';
 import Redis from 'ioredis';
 import { Logger, OnApplicationShutdown } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { redisConfig } from '@infrastructure/redis/configs/redis.config';
+import { redisConfig } from '@infrastructure/redis/redis.config';
 
-export class IORedisClient implements IRedisProvider, OnApplicationShutdown {
+export class RedisClient implements RedisProvider, OnApplicationShutdown {
   private readonly client: Redis;
-  private readonly logger = new Logger(IORedisClient.name);
+  private readonly logger = new Logger(RedisClient.name);
 
   constructor(
     private readonly redisConf: ConfigType<typeof redisConfig>,
@@ -20,6 +20,23 @@ export class IORedisClient implements IRedisProvider, OnApplicationShutdown {
       db: dbIndex,
       lazyConnect: true,
       showFriendlyErrorStack: false, // only use in development
+      connectTimeout: 10000,
+      maxRetriesPerRequest: 3,
+      retryStrategy: (times) => {
+        return Math.min(times * 50, 2000);
+      },
+    });
+
+    this.client.on('error', (err) => {
+      this.logger.error(`Redis Client Error (DB ${this.dbIndex}):`, err);
+    });
+
+    this.client.on('reconnecting', () => {
+      this.logger.warn(`Redis Client reconnecting (DB ${this.dbIndex})...`);
+    });
+
+    this.client.on('ready', () => {
+      this.logger.log(`Redis Client is ready (DB ${this.dbIndex})`);
     });
   }
 

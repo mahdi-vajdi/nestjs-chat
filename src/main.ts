@@ -6,10 +6,7 @@ import { wsConfig } from '@infrastructure/websocket/ws.config';
 import { INestApplication, Logger, ValidationPipe } from '@nestjs/common';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import {
-  IRedisProvider,
-  REDIS_DB0_PROVIDER,
-} from '@infrastructure/redis/providers/redis.provider';
+import { RedisProvider } from '@infrastructure/redis/redis.provider';
 import { RedisIoAdapter } from '@infrastructure/websocket/adapter/redis/redis-io.adapter';
 import { GlobalHttpExceptionFilter } from '@common/http/filters/global-http-exception.filter';
 
@@ -54,14 +51,8 @@ async function bootstrap() {
   setUpSwagger(app);
 
   // Set up adapter for socket gateway
-  const redisDB0Provider =
-    await app.resolve<IRedisProvider>(REDIS_DB0_PROVIDER);
-  const redisIoAdapter = new RedisIoAdapter(
-    wsConf,
-    app,
-    redisDB0Provider,
-    redisDB0Provider,
-  );
+  const redisProvider = await app.resolve<RedisProvider>(RedisProvider);
+  const redisIoAdapter = new RedisIoAdapter(wsConf, app, redisProvider);
   await redisIoAdapter.connectToRedis();
   app.useWebSocketAdapter(redisIoAdapter);
 
