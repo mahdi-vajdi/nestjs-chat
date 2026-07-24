@@ -23,9 +23,9 @@
     "test:e2e": "jest --config ./test/jest-e2e.config.ts",
     "typeorm": "typeorm-ts-node-commonjs -d src/infrastructure/database/postgres/config/data-source.ts",
     "migration:generate": "yarn build && yarn typeorm migration:generate",
-    "migration:generate:user": "yarn build && typeorm-ts-node-commonjs migration:generate -d src/modules/user/infrastructure/database/postgres/config/user-data-source.ts src/modules/user/infrastructure/database/postgres/migrations/Initial",
-    "migration:generate:chat": "yarn build && typeorm-ts-node-commonjs migration:generate -d src/modules/chat/infrastructure/database/postgres/config/chat-data-source.ts src/modules/chat/infrastructure/database/postgres/migrations/Initial",
-    "migration:generate:auth": "yarn build && typeorm-ts-node-commonjs migration:generate -d src/modules/auth/infrastructure/database/postgres/config/auth-data-source.ts src/modules/auth/infrastructure/database/postgres/migrations/Initial",
+    "migration:generate:user": "yarn build && typeorm-ts-node-commonjs migration:generate -d src/modules/user/infrastructure/database/postgres/user-data-source.ts src/modules/user/infrastructure/database/postgres/migrations/Initial",
+    "migration:generate:chat": "yarn build && typeorm-ts-node-commonjs migration:generate -d src/modules/chat/infrastructure/database/postgres/chat-data-source.ts src/modules/chat/infrastructure/database/postgres/migrations/Initial",
+    "migration:generate:auth": "yarn build && typeorm-ts-node-commonjs migration:generate -d src/modules/auth/infrastructure/database/postgres/auth-data-source.ts src/modules/auth/infrastructure/database/postgres/migrations/Initial",
     "migration:run": "yarn build && yarn typeorm migration:run",
     "migration:revert": "yarn typeorm migration:revert"
   },
