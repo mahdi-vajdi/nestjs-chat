@@ -43,7 +43,7 @@ export class GlobalWsExceptionFilter extends BaseWsExceptionFilter {
       if (typeof callback === 'function') {
         callback(response);
       } else {
-        client.emit('exception', response);
+        client.emit('error.server', response);
       }
     }
   }

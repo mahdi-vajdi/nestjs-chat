@@ -96,7 +96,7 @@ export class ChatWsGateway
       this.logger.debug(
         `Error during connection: ${(e as Error).message}. disconnecting...`,
       );
-      client.emit('appError', (e as Error).message);
+      client.emit('error.client', (e as Error).message);
       client.disconnect(true);
     }
   }
@@ -110,7 +110,7 @@ export class ChatWsGateway
     }
   }
 
-  @SubscribeMessage('conversation.direct.create')
+  @SubscribeMessage('conversation.create')
   async createDirectConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: CreateConversationRequest,
@@ -313,7 +313,7 @@ export class ChatWsGateway
     };
   }
 
-  @SubscribeMessage('conversation.message.create')
+  @SubscribeMessage('conversation.message.send')
   async createMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: CreateMessageRequest,
