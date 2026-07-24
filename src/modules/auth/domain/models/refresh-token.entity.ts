@@ -63,7 +63,7 @@ export class RefreshTokenEntity extends AggregateRoot<string> {
   }
 
   // Mutations
-  public softDelete(): void {
+  public revoke(): void {
     this._deletedAt = new Date();
     this.updatedAt = new Date();
   }

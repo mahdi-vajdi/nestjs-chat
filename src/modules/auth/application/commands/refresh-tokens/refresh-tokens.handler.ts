@@ -65,7 +65,7 @@ export class RefreshTokensHandler implements ICommandHandler<
 
     // Revoke/Delete old token
     const tokenToRevoke = this.publisher.mergeObjectContext(currentTokenEntity);
-    tokenToRevoke.softDelete();
+    tokenToRevoke.revoke();
 
     await this.authRepository.save(tokenToRevoke);
 

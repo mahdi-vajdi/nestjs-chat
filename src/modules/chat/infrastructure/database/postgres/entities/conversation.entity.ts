@@ -5,17 +5,17 @@ import {
   Entity,
   Index,
   OneToMany,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { ConversationType } from '@modules/chat/domain/enums/conversation-type.enum';
-import { Message } from '@modules/chat/infrastructure/database/entities/message.entity';
+import { Message } from '@modules/chat/infrastructure/database/postgres/entities/message.entity';
 import { ConversationEntity } from '@modules/chat/domain/models/conversation.model';
-import { ConversationMember } from '@modules/chat/infrastructure/database/entities/conversation-member.entity';
+import { ConversationMember } from '@modules/chat/infrastructure/database/postgres/entities/conversation-member.entity';
 
 @Entity({ schema: 'chat', name: 'conversations' })
 export class Conversation {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn('uuid')
   id: string;
 
   @Column({ type: 'varchar', nullable: true })
@@ -94,12 +94,16 @@ export class Conversation {
     );
 
     if (conversation.messages) {
-      entity.messages = conversation.messages.map((m) => Message.toDomain(m));
+      entity.loadMessages(
+        conversation.messages.map((m) => Message.toDomain(m)),
+      );
     }
 
     if (conversation.conversationMembers) {
-      entity.members = conversation.conversationMembers.map((cm) =>
-        ConversationMember.toDomain(cm),
+      entity.loadMembers(
+        conversation.conversationMembers.map((cm) =>
+          ConversationMember.toDomain(cm),
+        ),
       );
     }
 

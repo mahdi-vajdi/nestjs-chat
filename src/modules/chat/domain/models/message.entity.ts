@@ -1,5 +1,4 @@
 import { MessageType } from '@modules/chat/domain/enums/chat-type.enum';
-import { SoftDeletableEntity } from '@common/entities/soft-deletable-entity.interface';
 import { ConversationEntity } from '@modules/chat/domain/models/conversation.model';
 import { ConversationMemberEntity } from '@modules/chat/domain/models/conversation-member.model';
 import { v7 as uuidv7 } from 'uuid';
@@ -7,10 +6,7 @@ import { v7 as uuidv7 } from 'uuid';
 import { AggregateRoot } from '@common/domain/aggregate-root';
 import { MessageCreatedDomainEvent } from '@modules/chat/domain/events/message-created.domain-event';
 
-export class MessageEntity
-  extends AggregateRoot<string>
-  implements SoftDeletableEntity
-{
+export class MessageEntity extends AggregateRoot<string> {
   private readonly _text: string;
   private readonly _type: MessageType;
   private readonly _senderId: string;
@@ -19,8 +15,22 @@ export class MessageEntity
   private _deletedAt?: Date;
 
   // Transient properties
-  public sender?: Partial<ConversationMemberEntity>;
-  public conversation?: Partial<ConversationEntity>;
+  private _sender?: Partial<ConversationMemberEntity>;
+  private _conversation?: Partial<ConversationEntity>;
+
+  public get sender() {
+    return this._sender;
+  }
+  public get conversation() {
+    return this._conversation;
+  }
+
+  public loadSender(sender: Partial<ConversationMemberEntity>) {
+    this._sender = sender;
+  }
+  public loadConversation(c: Partial<ConversationEntity>) {
+    this._conversation = c;
+  }
 
   private constructor(
     id: string,

@@ -4,13 +4,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
-import { Message } from '@modules/chat/infrastructure/database/entities/message.entity';
+import { Message } from '@modules/chat/infrastructure/database/postgres/entities/message.entity';
 import { ConversationReadRepositoryPort } from '@modules/chat/application/ports/conversation-read-repository.port';
-import { Conversation } from '@modules/chat/infrastructure/database/entities/conversation.entity';
+import { Conversation } from '@modules/chat/infrastructure/database/postgres/entities/conversation.entity';
 import { GetUserConversationIdsOptions } from '@modules/chat/application/ports/options/get-user-conversation-ids.options';
 import { GetUserConversationListOptions } from '@modules/chat/application/ports/options/get-user-conversation-list.options';
-import { ConversationMember } from '@modules/chat/infrastructure/database/entities/conversation-member.entity';
-import { DeletedMessage } from '@modules/chat/infrastructure/database/entities/deleted-message.entity';
+import { ConversationMember } from '@modules/chat/infrastructure/database/postgres/entities/conversation-member.entity';
+import { DeletedMessage } from '@modules/chat/infrastructure/database/postgres/entities/deleted-message.entity';
 import {
   PaginatedResult,
   PaginationOptions,

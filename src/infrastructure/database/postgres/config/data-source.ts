@@ -32,7 +32,7 @@ export const AppDataSource = new DataSource({
     application_name: dbConfig.applicationName,
   },
   entities: ['dist/**/*.entity{.ts,.js}'],
-  migrations: ['dist/**/postgres/migrations/**/*.js'],
+  migrations: ['dist/modules/*/infrastructure/database/migrations/**/*.js'],
   synchronize: false,
   logging: dbConfig.log,
 });

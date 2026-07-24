@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
-import { Message } from '@modules/chat/infrastructure/database/entities/message.entity';
+import { Message } from '@modules/chat/infrastructure/database/postgres/entities/message.entity';
 import { ConversationRepositoryPort } from '@modules/chat/application/ports/conversation-repository.port';
-import { Conversation } from '@modules/chat/infrastructure/database/entities/conversation.entity';
+import { Conversation } from '@modules/chat/infrastructure/database/postgres/entities/conversation.entity';
 import { ConversationEntity } from '@modules/chat/domain/models/conversation.model';
-import { ConversationMember } from '@modules/chat/infrastructure/database/entities/conversation-member.entity';
+import { ConversationMember } from '@modules/chat/infrastructure/database/postgres/entities/conversation-member.entity';
 import { MessageEntity } from '@modules/chat/domain/models/message.entity';
-import { DeletedMessage } from '@modules/chat/infrastructure/database/entities/deleted-message.entity';
+import { DeletedMessage } from '@modules/chat/infrastructure/database/postgres/entities/deleted-message.entity';
 
 @Injectable()
 export class ConversationPostgresRepository implements ConversationRepositoryPort {

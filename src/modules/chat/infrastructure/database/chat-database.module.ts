@@ -3,12 +3,12 @@ import { Module } from '@nestjs/common';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConversationReadRepositoryPort } from '@modules/chat/application/ports/conversation-read-repository.port';
-import { ConversationPostgresRepository } from '@modules/chat/infrastructure/database/repositories/conversation-postgres.repository';
-import { ConversationPostgresReadRepository } from '@modules/chat/infrastructure/database/repositories/conversation-postgres-read.repository';
-import { Message } from '@modules/chat/infrastructure/database/entities/message.entity';
-import { Conversation } from '@modules/chat/infrastructure/database/entities/conversation.entity';
-import { ConversationMember } from '@modules/chat/infrastructure/database/entities/conversation-member.entity';
-import { DeletedMessage } from '@modules/chat/infrastructure/database/entities/deleted-message.entity';
+import { ConversationPostgresRepository } from '@modules/chat/infrastructure/database/postgres/repositories/conversation-postgres.repository';
+import { ConversationPostgresReadRepository } from '@modules/chat/infrastructure/database/postgres/repositories/conversation-postgres-read.repository';
+import { Message } from '@modules/chat/infrastructure/database/postgres/entities/message.entity';
+import { Conversation } from '@modules/chat/infrastructure/database/postgres/entities/conversation.entity';
+import { ConversationMember } from '@modules/chat/infrastructure/database/postgres/entities/conversation-member.entity';
+import { DeletedMessage } from '@modules/chat/infrastructure/database/postgres/entities/deleted-message.entity';
 
 @Module({
   imports: [

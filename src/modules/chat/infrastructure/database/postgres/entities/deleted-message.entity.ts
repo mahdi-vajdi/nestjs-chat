@@ -1,12 +1,11 @@
 import {
-  Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
 } from 'typeorm';
-import { Message } from '@modules/chat/infrastructure/database/entities/message.entity';
+import { Message } from '@modules/chat/infrastructure/database/postgres/entities/message.entity';
 
 @Entity({
   schema: 'chat',
@@ -14,13 +13,10 @@ import { Message } from '@modules/chat/infrastructure/database/entities/message.
   comment: 'messages that are deleted for users',
 })
 export class DeletedMessage {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ type: 'uuid' })
+  @PrimaryColumn({ type: 'uuid' })
   user_id: string;
 
-  @Column({ type: 'uuid' })
+  @PrimaryColumn({ type: 'uuid' })
   message_id: string;
 
   @CreateDateColumn()

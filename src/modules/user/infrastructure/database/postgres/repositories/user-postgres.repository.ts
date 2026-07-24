@@ -6,7 +6,7 @@ import { UserEntity } from '@modules/user/domain/models/user.model';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { UserRepositoryPort } from '@modules/user/application/ports/user-repository.port';
 import { UserExistsOptions } from '@modules/user/application/ports/options/user-exists.options';
-import { UserBlock } from '@modules/user/infrastructure/database/entities/user-block.entity';
+import { UserBlock } from '@modules/user/infrastructure/database/postgres/entities/user-block.entity';
 
 @Injectable()
 export class UserPostgresRepository implements UserRepositoryPort {

@@ -6,16 +6,16 @@ import {
   JoinColumn,
   ManyToOne,
   OneToOne,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Conversation } from '@modules/chat/infrastructure/database/entities/conversation.entity';
-import { Message } from '@modules/chat/infrastructure/database/entities/message.entity';
+import { Conversation } from '@modules/chat/infrastructure/database/postgres/entities/conversation.entity';
+import { Message } from '@modules/chat/infrastructure/database/postgres/entities/message.entity';
 import { ConversationMemberEntity } from '@modules/chat/domain/models/conversation-member.model';
 
 @Entity({ schema: 'chat', name: 'conversation_members' })
 export class ConversationMember {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn('uuid')
   id: string;
 
   @Column({ type: 'uuid' })
@@ -93,17 +93,17 @@ export class ConversationMember {
     );
 
     if (conversationMember.conversation) {
-      entity.conversation = Conversation.toDomain(
-        conversationMember.conversation,
+      entity.loadConversation(
+        Conversation.toDomain(conversationMember.conversation),
       );
     }
     if (conversationMember.lastSeenMessage) {
-      entity.lastSeenMessage = Message.toDomain(
-        conversationMember.lastSeenMessage,
+      entity.loadLastSeenMessage(
+        Message.toDomain(conversationMember.lastSeenMessage),
       );
     }
     if (conversationMember.lastMessage) {
-      entity.lastMessage = Message.toDomain(conversationMember.lastMessage);
+      entity.loadLastMessage(Message.toDomain(conversationMember.lastMessage));
     }
 
     return entity;

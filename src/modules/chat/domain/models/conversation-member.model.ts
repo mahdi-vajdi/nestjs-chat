@@ -1,13 +1,9 @@
 import { Entity } from '@common/domain/entity';
-import { SoftDeletableEntity } from '@common/entities/soft-deletable-entity.interface';
 import { MessageEntity } from '@modules/chat/domain/models/message.entity';
 import { ConversationEntity } from '@modules/chat/domain/models/conversation.model';
 import { v7 as uuidv7 } from 'uuid';
 
-export class ConversationMemberEntity
-  extends Entity<string>
-  implements SoftDeletableEntity
-{
+export class ConversationMemberEntity extends Entity<string> {
   private readonly _userId: string;
   private readonly _conversationId: string;
   private _lastSeenMessageId?: string;
@@ -15,10 +11,36 @@ export class ConversationMemberEntity
   private _deletedAt?: Date;
 
   // Transient properties
-  public conversation?: Partial<ConversationEntity>;
-  public lastSeenMessage?: Partial<MessageEntity>;
-  public lastMessage?: Partial<MessageEntity>;
-  public notSeenCount?: number;
+  private _conversation?: Partial<ConversationEntity>;
+  private _lastSeenMessage?: Partial<MessageEntity>;
+  private _lastMessage?: Partial<MessageEntity>;
+  private _notSeenCount?: number;
+
+  public get conversation() {
+    return this._conversation;
+  }
+  public get lastSeenMessage() {
+    return this._lastSeenMessage;
+  }
+  public get lastMessage() {
+    return this._lastMessage;
+  }
+  public get notSeenCount() {
+    return this._notSeenCount;
+  }
+
+  public loadConversation(c: Partial<ConversationEntity>) {
+    this._conversation = c;
+  }
+  public loadLastSeenMessage(m: Partial<MessageEntity>) {
+    this._lastSeenMessage = m;
+  }
+  public loadLastMessage(m: Partial<MessageEntity>) {
+    this._lastMessage = m;
+  }
+  public loadNotSeenCount(count: number) {
+    this._notSeenCount = count;
+  }
 
   private constructor(
     id: string,

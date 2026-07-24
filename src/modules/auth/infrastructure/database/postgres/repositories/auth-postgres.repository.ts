@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { AuthRepositoryPort } from '@modules/auth/application/ports/auth-repository.port';
 import { RefreshTokenEntity } from '@modules/auth/domain/models/refresh-token.entity';
-import { RefreshToken } from '@modules/auth/infrastructure/database/entities/refresh-token.entity';
+import { RefreshToken } from '@modules/auth/infrastructure/database/postgres/entities/refresh-token.entity';
 
 @Injectable()
 export class AuthPostgresRepository implements AuthRepositoryPort {

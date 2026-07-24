@@ -1,24 +1,20 @@
 import {
-  Column,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from '@modules/user/infrastructure/database/entities/user.entity';
+import { User } from '@modules/user/infrastructure/database/postgres/entities/user.entity';
 
 @Entity({ schema: 'user', name: 'user_blocks' })
 export class UserBlock {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ type: 'uuid' })
+  @PrimaryColumn({ type: 'uuid' })
   blocker_id: string;
 
-  @Column({ type: 'uuid' })
+  @PrimaryColumn({ type: 'uuid' })
   blocked_id: string;
 
   @CreateDateColumn({ type: 'timestamp' })

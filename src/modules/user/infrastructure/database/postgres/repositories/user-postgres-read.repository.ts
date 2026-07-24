@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { UserReadRepositoryPort } from '@modules/user/application/ports/user-read-repository.port';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { UserReadDto } from '@modules/user/application/dtos/user-read.dto';
-import { UserBlock } from '@modules/user/infrastructure/database/entities/user-block.entity';
+import { UserBlock } from '@modules/user/infrastructure/database/postgres/entities/user-block.entity';
 
 @Injectable()
 export class UserPostgresReadRepository implements UserReadRepositoryPort {
