@@ -1,10 +1,10 @@
-import { IsNotEmpty, IsNumberString } from 'class-validator';
+import { IsNotEmpty, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UnblockRequestParams {
   @ApiProperty()
   @IsNotEmpty()
-  @IsNumberString()
+  @IsUUID()
   targetUserId: string;
 }
 

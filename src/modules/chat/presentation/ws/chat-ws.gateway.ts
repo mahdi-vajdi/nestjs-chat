@@ -93,6 +93,7 @@ export class ChatWsGateway
       client.join(userEventsRoom);
 
       this.logger.log(`Client authorized: ${authPayload.sub}`);
+      client.emit('ready');
     } catch (e) {
       this.logger.debug(
         `Error during connection: ${(e as Error).message}. disconnecting...`,
@@ -160,16 +161,16 @@ export class ChatWsGateway
       `broadcasting 'UserChatCreated' event to the rooms: ${rooms}`,
     );
     this.logger.log(
-      `user ${currentUser.id} joined to room ${createMessage.conversation.id}`,
+      `user ${currentUser.id} joined to room ${createConversation.id}`,
     );
     await this.broadcast(
       client,
       rooms,
       new ConversationCreatedEvent({
         id: createMessage.conversationId,
-        name: `${targetUser.firstName} ${targetUser.lastName}`,
-        avatar: targetUser.avatar,
-        username: targetUser.username,
+        name: `${currentUser.firstName} ${currentUser.lastName}`,
+        avatar: currentUser.avatar,
+        username: currentUser.username,
         notSeenCount: 1,
         lastMessage: {
           id: createMessage.id,
@@ -437,11 +438,14 @@ export class ChatWsGateway
               : null,
           };
 
-          if (message.user.id === authUserId) {
+          if (message.user?.id === authUserId) {
             const otherMember = conversation.members.find(
               (m) => m.userId !== authUserId,
             );
-            if (item.createdAt < otherMember.lastSeenMessage.createdAt) {
+            if (
+              otherMember?.lastSeenMessage?.createdAt &&
+              item.createdAt <= otherMember.lastSeenMessage.createdAt
+            ) {
               message.seen = true;
             }
           }

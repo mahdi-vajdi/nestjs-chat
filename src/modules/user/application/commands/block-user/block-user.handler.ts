@@ -3,6 +3,7 @@ import { BlockUserCommand } from './block-user.command';
 import { Logger } from '@nestjs/common';
 import { UserRepositoryPort } from '@modules/user/application/ports/user-repository.port';
 import { UserNotFoundException } from '@modules/user/domain/user.exceptions';
+import { UserBlockedEvent } from '@modules/user/domain/events/user-blocked.event';
 
 @CommandHandler(BlockUserCommand)
 export class BlockUserHandler implements ICommandHandler<
@@ -26,21 +27,23 @@ export class BlockUserHandler implements ICommandHandler<
 
     const blockedRes = await this.userRepository.getUserById(command.blockedId);
     if (!blockedRes) throw new UserNotFoundException(command.blockedId);
-    const blocked = blockedRes;
 
-    const blocker = this.publisher.mergeObjectContext(blockerRes);
-    const originalLength = blocker.blockedUsers.length;
-    blocker.blockUser(blocked);
+    const isBlocked = await this.userRepository.getBlockStatus(
+      command.blockerId,
+      command.blockedId,
+    );
 
-    if (blocker.blockedUsers.length === originalLength) {
+    if (isBlocked) {
       this.logger.log(
         `User ${command.blockerId} has already blocked user ${command.blockedId}`,
       );
       return false;
     }
 
-    await this.userRepository.save(blockerRes);
+    await this.userRepository.block(command.blockerId, command.blockedId);
 
+    const blocker = this.publisher.mergeObjectContext(blockerRes);
+    blocker.apply(new UserBlockedEvent(command.blockerId, command.blockedId));
     blocker.commit();
 
     return true;

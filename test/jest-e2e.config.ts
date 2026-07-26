@@ -15,6 +15,7 @@ const config: Config = {
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
     prefix: '<rootDir>/../',
   }),
+  transformIgnorePatterns: ['/node_modules/(?!uuid)/'],
 };
 
 export default config;

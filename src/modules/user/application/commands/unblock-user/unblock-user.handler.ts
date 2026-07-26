@@ -3,6 +3,7 @@ import { UnblockUserCommand } from './unblock-user.command';
 import { Logger } from '@nestjs/common';
 import { UserRepositoryPort } from '@modules/user/application/ports/user-repository.port';
 import { UserNotFoundException } from '@modules/user/domain/user.exceptions';
+import { UserUnblockedEvent } from '@modules/user/domain/events/user-unblocked.event';
 
 @CommandHandler(UnblockUserCommand)
 export class UnblockUserHandler implements ICommandHandler<
@@ -26,11 +27,12 @@ export class UnblockUserHandler implements ICommandHandler<
     );
     if (!unblockerRes) throw new UserNotFoundException(command.unblockerId);
 
-    const unblocker = this.publisher.mergeObjectContext(unblockerRes);
-    const originalLength = unblocker.blockedUsers.length;
-    unblocker.unblockUser({ id: command.unblockedId }); // Only need ID for unblocking
+    const isBlocked = await this.userRepository.getBlockStatus(
+      command.unblockerId,
+      command.unblockedId,
+    );
 
-    if (unblocker.blockedUsers.length === originalLength) {
+    if (!isBlocked) {
       this.logger.log(
         `User ${command.unblockedId} was not blocked by ${command.unblockerId}`,
       );
@@ -39,6 +41,10 @@ export class UnblockUserHandler implements ICommandHandler<
 
     await this.userRepository.unblock(command.unblockerId, command.unblockedId);
 
+    const unblocker = this.publisher.mergeObjectContext(unblockerRes);
+    unblocker.apply(
+      new UserUnblockedEvent(command.unblockerId, command.unblockedId),
+    );
     unblocker.commit();
 
     return true;

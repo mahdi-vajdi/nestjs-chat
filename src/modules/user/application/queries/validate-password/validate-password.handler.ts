@@ -6,10 +6,7 @@ import { UserReadRepositoryPort } from '@modules/user/application/ports/user-rea
 import { UserReadDto } from '@modules/user/application/dtos/user-read.dto';
 import validator from 'validator';
 import * as bcrypt from 'bcrypt';
-import {
-  InvalidCredentialsException,
-  UserNotFoundException,
-} from '@modules/user/domain/user.exceptions';
+import { InvalidCredentialsException } from '@modules/user/domain/user.exceptions';
 
 @QueryHandler(ValidatePasswordQuery)
 export class ValidatePasswordHandler implements IQueryHandler<
@@ -32,7 +29,7 @@ export class ValidatePasswordHandler implements IQueryHandler<
 
     if (!userRes) {
       this.logger.error(`Failed to get user by property ${query.property}`);
-      throw new UserNotFoundException(query.property);
+      throw new InvalidCredentialsException();
     }
 
     const passwordMatches = await bcrypt.compare(

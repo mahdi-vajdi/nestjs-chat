@@ -1,5 +1,11 @@
-import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
+import {
+  CommandHandler,
+  EventBus,
+  EventPublisher,
+  ICommandHandler,
+} from '@nestjs/cqrs';
 import { SignupCommand } from './signup.command';
+import { SignupFailedEvent } from '@modules/auth/domain/events/signup-failed.event';
 import { Logger } from '@nestjs/common';
 
 import { TokenService } from '@modules/auth/application/services/token.service';
@@ -24,6 +30,7 @@ export class SignupHandler implements ICommandHandler<
     private readonly tokenService: TokenService,
     private readonly authRepository: AuthRepositoryPort,
     private readonly publisher: EventPublisher,
+    private readonly eventBus: EventBus,
   ) {}
 
   async execute(command: SignupCommand): Promise<SignupResponse> {
@@ -61,8 +68,9 @@ export class SignupHandler implements ICommandHandler<
       await this.authRepository.save(refreshToken);
     } catch {
       this.logger.error(
-        `Error saving refresh token during signup for user ${userId}`,
+        `Error saving refresh token during signup for user ${userId}. Triggering rollback.`,
       );
+      this.eventBus.publish(new SignupFailedEvent(userId));
       throw new TokenGenerationException(
         'Failed to create token; please sign in again',
       );

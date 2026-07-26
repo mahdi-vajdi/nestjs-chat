@@ -5,7 +5,6 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToOne,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -46,18 +45,18 @@ export class ConversationMember {
   @JoinColumn({ name: 'conversation_id', referencedColumnName: 'id' })
   conversation: Conversation;
 
-  @OneToOne(() => Message, {
+  @ManyToOne(() => Message, {
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'last_seen_message_id', referencedColumnName: 'id' })
   lastSeenMessage: Message;
 
-  @OneToOne(() => Message, {
+  @ManyToOne(() => Message, {
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'last_message', referencedColumnName: 'id' })
+  @JoinColumn({ name: 'last_message_id', referencedColumnName: 'id' })
   lastMessage: Message;
 
   static fromDomain(entity: ConversationMemberEntity): ConversationMember {

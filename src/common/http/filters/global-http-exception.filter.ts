@@ -7,8 +7,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import { DomainException } from '../../exceptions/domain.exception';
-import { mapDomainErrorTypeToHttpStatus } from '../../exceptions/exception-mapper';
+import { DomainException } from '@common/exceptions/domain.exception';
+import { mapDomainErrorTypeToHttpStatus } from '@common/exceptions/exception-mapper';
 
 @Catch()
 export class GlobalHttpExceptionFilter implements ExceptionFilter {
@@ -21,14 +21,25 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
 
     // Transform pure domain exceptions into standard NestJS REST responses
-    if (exception instanceof DomainException) {
-      const httpStatus = mapDomainErrorTypeToHttpStatus(exception.type);
+    if (
+      exception instanceof DomainException ||
+      (exception &&
+        typeof exception === 'object' &&
+        'type' in exception &&
+        'code' in exception &&
+        'message' in exception)
+    ) {
+      const type = (exception as any).type;
+      const code = (exception as any).code;
+      const message = (exception as any).message;
+      const httpStatus = mapDomainErrorTypeToHttpStatus(type);
+
       return httpAdapter.reply(
         ctx.getResponse(),
         {
           statusCode: httpStatus,
-          message: exception.message,
-          error: exception.code,
+          message: message,
+          error: code,
         },
         httpStatus,
       );

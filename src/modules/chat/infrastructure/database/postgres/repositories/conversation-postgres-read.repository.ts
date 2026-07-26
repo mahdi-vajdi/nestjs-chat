@@ -114,12 +114,12 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
       .addSelect(
         (qb: SelectQueryBuilder<any>) =>
           qb
-            .select('COUNT(m.id) - COUNT(dm.id)')
+            .select('COUNT(m.id) - COUNT(dm.message_id)')
             .from(Message, 'm')
             .leftJoin(
               DeletedMessage,
               'dm',
-              'm.id = dm.id AND dm.user_id = :userId',
+              'm.id = dm.message_id AND dm.user_id = :userId',
               { userId },
             )
             .where('m.conversation_id = cm.conversation_id')
@@ -156,7 +156,9 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
               id: currentMember.lastMessage.id,
               text: currentMember.lastMessage.text,
               type: currentMember.lastMessage.type,
-              senderId: currentMember.lastMessage.sender_id,
+              senderId: currentMember.lastMessage.sender
+                ? currentMember.lastMessage.sender.user_id
+                : currentMember.lastMessage.sender_id,
               createdAt: currentMember.lastMessage.created_at.toISOString(),
             }
           : null,
@@ -289,7 +291,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
       id: m.id,
       text: m.text,
       type: m.type,
-      senderId: m.sender_id,
+      senderId: m.sender ? m.sender.user_id : m.sender_id,
       createdAt: m.created_at.toISOString(),
     }));
 

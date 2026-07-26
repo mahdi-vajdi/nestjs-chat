@@ -11,6 +11,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": "./",
+    "types": ["jest", "node"],
     "ignoreDeprecations": "6.0",
     "incremental": true,
     "skipLibCheck": true,

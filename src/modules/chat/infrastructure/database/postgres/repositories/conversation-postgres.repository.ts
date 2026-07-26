@@ -50,7 +50,11 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
         await entityManager.save(conversationToSave.messages);
       }
 
-      return conversation;
+      // Reload with relation
+      return entityManager.findOne(Conversation, {
+        where: { id: conversation.id },
+        relations: { conversationMembers: true },
+      });
     });
 
     return Conversation.toDomain(res);
@@ -89,7 +93,7 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
           cm.last_message_id = message.id;
         }
         // If the user is the sender, also update their last_seen_message
-        if (cm.user_id === messageEntity.senderId) {
+        if (cm.id === messageEntity.senderId) {
           cm.last_seen_message_id = message.id;
         }
         return cm;

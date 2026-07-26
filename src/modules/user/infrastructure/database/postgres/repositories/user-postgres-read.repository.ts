@@ -88,8 +88,8 @@ export class UserPostgresReadRepository implements UserReadRepositoryPort {
   async getBlockStatus(blockerId: string, blockedId: string): Promise<boolean> {
     const res = await this.userBlockRepository
       .createQueryBuilder('ub')
-      .where('ub.blocker_id = :blockerId', { blockerId })
-      .andWhere('ub.blocked_id = :blocked_id', { blockedId })
+      .where('blocker_id = :blockerId', { blockerId })
+      .andWhere('blocked_id = :blockedId', { blockedId })
       .getExists();
 
     return res;
@@ -101,11 +101,11 @@ export class UserPostgresReadRepository implements UserReadRepositoryPort {
   ): Promise<string[]> {
     const query = this.userBlockRepository
       .createQueryBuilder('ub')
-      .select('ub.blocked_id', 'blockedId')
-      .where('ub.blocker_id = :userId', { userId: blockerId }); // Fixed variable interpolation
+      .select('blocked_id', 'blockedId')
+      .where('blocker_id = :userId', { userId: blockerId }); // Fixed variable interpolation
 
     if (blockedIds?.length) {
-      query.andWhere('ub.blocked_id IN (:...blockedIds)', { blockedIds }); // Fixed s
+      query.andWhere('blocked_id IN (:...blockedIds)', { blockedIds }); // Fixed s
     }
 
     const res = await query.getRawMany<{ blockedId: string }>();

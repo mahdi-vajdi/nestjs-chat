@@ -49,7 +49,7 @@ export class AuthHttpController {
   @ApiOkResponse({ type: SigninResponse })
   async signin(@Body() body: SigninRequestBody): Promise<SigninResponse> {
     return this.commandBus.execute(
-      new SigninCommand(body.property, body.password),
+      new SigninCommand(body.identifier, body.password),
     );
   }
 }

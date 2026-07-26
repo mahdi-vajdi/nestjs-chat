@@ -21,4 +21,5 @@ export abstract class UserRepositoryPort {
   abstract save(user: UserEntity): Promise<UserEntity>;
   abstract block(blockerId: string, blockedId: string): Promise<boolean>;
   abstract unblock(blockerId: string, blockedId: string): Promise<boolean>;
+  abstract delete(id: string): Promise<boolean>;
 }

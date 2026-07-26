@@ -12,6 +12,7 @@ import { QueryHandlers } from './application/queries';
 import { TokenService } from '@modules/auth/application/services/token.service';
 import { AuthDatabaseModule } from '@modules/auth/infrastructure/database/auth-database.module';
 import { authConfig } from '@modules/auth/infrastructure/config/auth.config';
+import { AuthSaga } from './application/sagas/auth.saga';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { authConfig } from '@modules/auth/infrastructure/config/auth.config';
     TokenService,
     ...CommandHandlers,
     ...QueryHandlers,
+    AuthSaga,
     AuthHttpGuard,
     AuthWsGuard,
     { provide: UserIntegrationPort, useClass: UserIntegrationAdapter },

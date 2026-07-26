@@ -13,7 +13,7 @@ export class UserPostgresRepository implements UserRepositoryPort {
   constructor(
     @InjectRepository(User, DatabaseType.POSTGRES)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(User, DatabaseType.POSTGRES)
+    @InjectRepository(UserBlock, DatabaseType.POSTGRES)
     private readonly userBlockRepository: Repository<UserBlock>,
     @InjectDataSource(DatabaseType.POSTGRES)
     private readonly dataSource: DataSource,
@@ -106,7 +106,7 @@ export class UserPostgresRepository implements UserRepositoryPort {
       userBlock.blocker_id = blockerId;
       userBlock.blocked_id = blockedId;
 
-      await this.userBlockRepository.insert(userBlock);
+      await entityManager.getRepository(UserBlock).insert(userBlock);
 
       return true;
     });
@@ -126,8 +126,8 @@ export class UserPostgresRepository implements UserRepositoryPort {
   async getBlockStatus(blockerId: string, blockedId: string): Promise<boolean> {
     return this.userBlockRepository
       .createQueryBuilder('ub')
-      .where('ub.blocker_id = :blockerId', { blockerId })
-      .andWhere('ub.blocked_id = :blocked_id', { blockedId })
+      .where('blocker_id = :blockerId', { blockerId })
+      .andWhere('blocked_id = :blockedId', { blockedId })
       .getExists();
   }
 
@@ -137,15 +137,20 @@ export class UserPostgresRepository implements UserRepositoryPort {
   ): Promise<string[]> {
     const query = this.userBlockRepository
       .createQueryBuilder('ub')
-      .select('ub.blocked_id', 'blockedId')
-      .where('ub.blocker_id = :userId', { userId: blockerId }); // Fix from :userId to match param, was previously bugged? Ah, in target it was userId
+      .select('blocked_id', 'blockedId')
+      .where('blocker_id = :userId', { userId: blockerId }); // Fix from :userId to match param, was previously bugged? Ah, in target it was userId
 
     if (blockedIds?.length) {
-      query.andWhere('ub.blocked_id IN (:...blockedIds)', { blockedIds }); // Fixed missing 's'
+      query.andWhere('blocked_id IN (:...blockedIds)', { blockedIds }); // Fixed missing 's'
     }
 
     const res = await query.getRawMany<any>();
 
     return res.map((r) => r.blockedId);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const res = await this.userRepository.delete({ id });
+    return res.affected !== 0;
   }
 }

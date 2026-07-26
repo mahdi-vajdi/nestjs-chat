@@ -5,7 +5,7 @@ export class SigninRequestBody {
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
-  property: string;
+  identifier: string;
 
   @ApiProperty()
   @IsNotEmpty()

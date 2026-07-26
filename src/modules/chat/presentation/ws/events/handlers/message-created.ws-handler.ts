@@ -27,10 +27,21 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
     );
 
     // Get conversation to find target users
-    let conversation;
+    let conversationDto;
+    let senderUserId: string;
+
     try {
-      conversation = await this.queryBus.execute(
-        new GetUserConversationQuery(event.conversationId, event.senderId),
+      const convEntity = await this.commandRepo.getConversationById(
+        event.conversationId,
+      );
+      const senderMember = convEntity.members.find(
+        (m) => m.id === event.senderId,
+      );
+      if (!senderMember) throw new Error('Sender member not found');
+      senderUserId = senderMember.userId;
+
+      conversationDto = await this.queryBus.execute(
+        new GetUserConversationQuery(event.conversationId, senderUserId),
       );
     } catch {
       this.logger.error(
@@ -39,20 +50,20 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
       return;
     }
 
-    const targetMember = conversation.members.find(
-      (member) => member.userId !== event.senderId,
+    const targetMember = conversationDto.members.find(
+      (member) => member.userId !== senderUserId,
     );
 
     if (!targetMember) {
       this.logger.error(
-        `No target member found in conversation ${conversation.id}`,
+        `No target member found in conversation ${conversationDto.id}`,
       );
       return;
     }
 
     try {
       const [currentUser, targetUser] = await Promise.all([
-        this.userIntegrationPort.getUserById(event.senderId),
+        this.userIntegrationPort.getUserById(senderUserId),
         this.userIntegrationPort.getUserById(targetMember.userId),
       ]);
 
@@ -74,10 +85,10 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
           },
           content: event.text,
           conversation: {
-            id: conversation.id,
-            name: conversation.id,
-            avatar: conversation.picture,
-            username: conversation.identifier,
+            id: conversationDto.id,
+            name: conversationDto.id,
+            avatar: conversationDto.picture,
+            username: conversationDto.identifier,
           },
         }),
       );
