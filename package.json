@@ -8,19 +8,24 @@
   "packageManager": "yarn@4.14.1",
   "scripts": {
     "build": "nest build",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "lint:fix": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
-    "typeorm": "typeorm-ts-node-commonjs -d ./src/infrastructure/database/postgres/configs/typeorm.config.ts",
+    "test:e2e": "jest --config ./test/jest-e2e.config.ts --runInBand",
+    "typeorm": "typeorm-ts-node-commonjs -d src/infrastructure/database/postgres/config/data-source.ts",
     "migration:generate": "yarn build && yarn typeorm migration:generate",
+    "migration:generate:user": "yarn build && typeorm-ts-node-commonjs migration:generate -d src/modules/user/infrastructure/database/postgres/user-data-source.ts src/modules/user/infrastructure/database/postgres/migrations/Initial",
+    "migration:generate:chat": "yarn build && typeorm-ts-node-commonjs migration:generate -d src/modules/chat/infrastructure/database/postgres/chat-data-source.ts src/modules/chat/infrastructure/database/postgres/migrations/Initial",
+    "migration:generate:auth": "yarn build && typeorm-ts-node-commonjs migration:generate -d src/modules/auth/infrastructure/database/postgres/auth-data-source.ts src/modules/auth/infrastructure/database/postgres/migrations/Initial",
     "migration:run": "yarn build && yarn typeorm migration:run",
     "migration:revert": "yarn typeorm migration:revert"
   },
@@ -28,6 +33,7 @@
     "@nestjs/common": "^11.1.27",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.1.27",
+    "@nestjs/cqrs": "^11.0.3",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.1.27",
     "@nestjs/platform-socket.io": "^11.1.27",
@@ -40,9 +46,10 @@
     "class-validator": "^0.15.1",
     "dotenv": "^17.4.2",
     "ioredis": "^5.11.1",
-    "joi": "^18.2.3",
-    "nest-winston": "^1.10.2",
+    "nestjs-pino": "^4.6.1",
     "pg": "^8.22.0",
+    "pino-http": "^11.0.0",
+    "pino-pretty": "^13.1.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "socket.io": "^4.8.3",
@@ -50,13 +57,14 @@
     "typeorm": "^1.0.0",
     "uuid": "^14.0.1",
     "validator": "^13.15.35",
-    "winston": "^3.19.0"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@nestjs/cli": "^11.0.23",
     "@nestjs/schematics": "^11.1.0",
     "@nestjs/testing": "^11.1.27",
+    "@testcontainers/postgresql": "^12.0.4",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
@@ -69,30 +77,15 @@
     "globals": "^17.7.0",
     "jest": "^30.4.2",
     "prettier": "^3.9.1",
+    "socket.io-client": "^4.8.3",
     "source-map-support": "^0.5.21",
     "supertest": "^7.2.2",
+    "testcontainers": "^12.0.4",
     "ts-jest": "^29.4.11",
     "ts-loader": "^9.6.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
 }

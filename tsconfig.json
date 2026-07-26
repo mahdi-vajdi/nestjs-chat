@@ -6,26 +6,20 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2021",
+    "target": "ES2022",
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": "./",
+    "types": ["jest", "node"],
     "ignoreDeprecations": "6.0",
     "incremental": true,
-    "types": [
-      "node",
-      "jest"
-    ],
     "skipLibCheck": true,
     "strictNullChecks": false,
+    "forceConsistentCasingInFileNames": false,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "lib": [
-      "ES2021"
-    ],
     "paths": {
       "@common/*": [
         "src/common/*"
@@ -33,17 +27,8 @@
       "@infrastructure/*": [
         "src/infrastructure/*"
       ],
-      "@presentation/*": [
-        "src/presentation/*"
-      ],
-      "@user/*": [
-        "src/application/user/*"
-      ],
-      "@auth/*": [
-        "src/application/auth/*"
-      ],
-      "@chat/*": [
-        "src/application/chat/*"
+      "@modules/*": [
+        "src/modules/*"
       ]
     }
   }

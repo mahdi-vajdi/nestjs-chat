@@ -1,19 +1,14 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ConfigService } from '@nestjs/config';
-import { HTTP_CONFIG_TOKEN, IHttpConfig } from '@presentation/http/http.config';
-import { INestApplication, Logger, LoggerService } from '@nestjs/common';
-import { LOGGER_PROVIDER } from '@infrastructure/logger/provider/logger.provider';
+import { ConfigType } from '@nestjs/config';
+import { httpConfig } from '@infrastructure/http/http.config';
+import { wsConfig } from '@infrastructure/websocket/ws.config';
+import { INestApplication, Logger, ValidationPipe } from '@nestjs/common';
+import { Logger as PinoLogger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import {
-  IRedisProvider,
-  REDIS_DB0_PROVIDER,
-} from '@infrastructure/redis/providers/redis.provider';
+import { RedisProvider } from '@infrastructure/redis/redis.provider';
 import { RedisIoAdapter } from '@infrastructure/websocket/adapter/redis/redis-io.adapter';
-import {
-  BROADCAST_PROVIDER,
-  BroadcastProvider,
-} from '@infrastructure/websocket/broadcast/providers/broadcast.provider';
+import { GlobalHttpExceptionFilter } from '@common/http/filters/global-http-exception.filter';
 
 function setUpSwagger(app: INestApplication) {
   const swaggerConfig = new DocumentBuilder()
@@ -39,35 +34,34 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  const configService = app.get(ConfigService);
-  const logger = app.get<LoggerService>(LOGGER_PROVIDER);
+  const wsConf = app.get<ConfigType<typeof wsConfig>>(wsConfig.KEY);
+  const logger = app.get(PinoLogger);
   const bootstrapLogger = new Logger('Bootstrap');
 
   app.useLogger(logger);
   app.enableCors();
+  const httpAdapterHost = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new GlobalHttpExceptionFilter(httpAdapterHost));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
   setUpSwagger(app);
 
   // Set up adapter for socket gateway
-  const redisDB0Provider =
-    await app.resolve<IRedisProvider>(REDIS_DB0_PROVIDER);
-  const broadcastProvider =
-    await app.resolve<BroadcastProvider>(BROADCAST_PROVIDER);
-  const redisIoAdapter = new RedisIoAdapter(
-    configService,
-    app,
-    redisDB0Provider,
-    redisDB0Provider,
-    broadcastProvider,
-  );
+  const redisProvider = await app.resolve<RedisProvider>(RedisProvider);
+  const redisIoAdapter = new RedisIoAdapter(wsConf, app, redisProvider);
   await redisIoAdapter.connectToRedis();
   app.useWebSocketAdapter(redisIoAdapter);
 
   app.enableShutdownHooks(['SIGINT', 'SIGTERM']);
 
-  const httpConfig = configService.get<IHttpConfig>(HTTP_CONFIG_TOKEN);
-  bootstrapLogger.log(`Starting app on port ${httpConfig.port}`);
+  const httpConf = app.get<ConfigType<typeof httpConfig>>(httpConfig.KEY);
+  bootstrapLogger.log(`Starting app on port ${httpConf.port}`);
 
-  await app.listen(httpConfig.port);
+  await app.listen(httpConf.port);
 }
 
 bootstrap();

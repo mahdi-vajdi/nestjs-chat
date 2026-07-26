@@ -5,8 +5,17 @@ import {
 
 export class PaginationHelper {
   static parse(page: any, pageSize: any): PaginationOptions {
-    const sanitizedPage = Math.max(1, Math.floor(page));
-    const sanitizedPageSize = Math.min(100, Math.max(1, Math.floor(pageSize)));
+    let parsedPage = Number(page);
+    let parsedPageSize = Number(pageSize);
+
+    if (isNaN(parsedPage)) parsedPage = 1;
+    if (isNaN(parsedPageSize)) parsedPageSize = 15;
+
+    const sanitizedPage = Math.max(1, Math.floor(parsedPage));
+    const sanitizedPageSize = Math.min(
+      100,
+      Math.max(1, Math.floor(parsedPageSize)),
+    );
 
     return {
       page: sanitizedPage,

@@ -1,0 +1,148 @@
+import { MessageType } from '@modules/chat/domain/enums/chat-type.enum';
+import { ConversationEntity } from '@modules/chat/domain/models/conversation.model';
+import { ConversationMemberEntity } from '@modules/chat/domain/models/conversation-member.model';
+import { v7 as uuidv7 } from 'uuid';
+
+import { AggregateRoot } from '@common/domain/aggregate-root';
+import { MessageCreatedDomainEvent } from '@modules/chat/domain/events/message-created.domain-event';
+
+export class MessageEntity extends AggregateRoot<string> {
+  private readonly _text: string;
+  private readonly _type: MessageType;
+  private readonly _senderId: string;
+  private readonly _conversationId: string;
+  private readonly _deletedForUserIds: string[];
+  private _deletedAt?: Date;
+
+  // Transient properties
+  private _sender?: Partial<ConversationMemberEntity>;
+  private _conversation?: Partial<ConversationEntity>;
+
+  public get sender() {
+    return this._sender;
+  }
+  public get conversation() {
+    return this._conversation;
+  }
+
+  public loadSender(sender: Partial<ConversationMemberEntity>) {
+    this._sender = sender;
+  }
+  public loadConversation(c: Partial<ConversationEntity>) {
+    this._conversation = c;
+  }
+
+  private constructor(
+    id: string,
+    createdAt: Date,
+    updatedAt: Date,
+    text: string,
+    type: MessageType,
+    senderId: string,
+    conversationId: string,
+    deletedForUserIds: string[] = [],
+    deletedAt?: Date,
+  ) {
+    super(id, createdAt, updatedAt);
+    this._text = text;
+    this._type = type;
+    this._senderId = senderId;
+    this._conversationId = conversationId;
+    this._deletedForUserIds = deletedForUserIds;
+    this._deletedAt = deletedAt;
+  }
+
+  public static create(
+    text: string,
+    type: MessageType,
+    senderId: string,
+    conversationId: string,
+    deletedForUserIds: string[] = [],
+  ): MessageEntity {
+    const id = uuidv7();
+    const createdAt = new Date();
+    const message = new MessageEntity(
+      id,
+      createdAt,
+      createdAt,
+      text,
+      type,
+      senderId,
+      conversationId,
+      deletedForUserIds,
+    );
+
+    message.apply(
+      new MessageCreatedDomainEvent(
+        id,
+        conversationId,
+        senderId,
+        text,
+        deletedForUserIds,
+        createdAt,
+      ),
+    );
+
+    return message;
+  }
+
+  public static reconstruct(
+    id: string,
+    text: string,
+    type: MessageType,
+    senderId: string,
+    conversationId: string,
+    deletedForUserIds: string[],
+    createdAt: Date,
+    updatedAt: Date,
+    deletedAt?: Date,
+  ): MessageEntity {
+    return new MessageEntity(
+      id,
+      createdAt,
+      updatedAt,
+      text,
+      type,
+      senderId,
+      conversationId,
+      deletedForUserIds,
+      deletedAt,
+    );
+  }
+
+  public get text(): string {
+    return this._text;
+  }
+  public get type(): MessageType {
+    return this._type;
+  }
+  public get senderId(): string {
+    return this._senderId;
+  }
+  public get conversationId(): string {
+    return this._conversationId;
+  }
+  public get deletedForUserIds(): string[] {
+    return [...this._deletedForUserIds];
+  }
+  public get deletedAt(): Date | undefined {
+    return this._deletedAt;
+  }
+
+  public deleteForUser(userId: string): void {
+    if (!this._deletedForUserIds.includes(userId)) {
+      this._deletedForUserIds.push(userId);
+      this.updatedAt = new Date();
+    }
+  }
+
+  public softDelete(): void {
+    this._deletedAt = new Date();
+    this.updatedAt = new Date();
+  }
+
+  public restore(): void {
+    this._deletedAt = undefined;
+    this.updatedAt = new Date();
+  }
+}

@@ -1,15 +1,11 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Logger as TypeOrmLogger } from 'typeorm';
+import { ConfigModule, ConfigType } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from '../logger/logger.module';
-import {
-  IPostgresConfig,
-  POSTGRES_CONFIG_TOKEN,
-} from '@infrastructure/database/postgres/configs/postgres.config';
+import { postgresConfig } from '@infrastructure/database/postgres/config/postgres.config';
 import { DatabaseType } from './database-type.enum';
-import { LOGGER_PROVIDER } from '../logger/provider/logger.provider';
-import { env } from 'node:process';
+import { PinoLogger } from 'nestjs-pino';
+import { TypeOrmLoggerAdapter } from './typeorm-logger.adapter';
 
 @Module({})
 export class DatabaseModule {
@@ -32,34 +28,36 @@ export class DatabaseModule {
   private static getPostgresConnection(): DynamicModule {
     return TypeOrmModule.forRootAsync({
       name: DatabaseType.POSTGRES,
-      imports: [ConfigModule, LoggerModule],
+      imports: [ConfigModule.forFeature(postgresConfig), LoggerModule],
       useFactory: async (
-        configService: ConfigService,
-        logger: TypeOrmLogger,
+        dbConfig: ConfigType<typeof postgresConfig>,
+        logger: PinoLogger,
       ) => {
-        const postgresConfig = configService.get<IPostgresConfig>(
-          POSTGRES_CONFIG_TOKEN,
-        );
-
         return {
           name: DatabaseType.POSTGRES, // Do not delete. Used in application shutdown.
           type: 'postgres',
-          host: postgresConfig.host,
-          port: postgresConfig.port,
-          username: postgresConfig.username,
-          password: postgresConfig.password,
-          database: postgresConfig.database,
+          host: dbConfig.host,
+          port: dbConfig.port,
+          username: dbConfig.username,
+          password: dbConfig.password,
+          database: dbConfig.database,
+          schema: dbConfig.schema,
+          ssl: dbConfig.ssl ? { rejectUnauthorized: false } : false,
+          extra: {
+            max: dbConfig.poolSize,
+            application_name: dbConfig.applicationName,
+          },
           autoLoadEntities: true,
           migrations: ['dist/**/postgres/migrations/**/*.js'],
-          migrationsRun: env.NODE_ENV === 'development',
+          migrationsRun: false,
           migrationsTableName: 'typeorm_migrations',
-          synchronize: env.NODE_ENV === 'development',
-          logging: postgresConfig.log,
-          logger: logger,
-          maxQueryExecutionTime: postgresConfig.slowQueryLimit,
+          synchronize: false,
+          logging: dbConfig.log,
+          logger: new TypeOrmLoggerAdapter(logger),
+          maxQueryExecutionTime: dbConfig.slowQueryLimit,
         };
       },
-      inject: [ConfigService, LOGGER_PROVIDER],
+      inject: [postgresConfig.KEY, PinoLogger],
     });
   }
 }

@@ -222,4 +222,4 @@ A brief overview of the main directories in `src/`:
 
 ## License
 
-This project is [UNLICENSED](./LICENSE).
+This project is licensed under the [MIT License](./LICENSE).
