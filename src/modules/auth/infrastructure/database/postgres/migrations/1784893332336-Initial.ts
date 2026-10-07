@@ -4,6 +4,7 @@ export class Initial1784893332336 implements MigrationInterface {
   name = 'Initial1784893332336';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS "auth"`);
     await queryRunner.query(
       `CREATE TABLE "auth"."refresh_tokens" ("id" uuid NOT NULL, "user_id" uuid NOT NULL, "token" text NOT NULL, "identifier" character varying NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_7d8bee0204106019488c4c50ffa" PRIMARY KEY ("id")); COMMENT ON COLUMN "auth"."refresh_tokens"."token" IS 'The hashed string of the actual token'; COMMENT ON COLUMN "auth"."refresh_tokens"."identifier" IS 'A unique id to identify the jwt. usually a uuid'`,
     );
@@ -21,5 +22,6 @@ export class Initial1784893332336 implements MigrationInterface {
     );
     await queryRunner.query(`DROP INDEX "auth"."refresh_tokens_user_id_idx"`);
     await queryRunner.query(`DROP TABLE "auth"."refresh_tokens"`);
+    await queryRunner.query(`DROP SCHEMA IF EXISTS "auth" CASCADE`);
   }
 }

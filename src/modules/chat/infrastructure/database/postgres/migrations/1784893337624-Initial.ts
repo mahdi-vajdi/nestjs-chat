@@ -4,6 +4,7 @@ export class Initial1784893337624 implements MigrationInterface {
   name = 'Initial1784893337624';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS "chat"`);
     await queryRunner.query(
       `CREATE TYPE "chat"."messages_type_enum" AS ENUM('TEXT')`,
     );
@@ -83,5 +84,6 @@ export class Initial1784893337624 implements MigrationInterface {
     await queryRunner.query(`DROP INDEX "chat"."messages_sender_id_idx"`);
     await queryRunner.query(`DROP TABLE "chat"."messages"`);
     await queryRunner.query(`DROP TYPE "chat"."messages_type_enum"`);
+    await queryRunner.query(`DROP SCHEMA IF EXISTS "chat" CASCADE`);
   }
 }
