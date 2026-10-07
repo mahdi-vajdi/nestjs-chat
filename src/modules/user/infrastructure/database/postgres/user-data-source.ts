@@ -4,5 +4,7 @@ import { AppDataSource } from '@infrastructure/database/postgres/config/data-sou
 export const UserDataSource = new DataSource({
   ...AppDataSource.options,
   entities: ['dist/modules/user/**/*.entity{.ts,.js}'],
-  migrations: ['dist/modules/user/infrastructure/database/migrations/**/*.js'],
+  migrations: [
+    'dist/modules/user/infrastructure/database/postgres/migrations/**/*.js',
+  ],
 });
