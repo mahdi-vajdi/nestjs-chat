@@ -18,6 +18,14 @@ Chatterbox is a real-time chat application built with NestJS, designed for scala
 
 ---
 
+## Roadmap
+
+Chatterbox currently supports 1-on-1 text messaging with read receipts and user blocking. Planned work includes group chats, message edit/delete, typing indicators and presence, push notifications, media attachments, reactions, and search.
+
+See the full, prioritized plan in [ROADMAP.md](./ROADMAP.md). Contributions are welcome.
+
+---
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
