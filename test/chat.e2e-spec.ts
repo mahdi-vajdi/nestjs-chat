@@ -433,4 +433,155 @@ describe('ChatWsGateway (e2e)', () => {
       },
     );
   });
+
+  it('should send a reply to a message and broadcast with quoted preview', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'First question' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const parentMsgId = createRes.chat.id;
+
+        // User 1 listens for the reply from User 2
+        clientSocket1.on('conversation.message.sent', (msg) => {
+          if (msg.content === 'First question') return;
+          expect(msg.content).toBe('Here is my reply');
+          expect(msg.replyToMessageId).toBe(parentMsgId);
+          expect(msg.replyTo).toBeDefined();
+          expect(msg.replyTo.id).toBe(parentMsgId);
+          expect(msg.replyTo.content).toBe('First question');
+          expect(msg.replyTo.user.name).toBe('U 1');
+          done();
+        });
+
+        // User 2 sends reply
+        clientSocket2.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Here is my reply',
+            replyToMessageId: parentMsgId,
+          },
+          (res: any) => {
+            expect(res.content).toBe('Here is my reply');
+            expect(res.replyToMessageId).toBe(parentMsgId);
+            expect(res.replyTo).toBeDefined();
+            expect(res.replyTo.content).toBe('First question');
+          },
+        );
+      },
+    );
+  });
+
+  it('should list messages in conversation with replyTo preview', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'First question' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const parentMsgId = createRes.chat.id;
+
+        clientSocket2.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Replying now',
+            replyToMessageId: parentMsgId,
+          },
+          () => {
+            clientSocket1.emit(
+              'conversation.message.list',
+              { conversationId: convId, page: 1, pageSize: 15 },
+              (res: any) => {
+                expect(res.messages.list.length).toBe(2);
+                const replyMsg = res.messages.list.find(
+                  (m: any) => m.content === 'Replying now',
+                );
+                expect(replyMsg).toBeDefined();
+                expect(replyMsg.replyToMessageId).toBe(parentMsgId);
+                expect(replyMsg.replyTo).toBeDefined();
+                expect(replyMsg.replyTo.id).toBe(parentMsgId);
+                expect(replyMsg.replyTo.content).toBe('First question');
+                expect(replyMsg.replyTo.user.name).toBe('U');
+                done();
+              },
+            );
+          },
+        );
+      },
+    );
+  });
+
+  it('should dynamically mask quoted content when parent message is deleted for everyone', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'Sensitive parent message' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const parentMsgId = createRes.chat.id;
+
+        clientSocket2.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Reply to sensitive',
+            replyToMessageId: parentMsgId,
+          },
+          () => {
+            // User 1 deletes the parent message for everyone
+            clientSocket1.emit(
+              'conversation.message.delete',
+              {
+                conversationId: convId,
+                messageId: parentMsgId,
+                scope: 'EVERYONE',
+              },
+              () => {
+                // Fetch list - parent message text is masked, and quote preview in child message is also masked!
+                clientSocket2.emit(
+                  'conversation.message.list',
+                  { conversationId: convId, page: 1, pageSize: 15 },
+                  (res: any) => {
+                    const replyMsg = res.messages.list.find(
+                      (m: any) => m.content === 'Reply to sensitive',
+                    );
+                    expect(replyMsg).toBeDefined();
+                    expect(replyMsg.replyToMessageId).toBe(parentMsgId);
+                    expect(replyMsg.replyTo).toBeDefined();
+                    expect(replyMsg.replyTo.content).toBeNull(); // Masked at read boundary!
+                    done();
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  });
+
+  it('should reject reply when replyToMessageId does not exist', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'Initial message' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const fakeMessageId = '00000000-0000-0000-0000-000000000000';
+
+        clientSocket2.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Reply to phantom',
+            replyToMessageId: fakeMessageId,
+          },
+          (errRes: any) => {
+            expect(errRes.statusCode).toBe(404);
+            expect(errRes.code).toBe('CHAT_MESSAGE_NOT_FOUND');
+            done();
+          },
+        );
+      },
+    );
+  });
 });

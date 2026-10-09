@@ -29,9 +29,10 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
     // Get conversation to find target users
     let conversationDto;
     let senderUserId: string;
+    let convEntity: any;
 
     try {
-      const convEntity = await this.commandRepo.getConversationById(
+      convEntity = await this.commandRepo.getConversationById(
         event.conversationId,
       );
       const senderMember = convEntity.members.find(
@@ -67,6 +68,49 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
         this.userIntegrationPort.getUserById(targetMember.userId),
       ]);
 
+      let replyTo = null;
+      if (event.replyToMessageId) {
+        try {
+          const parentMsg = await this.commandRepo.getMessageById(
+            event.replyToMessageId,
+          );
+          if (parentMsg) {
+            const parentMember = convEntity?.members?.find(
+              (m: any) => m.id === parentMsg.senderId,
+            );
+            const parentUserId = parentMember ? parentMember.userId : null;
+            let parentUser = null;
+            if (parentUserId) {
+              parentUser =
+                parentUserId === currentUser.id
+                  ? currentUser
+                  : parentUserId === targetUser.id
+                    ? targetUser
+                    : await this.userIntegrationPort.getUserById(parentUserId);
+            }
+
+            replyTo = {
+              id: parentMsg.id,
+              content: parentMsg.deletedAt ? null : parentMsg.text,
+              createdAt: parentMsg.createdAt.toISOString(),
+              senderId: parentUserId || parentMsg.senderId,
+              user: parentUser
+                ? {
+                    id: parentUser.id,
+                    username: parentUser.username,
+                    name: `${parentUser.firstName} ${parentUser.lastName}`,
+                    avatar: parentUser.avatar,
+                  }
+                : null,
+            };
+          }
+        } catch (e) {
+          this.logger.warn(
+            `Failed to resolve replyTo preview for message ${event.messageId}: ${e}`,
+          );
+        }
+      }
+
       const rooms: string[] = [];
       if (!event.deletedForUserIds.includes(targetUser.id)) {
         rooms.push(`user-${targetUser.id}`);
@@ -94,6 +138,8 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
             avatar: currentUser.avatar,
             username: currentUser.username,
           },
+          replyToMessageId: event.replyToMessageId ?? null,
+          replyTo,
         }),
       );
     } catch {

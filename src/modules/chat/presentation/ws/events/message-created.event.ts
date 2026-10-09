@@ -6,6 +6,14 @@ export class UserMessageCreatedEvent extends BaseWsEvent<UserMessageCreated> {
   }
 }
 
+export class UserMessageCreatedReplyTo {
+  id: string;
+  content: string | null;
+  createdAt: string;
+  senderId: string;
+  user?: UserMessageCreatedUser | null;
+}
+
 export class UserMessageCreated {
   id: string;
   content: string;
@@ -13,6 +21,8 @@ export class UserMessageCreated {
   conversation: UserMessageCreatedConversation;
   createdAt: string;
   user: UserMessageCreatedUser;
+  replyToMessageId?: string | null;
+  replyTo?: UserMessageCreatedReplyTo | null;
 }
 
 export class UserMessageCreatedConversation {

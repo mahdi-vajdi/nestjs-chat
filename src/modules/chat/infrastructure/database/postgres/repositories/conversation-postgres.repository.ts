@@ -116,7 +116,7 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
   async getMessageById(id: string): Promise<MessageEntity | null> {
     const message = await this.dataSource.getRepository(Message).findOne({
       where: { id },
-      relations: { sender: true, conversation: true },
+      relations: { sender: true, conversation: true, reply_to_message: true },
     });
 
     if (!message) {

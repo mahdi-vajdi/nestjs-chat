@@ -20,12 +20,14 @@ export class MessageEntity extends AggregateRoot<string> {
   private readonly _senderId: string;
   private readonly _conversationId: string;
   private readonly _deletedForUserIds: string[];
+  private readonly _replyToMessageId?: string | null;
   private _deletedAt?: Date;
   private _editedAt?: Date;
 
   // Transient properties
   private _sender?: Partial<ConversationMemberEntity>;
   private _conversation?: Partial<ConversationEntity>;
+  private _replyToMessage?: Partial<MessageEntity> | null;
 
   public get sender() {
     return this._sender;
@@ -33,12 +35,18 @@ export class MessageEntity extends AggregateRoot<string> {
   public get conversation() {
     return this._conversation;
   }
+  public get replyToMessage() {
+    return this._replyToMessage;
+  }
 
   public loadSender(sender: Partial<ConversationMemberEntity>) {
     this._sender = sender;
   }
   public loadConversation(c: Partial<ConversationEntity>) {
     this._conversation = c;
+  }
+  public loadReplyToMessage(msg: Partial<MessageEntity> | null) {
+    this._replyToMessage = msg;
   }
 
   private constructor(
@@ -52,6 +60,7 @@ export class MessageEntity extends AggregateRoot<string> {
     deletedForUserIds: string[] = [],
     deletedAt?: Date,
     editedAt?: Date,
+    replyToMessageId?: string | null,
   ) {
     super(id, createdAt, updatedAt);
     this._text = text;
@@ -61,6 +70,7 @@ export class MessageEntity extends AggregateRoot<string> {
     this._deletedForUserIds = deletedForUserIds;
     this._deletedAt = deletedAt;
     this._editedAt = editedAt;
+    this._replyToMessageId = replyToMessageId ?? null;
   }
 
   public static create(
@@ -69,8 +79,12 @@ export class MessageEntity extends AggregateRoot<string> {
     senderId: string,
     conversationId: string,
     deletedForUserIds: string[] = [],
+    replyToMessageId?: string | null,
   ): MessageEntity {
     const id = uuidv7();
+    if (replyToMessageId && replyToMessageId === id) {
+      throw new ChatDomainError('A message cannot reply to itself');
+    }
     const createdAt = new Date();
     const message = new MessageEntity(
       id,
@@ -81,6 +95,9 @@ export class MessageEntity extends AggregateRoot<string> {
       senderId,
       conversationId,
       deletedForUserIds,
+      undefined,
+      undefined,
+      replyToMessageId,
     );
 
     message.apply(
@@ -91,6 +108,7 @@ export class MessageEntity extends AggregateRoot<string> {
         text,
         deletedForUserIds,
         createdAt,
+        replyToMessageId,
       ),
     );
 
@@ -108,6 +126,7 @@ export class MessageEntity extends AggregateRoot<string> {
     updatedAt: Date,
     deletedAt?: Date,
     editedAt?: Date,
+    replyToMessageId?: string | null,
   ): MessageEntity {
     return new MessageEntity(
       id,
@@ -120,6 +139,7 @@ export class MessageEntity extends AggregateRoot<string> {
       deletedForUserIds,
       deletedAt,
       editedAt,
+      replyToMessageId,
     );
   }
 
@@ -134,6 +154,9 @@ export class MessageEntity extends AggregateRoot<string> {
   }
   public get conversationId(): string {
     return this._conversationId;
+  }
+  public get replyToMessageId(): string | null | undefined {
+    return this._replyToMessageId;
   }
   public get deletedForUserIds(): string[] {
     return [...this._deletedForUserIds];

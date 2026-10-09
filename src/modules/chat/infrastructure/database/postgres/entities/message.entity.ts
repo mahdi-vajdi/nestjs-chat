@@ -44,6 +44,22 @@ export class Message {
   @Column({ type: 'timestamp', nullable: true })
   deleted_at: Date | null;
 
+  @Column({ type: 'uuid', nullable: true })
+  @Index('messages_reply_to_message_id_idx')
+  reply_to_message_id: string | null;
+
+  @ManyToOne(() => Message, {
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+    nullable: true,
+  })
+  @JoinColumn({
+    name: 'reply_to_message_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'messages_reply_to_message_id_fk',
+  })
+  reply_to_message?: Message | null;
+
   @ManyToOne(() => Conversation, (c) => c.messages, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
@@ -79,6 +95,7 @@ export class Message {
     message.updated_at = entity.updatedAt;
     message.deleted_at = entity.deletedAt;
     message.edited_at = entity.editedAt ?? null;
+    message.reply_to_message_id = entity.replyToMessageId ?? null;
 
     return message;
   }
@@ -97,6 +114,7 @@ export class Message {
       message.updated_at,
       message.deleted_at,
       message.edited_at,
+      message.reply_to_message_id,
     );
 
     if (message.sender) {
@@ -105,6 +123,10 @@ export class Message {
 
     if (message.conversation) {
       entity.loadConversation(Conversation.toDomain(message.conversation));
+    }
+
+    if (message.reply_to_message) {
+      entity.loadReplyToMessage(Message.toDomain(message.reply_to_message));
     }
 
     return entity;

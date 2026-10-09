@@ -266,6 +266,62 @@ describe('ChatWsGateway', () => {
       expect(result.content).toBe('hi');
     });
 
+    it('should create message with replyTo and return reply preview', async () => {
+      queryBus.execute.mockResolvedValue({
+        id: 'conv-1',
+        members: [
+          { id: 'm-1', userId: 'user-1' },
+          { id: 'm-2', userId: 'user-2' },
+        ],
+      });
+      userIntegrationPort.getUserById.mockImplementation(
+        async (id) =>
+          ({
+            id,
+            firstName: id === 'user-1' ? 'J' : 'Jane',
+            lastName: id === 'user-1' ? 'Doe' : 'Smith',
+          }) as any,
+      );
+      userIntegrationPort.getBlockStatus.mockResolvedValue({
+        isBlocker: false,
+        isBlocked: false,
+      });
+
+      const parentDate = new Date();
+      const parentMsgMock = {
+        id: 'parent-1',
+        senderId: 'm-2',
+        text: 'Parent text',
+        createdAt: parentDate,
+        deletedAt: null,
+      };
+
+      commandBus.execute.mockResolvedValue({
+        id: 'msg-reply',
+        createdAt: new Date(),
+        text: 'Replying to parent',
+        replyToMessageId: 'parent-1',
+        replyToMessage: parentMsgMock,
+      });
+
+      const result = await gateway.createMessage(
+        {} as any,
+        {
+          conversationId: 'conv-1',
+          text: 'Replying to parent',
+          replyToMessageId: 'parent-1',
+        },
+        'user-1',
+      );
+
+      expect(result.id).toBe('msg-reply');
+      expect(result.replyToMessageId).toBe('parent-1');
+      expect(result.replyTo).not.toBeNull();
+      expect(result.replyTo.id).toBe('parent-1');
+      expect(result.replyTo.content).toBe('Parent text');
+      expect(result.replyTo.user.name).toBe('Jane Smith');
+    });
+
     it('should throw if conversation missing target member', async () => {
       queryBus.execute.mockResolvedValue({
         id: 'conv-1',
@@ -282,7 +338,8 @@ describe('ChatWsGateway', () => {
   });
 
   describe('getConversationMessageList', () => {
-    it('should return mapped messages and members', async () => {
+    it('should return mapped messages and members including replies', async () => {
+      const parentDate = new Date();
       queryBus.execute
         .mockResolvedValueOnce({
           id: 'conv-1',
@@ -298,15 +355,22 @@ describe('ChatWsGateway', () => {
             {
               id: 'msg-1',
               senderId: 'user-1',
-              text: 'hi',
+              text: 'hi reply',
               createdAt: new Date(),
+              replyToMessageId: 'parent-1',
+              replyTo: {
+                id: 'parent-1',
+                text: 'quoted question',
+                senderId: 'user-2',
+                createdAt: parentDate.toISOString(),
+              },
             },
           ],
         });
 
       userIntegrationPort.getUsersByIds.mockResolvedValue([
         { id: 'user-1', firstName: 'J' },
-        { id: 'user-2', firstName: 'M' },
+        { id: 'user-2', firstName: 'Jane' },
       ] as any);
       userIntegrationPort.getBlockedUsersIds.mockResolvedValue([]);
 
@@ -316,6 +380,9 @@ describe('ChatWsGateway', () => {
         'user-1',
       );
       expect(result.messages.list[0].id).toBe('msg-1');
+      expect(result.messages.list[0].replyToMessageId).toBe('parent-1');
+      expect(result.messages.list[0].replyTo.content).toBe('quoted question');
+      expect(result.messages.list[0].replyTo.user.name).toBe('Jane');
       expect(result.members).toHaveLength(1); // excluding authUserId
     });
   });

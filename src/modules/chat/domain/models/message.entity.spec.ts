@@ -7,6 +7,7 @@ import {
 } from '../chat.exceptions';
 import { MessageEditedDomainEvent } from '../events/message-edited.domain-event';
 import { MessageDeletedDomainEvent } from '../events/message-deleted.domain-event';
+import { MessageCreatedDomainEvent } from '../events/message-created.domain-event';
 import { MessageDeleteScope } from '../enums/message-delete-scope.enum';
 
 describe('MessageEntity', () => {
@@ -223,6 +224,52 @@ describe('MessageEntity', () => {
 
       expect(message.deletedForUserIds).toContain('user-1');
       expect(message.getUncommittedEvents()).toHaveLength(0);
+    });
+  });
+
+  describe('replies and quoted messages', () => {
+    it('should create message with replyToMessageId and emit MessageCreatedDomainEvent', () => {
+      const replyToId = 'parent-msg-123';
+      const message = MessageEntity.create(
+        'Replying to you',
+        MessageType.TEXT,
+        memberId,
+        conversationId,
+        [],
+        replyToId,
+      );
+
+      expect(message.replyToMessageId).toBe(replyToId);
+
+      const events = message.getUncommittedEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(MessageCreatedDomainEvent);
+      const event = events[0] as any;
+      expect(event.replyToMessageId).toBe(replyToId);
+    });
+
+    it('should reconstruct message with replyToMessageId and load transient replyToMessage', () => {
+      const replyToId = 'parent-msg-123';
+      const message = MessageEntity.reconstruct(
+        'msg-child-1',
+        'Replying',
+        MessageType.TEXT,
+        memberId,
+        conversationId,
+        [],
+        new Date(),
+        new Date(),
+        undefined,
+        undefined,
+        replyToId,
+      );
+
+      expect(message.replyToMessageId).toBe(replyToId);
+      expect(message.replyToMessage).toBeUndefined();
+
+      const parentMock = { id: replyToId, text: 'Original message' } as any;
+      message.loadReplyToMessage(parentMock);
+      expect(message.replyToMessage).toBe(parentMock);
     });
   });
 });

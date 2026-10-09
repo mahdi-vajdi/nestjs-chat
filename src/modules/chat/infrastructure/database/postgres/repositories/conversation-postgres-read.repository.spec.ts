@@ -7,6 +7,8 @@ import { Message } from '../entities/message.entity';
 import { ConversationMember } from '../entities/conversation-member.entity';
 import { ConversationType } from '@modules/chat/domain/enums/conversation-type.enum';
 
+import { DeletedMessage } from '../entities/deleted-message.entity';
+
 describe('ConversationPostgresReadRepository', () => {
   let repository: ConversationPostgresReadRepository;
   let dataSourceMock: any;
@@ -14,6 +16,7 @@ describe('ConversationPostgresReadRepository', () => {
   let conversationRepoMock: any;
   let messageRepoMock: any;
   let conversationMemberRepoMock: any;
+  let deletedMessageRepoMock: any;
 
   beforeEach(async () => {
     queryBuilderMock = {
@@ -51,11 +54,16 @@ describe('ConversationPostgresReadRepository', () => {
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilderMock),
     };
 
+    deletedMessageRepoMock = {
+      find: jest.fn().mockResolvedValue([]),
+    };
+
     dataSourceMock = {
       transaction: jest.fn().mockImplementation(async (cb) => {
         const entityManager = {
           getRepository: jest.fn().mockImplementation((entity) => {
             if (entity === Message) return messageRepoMock;
+            if (entity === DeletedMessage) return deletedMessageRepoMock;
             return {
               createQueryBuilder: jest.fn().mockReturnValue(queryBuilderMock),
             };
@@ -245,6 +253,119 @@ describe('ConversationPostgresReadRepository', () => {
       expect(result.data).toHaveLength(1);
       expect(result.data[0].text).toBe(''); // Masked!
       expect(result.data[0].deletedAt).toBe(deletedDate.toISOString());
+    });
+
+    it('should project replyTo with original text when replying to an active message', async () => {
+      const msgDate = new Date();
+      const parentDate = new Date();
+      queryBuilderMock.getManyAndCount.mockResolvedValue([
+        [
+          {
+            id: 'child-1',
+            text: 'I am replying',
+            sender_id: 'user-1',
+            reply_to_message_id: 'parent-1',
+            reply_to_message: {
+              id: 'parent-1',
+              text: 'Original question',
+              type: 'TEXT',
+              sender_id: 'user-2',
+              created_at: parentDate,
+              deleted_at: null,
+            },
+            created_at: msgDate,
+          },
+        ],
+        1,
+      ]);
+
+      const result = await repository.getUserConversationMessageList(
+        'conv-1',
+        'user-1',
+        { page: 1, pageSize: 10, limit: 10, offset: 0 },
+      );
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].replyToMessageId).toBe('parent-1');
+      expect(result.data[0].replyTo).not.toBeNull();
+      expect(result.data[0].replyTo?.id).toBe('parent-1');
+      expect(result.data[0].replyTo?.text).toBe('Original question');
+      expect(result.data[0].replyTo?.deletedAt).toBeNull();
+    });
+
+    it('should project replyTo with null text when replied message was deleted for everyone', async () => {
+      const msgDate = new Date();
+      const parentDeletedDate = new Date();
+      queryBuilderMock.getManyAndCount.mockResolvedValue([
+        [
+          {
+            id: 'child-1',
+            text: 'I am replying',
+            sender_id: 'user-1',
+            reply_to_message_id: 'parent-1',
+            reply_to_message: {
+              id: 'parent-1',
+              text: 'Original question',
+              type: 'TEXT',
+              sender_id: 'user-2',
+              created_at: msgDate,
+              deleted_at: parentDeletedDate,
+            },
+            created_at: msgDate,
+          },
+        ],
+        1,
+      ]);
+
+      const result = await repository.getUserConversationMessageList(
+        'conv-1',
+        'user-1',
+        { page: 1, pageSize: 10, limit: 10, offset: 0 },
+      );
+
+      expect(result.data[0].replyTo?.id).toBe('parent-1');
+      expect(result.data[0].replyTo?.text).toBeNull(); // Masked!
+      expect(result.data[0].replyTo?.deletedAt).toBe(
+        parentDeletedDate.toISOString(),
+      );
+    });
+
+    it('should project replyTo with null text when replied message was deleted for me', async () => {
+      const msgDate = new Date();
+      queryBuilderMock.getManyAndCount.mockResolvedValue([
+        [
+          {
+            id: 'child-1',
+            text: 'I am replying',
+            sender_id: 'user-1',
+            reply_to_message_id: 'parent-1',
+            reply_to_message: {
+              id: 'parent-1',
+              text: 'Original question',
+              type: 'TEXT',
+              sender_id: 'user-2',
+              created_at: msgDate,
+              deleted_at: null,
+            },
+            created_at: msgDate,
+          },
+        ],
+        1,
+      ]);
+
+      deletedMessageRepoMock.find.mockResolvedValue([
+        { message_id: 'parent-1', user_id: 'user-1' },
+      ]);
+
+      const result = await repository.getUserConversationMessageList(
+        'conv-1',
+        'user-1',
+        { page: 1, pageSize: 10, limit: 10, offset: 0 },
+      );
+
+      expect(result.data[0].replyTo?.id).toBe('parent-1');
+      expect(result.data[0].replyTo?.text).toBeNull(); // Masked!
+      expect(result.data[0].replyTo?.deletedAt).not.toBeNull();
     });
   });
 });

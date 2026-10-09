@@ -6,5 +6,6 @@ export class MessageCreatedDomainEvent {
     public readonly text: string,
     public readonly deletedForUserIds: string[],
     public readonly createdAt: Date,
+    public readonly replyToMessageId?: string | null,
   ) {}
 }

@@ -17,12 +17,24 @@ export class UserConversationMessageItemUser {
   name: string;
 }
 
+export class UserConversationMessageItemReplyTo {
+  id: string;
+  content: string | null;
+  createdAt: string;
+  senderId: string;
+  user?: UserConversationMessageItemUser | null;
+}
+
 export class UserConversationMessageItem {
   id: string;
-  content: string;
+  content: string | null;
   seen: boolean;
   createdAt: string;
+  editedAt?: string | null;
+  deletedAt?: string | null;
   user: UserConversationMessageItemUser;
+  replyToMessageId?: string | null;
+  replyTo?: UserConversationMessageItemReplyTo | null;
 }
 
 export class UserConversationMessageList {

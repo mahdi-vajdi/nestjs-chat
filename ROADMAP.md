@@ -58,7 +58,8 @@ Known issues in the current code that should be fixed before building new featur
   Implemented text message editing: domain invariants in `MessageEntity.edit()`, `MessageEditedDomainEvent`, isolated `updateMessage` repository method, `edited_at` DB migration, WebSocket `conversation.message.edit` handler, and real-time broadcast with multi-device sync and blocked-user isolation.
 - [x] **Delete message**: "delete for me" and "delete for everyone" with a `conversation.message.deleted` event ✅
   Implemented message deletion with two scopes: "delete for me" (persisted via `deleted_messages`, syncs to actor's devices) and "delete for everyone" (sender-only, tombstones message with `deleted_at`, masks text at read boundary while retaining in DB for analysis). Automatically recomputes `last_message_id` on conversation members and excludes deleted messages from unread counts.
-- [ ] **Replies / quoted messages** (`reply_to_message_id`) 📋
+- [x] **Replies / quoted messages** (`reply_to_message_id`) ✅
+  Implemented referential replies and dynamic quoted messages: domain invariants preventing self-replies and enforcing same-conversation boundaries in `MessageEntity.create()`, indexed foreign key forward migration with `ON DELETE SET NULL`, dynamic projection in `ConversationPostgresReadRepository` with real-time deletion masking, WebSocket acknowledgments and `conversation.message.sent` broadcasts embedding author and content previews, and comprehensive unit and e2e test suites.
 - [ ] **Idempotent sends** via client-generated `clientMessageId` to prevent duplicates on retry 📋
 
 ### Delivery and receipts

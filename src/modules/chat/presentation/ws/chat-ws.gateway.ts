@@ -366,8 +366,40 @@ export class ChatWsGateway
         authUserId,
         conversation.id,
         blockStatus.isBlocked ? [targetUser.id] : [],
+        data.replyToMessageId,
       ),
     );
+
+    let replyTo = null;
+    if (createMessage.replyToMessageId && createMessage.replyToMessage) {
+      const parentMsg = createMessage.replyToMessage;
+      const parentMember = conversation.members.find(
+        (m: any) => m.id === parentMsg.senderId,
+      );
+      const parentUserId = parentMember ? parentMember.userId : null;
+      let parentUser = null;
+      if (parentUserId) {
+        parentUser =
+          parentUserId === currentUser.id
+            ? currentUser
+            : parentUserId === targetUser.id
+              ? targetUser
+              : await this.userIntegrationPort.getUserById(parentUserId);
+      }
+
+      replyTo = {
+        id: parentMsg.id,
+        content: parentMsg.deletedAt ? null : parentMsg.text,
+        createdAt: parentMsg.createdAt.toISOString(),
+        senderId: parentUserId || parentMsg.senderId,
+        user: parentUser
+          ? {
+              id: parentUser.id,
+              name: `${parentUser.firstName} ${parentUser.lastName}`,
+            }
+          : null,
+      };
+    }
 
     return {
       id: createMessage.id,
@@ -378,6 +410,8 @@ export class ChatWsGateway
         name: `${currentUser.firstName} ${currentUser.lastName}`,
       },
       content: createMessage.text,
+      replyToMessageId: createMessage.replyToMessageId ?? null,
+      replyTo,
     };
   }
 
@@ -467,6 +501,11 @@ export class ChatWsGateway
 
     let userIds = messageList.data.map((message) => message.senderId);
     userIds.push(...conversation.members.map((member) => member.userId));
+    for (const msg of messageList.data) {
+      if (msg.replyTo?.senderId) {
+        userIds.push(msg.replyTo.senderId);
+      }
+    }
     userIds = Array.from(new Set(userIds));
 
     const users = await this.userIntegrationPort.getUsersByIds(userIds);
@@ -505,6 +544,23 @@ export class ChatWsGateway
         pageSize: messageList.meta.pageSize,
         list: messageList.data.map((item) => {
           const user = users.find((u) => u.id == item.senderId);
+          let replyTo = null;
+          if (item.replyTo) {
+            const replyUser = users.find((u) => u.id == item.replyTo?.senderId);
+            replyTo = {
+              id: item.replyTo.id,
+              content: item.replyTo.text,
+              createdAt: item.replyTo.createdAt,
+              senderId: item.replyTo.senderId,
+              user: replyUser
+                ? {
+                    id: replyUser.id,
+                    name: replyUser.firstName,
+                  }
+                : null,
+            };
+          }
+
           const message = {
             id: item.id,
             content: item.deletedAt ? null : item.text,
@@ -518,6 +574,8 @@ export class ChatWsGateway
                   name: user.firstName,
                 }
               : null,
+            replyToMessageId: item.replyToMessageId ?? null,
+            replyTo,
           };
 
           if (message.user?.id === authUserId) {

@@ -134,5 +134,67 @@ describe('MessageCreatedWsEventHandler', () => {
         expect.anything(),
       );
     });
+
+    it('should broadcast message with replyTo preview when replyToMessageId is present', async () => {
+      const event = new MessageCreatedDomainEvent(
+        'child-msg-1',
+        'conv-1',
+        'member-2',
+        'Replying back',
+        [],
+        new Date(),
+        'parent-msg-1',
+      );
+
+      commandRepo.getConversationById = jest.fn().mockResolvedValue({
+        id: 'conv-1',
+        members: [
+          { id: 'member-1', userId: 'user-1' },
+          { id: 'member-2', userId: 'user-2' },
+        ],
+      });
+
+      commandRepo.getMessageById = jest.fn().mockResolvedValue({
+        id: 'parent-msg-1',
+        senderId: 'member-1',
+        text: 'Initial question',
+        createdAt: new Date(),
+        deletedAt: null,
+      });
+
+      queryBus.execute.mockResolvedValue({
+        id: 'conv-1',
+        members: [{ userId: 'user-1' }, { userId: 'user-2' }],
+      });
+
+      userIntegrationPort.getUserById.mockImplementation(
+        async (id) =>
+          ({
+            id,
+            username: `username-${id}`,
+            firstName: 'First',
+            lastName: 'Last',
+            avatar: null,
+          }) as any,
+      );
+
+      await handler.handle(event);
+
+      expect(commandRepo.getMessageById).toHaveBeenCalledWith('parent-msg-1');
+      expect(chatWsGateway.serverBroadcast).toHaveBeenCalledWith(
+        chatWsGateway.server,
+        ['user-user-1', 'user-user-2'],
+        expect.objectContaining({
+          data: expect.objectContaining({
+            replyToMessageId: 'parent-msg-1',
+            replyTo: expect.objectContaining({
+              id: 'parent-msg-1',
+              content: 'Initial question',
+              senderId: 'user-1',
+            }),
+          }),
+        }),
+      );
+    });
   });
 });
