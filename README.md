@@ -140,6 +140,7 @@ WebSocket connections are authenticated into per-user rooms (`user-<userId>`). O
 
 - **Real-Time Direct Messaging**: 1-on-1 conversations with low-latency delivery over Socket.IO.
 - **Message Editing with Real-Time Sync**: Senders can edit sent text messages; updates broadcast instantly to all participants and sync across the sender's devices.
+- **Message Deletion ("Delete for Me" & "Delete for Everyone")**: Users can delete messages for their own account or tombstone them for all conversation participants. Original text is retained securely in the database for analysis while masked at read boundaries, with dynamic recalculation of conversation last messages and unread counters.
 - **Multi-Instance Horizontal Scaling**: Redis-backed Socket.IO adapter distributes WebSocket events across container replicas.
 - **Multi-Device & Multi-Tab Sync**: Per-user room routing ensures a user's sent messages and read receipts mirror instantly across all active sessions.
 - **Read Receipts & Unread Counters**: Message viewing updates `last_seen_message_id` and recalculates unread counts per conversation member.
@@ -331,6 +332,7 @@ Clients emit the following events to interact with the chat service:
 | `conversation.list` | `{ page?: number, pageSize?: number, filter?: string, targetUserId?: string }` | Fetches paginated conversations with last message and unread count. |
 | `conversation.message.send` | `{ conversationId: string, text: string }` | Sends a text message to an existing conversation. |
 | `conversation.message.edit` | `{ conversationId: string, messageId: string, text: string }` | Edits an existing text message sent by the authenticated user. |
+| `conversation.message.delete` | `{ conversationId: string, messageId: string, scope: 'ME' \| 'EVERYONE' }` | Deletes a message for the requester ('ME') or tombstones it for everyone ('EVERYONE', sender only). |
 | `conversation.message.list` | `{ conversationId: string, page?: number, pageSize?: number }` | Retrieves paginated message history for a conversation. |
 | `conversation.message.markSeen` | `{ conversationId: string, messageId: string }` | Updates user's read receipt up to the specified message. |
 
@@ -344,6 +346,7 @@ Clients receive the following broadcast and direct events:
 | `conversation.created` | Conversation metadata, last message, sender details | Emitted to both sender and recipient user rooms. |
 | `conversation.message.sent` | Message ID, content, timestamp, sender info | Emitted to recipient and sender user rooms for sync. |
 | `conversation.message.edited` | Message ID, conversation ID, updated content, `editedAt` | Emitted to all participants and sender rooms upon edit. |
+| `conversation.message.deleted` | Message ID, conversation ID, `scope`, `deletedAt?` | Emitted to actor user room on 'ME' delete or all non-shadowed participants on 'EVERYONE' delete. |
 | `conversation.message.seen` | `{ conversationId: string, messageId: string }` | Emitted to all conversation participants when messages are read. |
 | `user.blocked` | `{ blockerId: string, blockedId: string }` | Emitted to both parties when a block relation is created. |
 | `user.unblocked` | `{ blockerId: string, blockedId: string }` | Emitted to both parties when a block relation is removed. |

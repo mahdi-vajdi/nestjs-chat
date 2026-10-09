@@ -1,7 +1,6 @@
 import {
   Column,
   CreateDateColumn,
-  DeleteDateColumn,
   Entity,
   Index,
   JoinColumn,
@@ -42,7 +41,7 @@ export class Message {
   @Column({ type: 'timestamptz', nullable: true })
   edited_at: Date | null;
 
-  @DeleteDateColumn()
+  @Column({ type: 'timestamp', nullable: true })
   deleted_at: Date | null;
 
   @ManyToOne(() => Conversation, (c) => c.messages, {

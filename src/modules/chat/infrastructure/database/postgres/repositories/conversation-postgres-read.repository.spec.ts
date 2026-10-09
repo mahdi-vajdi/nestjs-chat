@@ -214,5 +214,37 @@ describe('ConversationPostgresReadRepository', () => {
       expect(result.data).toHaveLength(1);
       expect(result.meta.total).toBe(1);
     });
+
+    it('should mask text and populate deletedAt when message has deleted_at', async () => {
+      const msgDate = new Date();
+      const deletedDate = new Date();
+      queryBuilderMock.getManyAndCount.mockResolvedValue([
+        [
+          {
+            id: 'msg-1',
+            text: 'secret content',
+            sender_id: 'user-1',
+            created_at: msgDate,
+            deleted_at: deletedDate,
+          },
+        ],
+        1,
+      ]);
+
+      const result = await repository.getUserConversationMessageList(
+        'conv-1',
+        'user-1',
+        {
+          page: 1,
+          pageSize: 10,
+          limit: 10,
+          offset: 0,
+        },
+      );
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].text).toBe(''); // Masked!
+      expect(result.data[0].deletedAt).toBe(deletedDate.toISOString());
+    });
   });
 });

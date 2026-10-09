@@ -18,14 +18,23 @@ describe('ConversationPostgresRepository', () => {
   beforeEach(async () => {
     queryBuilderMock = {
       where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getOne: jest.fn(),
       getMany: jest.fn(),
       softDelete: jest.fn().mockReturnThis(),
       from: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      into: jest.fn().mockReturnThis(),
+      values: jest.fn().mockReturnThis(),
+      orIgnore: jest.fn().mockReturnThis(),
       execute: jest.fn(),
     };
 
     repoMock = {
       findOne: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue({}),
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilderMock),
     };
 
@@ -121,6 +130,32 @@ describe('ConversationPostgresRepository', () => {
       expect(entityManagerMock.save).toHaveBeenCalled();
       expect(result).toBeInstanceOf(MessageEntity);
       expect(result.id).toBe(msg.id);
+    });
+  });
+
+  describe('saveMessageDeletion', () => {
+    it('should save deletion relations, update message and recompute members last_message_id', async () => {
+      const msg = MessageEntity.create(
+        'hello',
+        MessageType.TEXT,
+        'user-1',
+        'conv-1',
+      );
+      msg.deleteForUser('user-1');
+
+      repoMock.find.mockResolvedValue([
+        { id: 'member-1', user_id: 'user-1', last_message_id: msg.id },
+      ]);
+      queryBuilderMock.getOne.mockResolvedValue({ id: 'msg-prev' });
+
+      jest.spyOn(repository, 'getMessageById').mockResolvedValue(msg);
+
+      const result = await repository.saveMessageDeletion(msg);
+
+      expect(queryBuilderMock.insert).toHaveBeenCalled();
+      expect(repoMock.update).toHaveBeenCalled();
+      expect(entityManagerMock.save).toHaveBeenCalled();
+      expect(result).toBe(msg);
     });
   });
 

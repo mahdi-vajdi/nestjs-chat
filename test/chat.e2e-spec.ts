@@ -302,4 +302,135 @@ describe('ChatWsGateway (e2e)', () => {
       },
     );
   });
+
+  it('should delete a message for me without affecting the recipient', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'Message for me delete test' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const msgId = createRes.chat.id;
+
+        // User 1 listens for deleted sync event on their socket
+        clientSocket1.once('conversation.message.deleted', (data) => {
+          expect(data.id).toBe(msgId);
+          expect(data.conversationId).toBe(convId);
+          expect(data.scope).toBe('ME');
+
+          // Check that User 1 no longer sees the message
+          clientSocket1.emit(
+            'conversation.message.list',
+            { conversationId: convId, page: 1, pageSize: 10 },
+            (list1Res: any) => {
+              expect(
+                list1Res.messages.list.find((m: any) => m.id === msgId),
+              ).toBeUndefined();
+
+              // Check that User 2 STILL sees the message
+              clientSocket2.emit(
+                'conversation.message.list',
+                { conversationId: convId, page: 1, pageSize: 10 },
+                (list2Res: any) => {
+                  const u2Msg = list2Res.messages.list.find(
+                    (m: any) => m.id === msgId,
+                  );
+                  expect(u2Msg).toBeDefined();
+                  expect(u2Msg.content).toBe('Message for me delete test');
+                  done();
+                },
+              );
+            },
+          );
+        });
+
+        // User 1 deletes for ME
+        clientSocket1.emit(
+          'conversation.message.delete',
+          {
+            conversationId: convId,
+            messageId: msgId,
+            scope: 'ME',
+          },
+          (delAck: any) => {
+            expect(delAck.id).toBe(msgId);
+            expect(delAck.scope).toBe('ME');
+          },
+        );
+      },
+    );
+  });
+
+  it('should delete a message for everyone, broadcast event, and tombstone the message', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'Confidential message' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const msgId = createRes.chat.id;
+
+        // Recipient (User 2) listens for deleted event
+        clientSocket2.once('conversation.message.deleted', (data) => {
+          expect(data.id).toBe(msgId);
+          expect(data.conversationId).toBe(convId);
+          expect(data.scope).toBe('EVERYONE');
+          expect(data.deletedAt).toBeDefined();
+
+          // User 2 fetches message list: text must be masked (null) and deletedAt set
+          clientSocket2.emit(
+            'conversation.message.list',
+            { conversationId: convId, page: 1, pageSize: 10 },
+            (listRes: any) => {
+              const msg = listRes.messages.list.find(
+                (m: any) => m.id === msgId,
+              );
+              expect(msg).toBeDefined();
+              expect(msg.content).toBeNull(); // Text is masked at read boundary!
+              expect(msg.deletedAt).toBeDefined();
+              done();
+            },
+          );
+        });
+
+        // User 1 deletes for EVERYONE
+        clientSocket1.emit(
+          'conversation.message.delete',
+          {
+            conversationId: convId,
+            messageId: msgId,
+            scope: 'EVERYONE',
+          },
+          (delAck: any) => {
+            expect(delAck.id).toBe(msgId);
+            expect(delAck.scope).toBe('EVERYONE');
+          },
+        );
+      },
+    );
+  });
+
+  it('should reject deleting a message for everyone when user is not the owner', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'User 1 message' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const msgId = createRes.chat.id;
+
+        // User 2 attempts to delete User 1's message for everyone
+        clientSocket2.emit(
+          'conversation.message.delete',
+          {
+            conversationId: convId,
+            messageId: msgId,
+            scope: 'EVERYONE',
+          },
+          (errRes: any) => {
+            expect(errRes.statusCode).toBe(403);
+            expect(errRes.code).toBe('CHAT_NOT_MESSAGE_OWNER');
+            done();
+          },
+        );
+      },
+    );
+  });
 });

@@ -8,6 +8,7 @@ import { AuthIntegrationPort } from '@modules/chat/application/ports/auth-integr
 import { WsException } from '@nestjs/websockets';
 import { ConversationType } from '@modules/chat/domain/enums/conversation-type.enum';
 import { DeleteConversationCommand } from '@modules/chat/application/commands/delete-conversation/delete-conversation.command';
+import { MessageDeleteScope } from '@modules/chat/domain/enums/message-delete-scope.enum';
 
 describe('ChatWsGateway', () => {
   let gateway: ChatWsGateway;
@@ -316,6 +317,54 @@ describe('ChatWsGateway', () => {
       );
       expect(result.messages.list[0].id).toBe('msg-1');
       expect(result.members).toHaveLength(1); // excluding authUserId
+    });
+  });
+
+  describe('deleteMessage', () => {
+    it('should throw WsException if user is not a conversation member', async () => {
+      queryBus.execute.mockResolvedValue({
+        id: 'conv-1',
+        members: [{ userId: 'user-2' }],
+      });
+
+      await expect(
+        gateway.deleteMessage(
+          {} as any,
+          {
+            conversationId: 'conv-1',
+            messageId: 'msg-1',
+            scope: MessageDeleteScope.ME,
+          },
+          'user-1',
+        ),
+      ).rejects.toThrow(WsException);
+    });
+
+    it('should execute DeleteMessageCommand and return response', async () => {
+      queryBus.execute.mockResolvedValue({
+        id: 'conv-1',
+        members: [{ userId: 'user-1' }, { userId: 'user-2' }],
+      });
+      commandBus.execute.mockResolvedValue({
+        id: 'msg-1',
+      });
+
+      const res = await gateway.deleteMessage(
+        {} as any,
+        {
+          conversationId: 'conv-1',
+          messageId: 'msg-1',
+          scope: MessageDeleteScope.EVERYONE,
+        },
+        'user-1',
+      );
+
+      expect(res).toEqual({
+        id: 'msg-1',
+        conversationId: 'conv-1',
+        scope: MessageDeleteScope.EVERYONE,
+      });
+      expect(commandBus.execute).toHaveBeenCalled();
     });
   });
 

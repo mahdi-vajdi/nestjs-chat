@@ -106,7 +106,9 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
 
     const entity = Message.toDomain(res);
     // Restore the deletedForUserIds to the returned entity since we don't map it back natively in fromDomain
-    messageEntity.deletedForUserIds.forEach((id) => entity.deleteForUser(id));
+    messageEntity.deletedForUserIds.forEach((id) =>
+      entity.loadDeletedForUserId(id),
+    );
 
     return entity;
   }
@@ -128,7 +130,7 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
       });
 
     const entity = Message.toDomain(message);
-    deletedMessages.forEach((dm) => entity.deleteForUser(dm.user_id));
+    deletedMessages.forEach((dm) => entity.loadDeletedForUserId(dm.user_id));
 
     return entity;
   }
@@ -138,6 +140,69 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
       text: messageEntity.text,
       edited_at: messageEntity.editedAt ?? null,
       updated_at: messageEntity.updatedAt,
+    });
+
+    const updated = await this.getMessageById(messageEntity.id);
+    return updated!;
+  }
+
+  async saveMessageDeletion(
+    messageEntity: MessageEntity,
+  ): Promise<MessageEntity> {
+    await this.dataSource.transaction(async (entityManager) => {
+      // 1. Save deleted message relations for users who deleted this message
+      if (messageEntity.deletedForUserIds?.length) {
+        await entityManager
+          .createQueryBuilder()
+          .insert()
+          .into(DeletedMessage)
+          .values(
+            messageEntity.deletedForUserIds.map((userId) => ({
+              user_id: userId,
+              message_id: messageEntity.id,
+            })),
+          )
+          .orIgnore()
+          .execute();
+      }
+
+      // 2. Update message deleted_at and updated_at (text retained)
+      await entityManager.getRepository(Message).update(messageEntity.id, {
+        deleted_at: messageEntity.deletedAt ?? null,
+        updated_at: messageEntity.updatedAt,
+      });
+
+      // 3. Recompute last_message_id for any conversation member whose last_message_id was this message
+      const membersWithThisLastMessage = await entityManager
+        .getRepository(ConversationMember)
+        .find({
+          where: {
+            conversation_id: messageEntity.conversationId,
+            last_message_id: messageEntity.id,
+          },
+        });
+
+      for (const cm of membersWithThisLastMessage) {
+        const latestMessage = await entityManager
+          .getRepository(Message)
+          .createQueryBuilder('m')
+          .where('m.conversation_id = :conversationId', {
+            conversationId: messageEntity.conversationId,
+          })
+          .andWhere('m.deleted_at IS NULL')
+          .andWhere(
+            `NOT EXISTS (
+              SELECT 1 FROM chat.deleted_messages dm
+              WHERE dm.message_id = m.id AND dm.user_id = :cmUserId
+            )`,
+            { cmUserId: cm.user_id },
+          )
+          .orderBy('m.created_at', 'DESC')
+          .getOne();
+
+        cm.last_message_id = latestMessage ? latestMessage.id : null;
+        await entityManager.save(ConversationMember, cm);
+      }
     });
 
     const updated = await this.getMessageById(messageEntity.id);

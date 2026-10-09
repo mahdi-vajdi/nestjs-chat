@@ -34,10 +34,15 @@ import { ConversationCreatedEvent } from '@modules/chat/presentation/ws/events/c
 import { CreateMessageRequest } from '@modules/chat/presentation/ws/dtos/create-message.dto';
 import { MarkConversationAsReadCommand } from '@modules/chat/application/commands/mark-conversation-as-read/mark-conversation-as-read.command';
 import { EditMessageCommand } from '@modules/chat/application/commands/edit-message/edit-message.command';
+import { DeleteMessageCommand } from '@modules/chat/application/commands/delete-message/delete-message.command';
 import {
   EditMessageRequest,
   EditMessageResponse,
 } from '@modules/chat/presentation/ws/dtos/edit-message.dto';
+import {
+  DeleteMessageRequest,
+  DeleteMessageResponse,
+} from '@modules/chat/presentation/ws/dtos/delete-message.dto';
 import { MessageEntity } from '@modules/chat/domain/models/message.entity';
 import { GetConversationMessageListRequest } from '@modules/chat/presentation/ws/dtos/get-conversation-message-list.dto';
 import { MessageSeenEvent } from '@modules/chat/presentation/ws/events/message-seen.event';
@@ -409,6 +414,37 @@ export class ChatWsGateway
     };
   }
 
+  @SubscribeMessage('conversation.message.delete')
+  async deleteMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: DeleteMessageRequest,
+    @CurrentUserId() authUserId: string,
+  ): Promise<DeleteMessageResponse> {
+    const conversation = await this.queryBus.execute(
+      new GetUserConversationQuery(data.conversationId, authUserId),
+    );
+
+    const isMember = conversation.members.some((m) => m.userId === authUserId);
+    if (!isMember) {
+      throw new WsException('Conversation not found or access denied');
+    }
+
+    const deletedMessage: MessageEntity = await this.commandBus.execute(
+      new DeleteMessageCommand(
+        data.messageId,
+        data.conversationId,
+        authUserId,
+        data.scope,
+      ),
+    );
+
+    return {
+      id: deletedMessage.id,
+      conversationId: data.conversationId,
+      scope: data.scope,
+    };
+  }
+
   @SubscribeMessage('conversation.message.list')
   async getConversationMessageList(
     @ConnectedSocket() client: Socket,
@@ -471,9 +507,10 @@ export class ChatWsGateway
           const user = users.find((u) => u.id == item.senderId);
           const message = {
             id: item.id,
-            content: item.text,
+            content: item.deletedAt ? null : item.text,
             createdAt: item.createdAt,
             editedAt: item.editedAt ?? null,
+            deletedAt: item.deletedAt ?? null,
             seen: false,
             user: user
               ? {

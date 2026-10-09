@@ -6,6 +6,8 @@ import { v7 as uuidv7 } from 'uuid';
 import { AggregateRoot } from '@common/domain/aggregate-root';
 import { MessageCreatedDomainEvent } from '@modules/chat/domain/events/message-created.domain-event';
 import { MessageEditedDomainEvent } from '@modules/chat/domain/events/message-edited.domain-event';
+import { MessageDeletedDomainEvent } from '@modules/chat/domain/events/message-deleted.domain-event';
+import { MessageDeleteScope } from '@modules/chat/domain/enums/message-delete-scope.enum';
 import {
   ChatDomainError,
   MessageNotFoundException,
@@ -183,19 +185,62 @@ export class MessageEntity extends AggregateRoot<string> {
   }
 
   public deleteForUser(userId: string): void {
+    if (this._deletedForUserIds.includes(userId)) {
+      return;
+    }
+
+    this._deletedForUserIds.push(userId);
+    this.updatedAt = new Date();
+
+    this.apply(
+      new MessageDeletedDomainEvent(
+        this.id,
+        this._conversationId,
+        MessageDeleteScope.ME,
+        userId,
+        this._deletedForUserIds,
+        this._deletedAt,
+      ),
+    );
+  }
+
+  public deleteForEveryone(
+    requesterMemberId: string,
+    actorUserId: string,
+  ): void {
+    if (requesterMemberId !== this._senderId) {
+      throw new NotMessageOwnerException();
+    }
+
+    if (this._deletedAt) {
+      return;
+    }
+
+    const now = new Date();
+    this._deletedAt = now;
+    this.updatedAt = now;
+
+    this.apply(
+      new MessageDeletedDomainEvent(
+        this.id,
+        this._conversationId,
+        MessageDeleteScope.EVERYONE,
+        actorUserId,
+        this._deletedForUserIds,
+        this._deletedAt,
+      ),
+    );
+  }
+
+  public loadDeletedForUserId(userId: string): void {
     if (!this._deletedForUserIds.includes(userId)) {
       this._deletedForUserIds.push(userId);
-      this.updatedAt = new Date();
     }
   }
 
-  public softDelete(): void {
-    this._deletedAt = new Date();
-    this.updatedAt = new Date();
-  }
-
-  public restore(): void {
-    this._deletedAt = undefined;
-    this.updatedAt = new Date();
+  public loadDeletedForUserIds(userIds: string[]): void {
+    for (const userId of userIds) {
+      this.loadDeletedForUserId(userId);
+    }
   }
 }

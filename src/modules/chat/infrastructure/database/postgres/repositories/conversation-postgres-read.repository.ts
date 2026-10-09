@@ -123,6 +123,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
               { userId },
             )
             .where('m.conversation_id = cm.conversation_id')
+            .andWhere('m.deleted_at IS NULL')
             .andWhere('m.id > cm.last_seen_message_id'),
         'notSeenCount',
       )
@@ -154,7 +155,9 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
         lastMessage: currentMember?.lastMessage
           ? {
               id: currentMember.lastMessage.id,
-              text: currentMember.lastMessage.text,
+              text: currentMember.lastMessage.deleted_at
+                ? ''
+                : currentMember.lastMessage.text,
               type: currentMember.lastMessage.type,
               senderId: currentMember.lastMessage.sender
                 ? currentMember.lastMessage.sender.user_id
@@ -289,11 +292,12 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
 
     const dtos: MessageReadDto[] = messages.map((m) => ({
       id: m.id,
-      text: m.text,
+      text: m.deleted_at ? '' : m.text,
       type: m.type,
       senderId: m.sender ? m.sender.user_id : m.sender_id,
       createdAt: m.created_at.toISOString(),
       editedAt: m.edited_at ? m.edited_at.toISOString() : null,
+      deletedAt: m.deleted_at ? m.deleted_at.toISOString() : null,
     }));
 
     return PaginationHelper.createResult(dtos, count, pagination);

@@ -9,5 +9,6 @@ export abstract class ConversationRepositoryPort {
   abstract getMessageById(id: string): Promise<MessageEntity | null>;
   abstract saveMessage(message: MessageEntity): Promise<MessageEntity>;
   abstract updateMessage(message: MessageEntity): Promise<MessageEntity>;
+  abstract saveMessageDeletion(message: MessageEntity): Promise<MessageEntity>;
   abstract deleteConversation(id: string): Promise<boolean>;
 }
