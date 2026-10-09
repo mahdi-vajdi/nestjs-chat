@@ -221,6 +221,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
     const res = await this.conversationRepository
       .createQueryBuilder('c')
       .innerJoinAndSelect('c.conversationMembers', 'cm')
+      .leftJoinAndSelect('cm.lastSeenMessage', 'lsm')
       .where('c.id = :conversationId', { conversationId })
       .andWhereExists(
         this.conversationMemberRepository
@@ -248,6 +249,11 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
         id: cm.id,
         userId: cm.user_id,
         lastSeenMessageId: cm.last_seen_message_id,
+        lastSeenMessage: cm.lastSeenMessage
+          ? {
+              createdAt: cm.lastSeenMessage.created_at,
+            }
+          : null,
         lastMessageId: cm.last_message_id,
       })),
     };
