@@ -49,7 +49,7 @@ describe('MessageCreatedWsEventHandler', () => {
   });
 
   describe('handle', () => {
-    it('should broadcast message to target user room', async () => {
+    it('should broadcast message to target user room and sender room for multi-device sync', async () => {
       const event = new MessageCreatedDomainEvent(
         'msg-1',
         'conv-1',
@@ -85,7 +85,54 @@ describe('MessageCreatedWsEventHandler', () => {
 
       await handler.handle(event);
 
-      expect(chatWsGateway.serverBroadcast).toHaveBeenCalled();
+      expect(chatWsGateway.serverBroadcast).toHaveBeenCalledWith(
+        chatWsGateway.server,
+        ['user-user-2', 'user-user-1'],
+        expect.anything(),
+      );
+    });
+
+    it('should not broadcast to target user room if target user is in deletedForUserIds', async () => {
+      const event = new MessageCreatedDomainEvent(
+        'msg-1',
+        'conv-1',
+        'member-1',
+        'hello',
+        ['user-2'],
+        new Date(),
+      );
+
+      commandRepo.getConversationById = jest.fn().mockResolvedValue({
+        id: 'conv-1',
+        members: [
+          { id: 'member-1', userId: 'user-1' },
+          { id: 'member-2', userId: 'user-2' },
+        ],
+      });
+
+      queryBus.execute.mockResolvedValue({
+        id: 'conv-1',
+        members: [{ userId: 'user-1' }, { userId: 'user-2' }],
+      });
+
+      userIntegrationPort.getUserById.mockImplementation(
+        async (id) =>
+          ({
+            id,
+            username: `username-${id}`,
+            firstName: 'First',
+            lastName: 'Last',
+            avatar: null,
+          }) as any,
+      );
+
+      await handler.handle(event);
+
+      expect(chatWsGateway.serverBroadcast).toHaveBeenCalledWith(
+        chatWsGateway.server,
+        ['user-user-1'],
+        expect.anything(),
+      );
     });
   });
 });

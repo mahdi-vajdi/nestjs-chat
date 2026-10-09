@@ -25,10 +25,10 @@ Want to help? Pick an item marked `help wanted`, open an issue to discuss the ap
 | Text messages over WebSocket (Socket.IO) | ✅ |
 | Multi-instance WebSocket scaling (Redis adapter) | ✅ |
 | Read tracking (`markSeen`) and unread counts | ✅ |
-| JWT auth (access + refresh tokens, RSA) | 🚧 refresh/logout not exposed over HTTP |
+| JWT auth (access + refresh tokens, RSA, rotation, logout) | ✅ |
 | User blocking / unblocking | ✅ |
 | Offset-based pagination | ✅ (to be replaced, see Phase 2) |
-| Swagger docs, Winston/Pino logging, migrations, unit + e2e tests | ✅ |
+| Swagger docs, Pino logging, migrations, unit + e2e tests | ✅ |
 
 ---
 
@@ -36,18 +36,18 @@ Want to help? Pick an item marked `help wanted`, open an issue to discuss the ap
 
 Known issues in the current code that should be fixed before building new features.
 
-- [ ] **Migration drift / unique constraint on `last_seen_message_id`** 📋
-  The initial chat migration creates `conversation_members` with a `UNIQUE` constraint on `last_seen_message_id` (and a stale `last_message` column), which does not match the current TypeORM entity. If two members of a conversation have read up to the same message, the write can fail on a database created from migrations. Add a corrective migration, and run the e2e tests against migrations instead of `synchronize()` so drift is caught.
-- [ ] **Blocked-user messages are still delivered in real time** 📋
-  `MessageCreatedWsEventHandler` filters room names (`user-<id>`) against `deletedForUserIds` (plain user IDs), so the filter never matches. Messages from a blocked sender are persisted as hidden but are still pushed live to the blocker.
-- [ ] **Multi-device / multi-tab sync for the sender** 📋
-  Outgoing messages are only broadcast to the recipient's `user-<id>` room. The sender's other devices and tabs never receive them.
-- [ ] **Expose `POST /v1/auth/refresh` and `POST /v1/auth/logout`** 📋
-  `RefreshTokensCommand` already exists but has no controller endpoint. Logout needs refresh-token revocation.
-- [ ] **Stop joining every conversation room on connect** 📋
-  `handleConnection` joins the socket to all of a user's conversation rooms. This does not scale for users with many chats. Deliver through per-user rooms and/or join lazily.
-- [ ] **Docs: README project structure is out of date** 📋
-  The README describes `src/application`, `src/presentation`, etc., but the code is organised under `src/modules/<module>/{domain,application,infrastructure,presentation}`.
+- [x] **Migration drift / unique constraint on `last_seen_message_id`** ✅
+  Fixed initial chat migration and entity mappings: eliminated erroneous `UNIQUE` constraint on `last_seen_message_id`, removed phantom columns (`conversationId`, `last_message`), added proper `@JoinColumn` on message conversation relation, and added appropriate indexes.
+- [x] **Blocked-user messages are still delivered in real time** ✅
+  Fixed room filtering in `MessageCreatedWsEventHandler` to filter raw target user IDs before generating `user-<id>` room names.
+- [x] **Multi-device / multi-tab sync for the sender** ✅
+  Broadcast outgoing messages, new conversation creations, and read-receipt events to the sender's user room (`user-<authUserId>`), enabling seamless multi-device/multi-tab sync.
+- [x] **Expose `POST /v1/auth/refresh` and `POST /v1/auth/logout`** ✅
+  Exposed `POST /v1/auth/refresh` with automatic user role lookup, atomic token rotation, and reuse/replay detection that invalidates all compromised sessions. Exposed `POST /v1/auth/logout` with single-device or all-devices revocation.
+- [x] **Stop joining every conversation room on connect** ✅
+  Removed the expensive `GetUserConversationIdsQuery` query and bulk `client.join(conversationIds)` on WebSocket connect, routing solely via per-user rooms.
+- [x] **Docs: README project structure is out of date** ✅
+  Updated README to reflect current modular DDD folder layout, accurate Pino logging references, complete environment variables, and module migration commands.
 
 ---
 

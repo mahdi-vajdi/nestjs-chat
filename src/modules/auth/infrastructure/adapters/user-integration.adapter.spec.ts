@@ -65,4 +65,26 @@ describe('UserIntegrationAdapter', () => {
       expect(result.id).toBe('user-2');
     });
   });
+
+  describe('getUserById', () => {
+    it('should execute GetUserByIdQuery and return AuthUser', async () => {
+      queryBus.execute.mockResolvedValue({
+        id: 'user-3',
+        role: 'user',
+        firstName: 'f',
+        lastName: 'l',
+        createdAt: new Date(),
+      });
+      const result = await adapter.getUserById('user-3');
+      expect(queryBus.execute).toHaveBeenCalled();
+      expect(result.id).toBe('user-3');
+      expect(result.role).toBe('user');
+    });
+
+    it('should return null if user not found', async () => {
+      queryBus.execute.mockResolvedValue(null);
+      const result = await adapter.getUserById('user-not-found');
+      expect(result).toBeNull();
+    });
+  });
 });

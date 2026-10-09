@@ -12,4 +12,5 @@ export abstract class UserIntegrationPort {
     property: string,
     password: string,
   ): Promise<AuthUser>;
+  abstract getUserById(userId: string): Promise<AuthUser | null>;
 }
