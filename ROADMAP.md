@@ -54,7 +54,8 @@ Known issues in the current code that should be fixed before building new featur
 ## Phase 1: Core messaging (P1)
 
 ### Message lifecycle
-- [ ] **Edit message** with `message.edited` event, `edited_at` field 📋
+- [x] **Edit message** with `conversation.message.edited` event, `edited_at` field ✅
+  Implemented text message editing: domain invariants in `MessageEntity.edit()`, `MessageEditedDomainEvent`, isolated `updateMessage` repository method, `edited_at` DB migration, WebSocket `conversation.message.edit` handler, and real-time broadcast with multi-device sync and blocked-user isolation.
 - [ ] **Delete message**: "delete for me" and "delete for everyone" with a `message.deleted` event 📋
   (The `deleted_messages` table exists today but is only used internally for block-shadowing.)
 - [ ] **Replies / quoted messages** (`reply_to_message_id`) 📋

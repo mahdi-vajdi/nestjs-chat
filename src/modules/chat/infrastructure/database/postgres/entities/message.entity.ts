@@ -39,6 +39,9 @@ export class Message {
   @UpdateDateColumn()
   updated_at: Date;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  edited_at: Date | null;
+
   @DeleteDateColumn()
   deleted_at: Date | null;
 
@@ -76,6 +79,7 @@ export class Message {
     message.created_at = entity.createdAt;
     message.updated_at = entity.updatedAt;
     message.deleted_at = entity.deletedAt;
+    message.edited_at = entity.editedAt ?? null;
 
     return message;
   }
@@ -93,6 +97,7 @@ export class Message {
       message.created_at,
       message.updated_at,
       message.deleted_at,
+      message.edited_at,
     );
 
     if (message.sender) {

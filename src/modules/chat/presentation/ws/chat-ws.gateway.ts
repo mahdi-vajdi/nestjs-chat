@@ -33,6 +33,12 @@ import { BaseWsGateway } from '@common/websocket/base-ws.gateway';
 import { ConversationCreatedEvent } from '@modules/chat/presentation/ws/events/conversation-created.event';
 import { CreateMessageRequest } from '@modules/chat/presentation/ws/dtos/create-message.dto';
 import { MarkConversationAsReadCommand } from '@modules/chat/application/commands/mark-conversation-as-read/mark-conversation-as-read.command';
+import { EditMessageCommand } from '@modules/chat/application/commands/edit-message/edit-message.command';
+import {
+  EditMessageRequest,
+  EditMessageResponse,
+} from '@modules/chat/presentation/ws/dtos/edit-message.dto';
+import { MessageEntity } from '@modules/chat/domain/models/message.entity';
 import { GetConversationMessageListRequest } from '@modules/chat/presentation/ws/dtos/get-conversation-message-list.dto';
 import { MessageSeenEvent } from '@modules/chat/presentation/ws/events/message-seen.event';
 import { MarkMessageSeenRequest } from '@modules/chat/presentation/ws/dtos/mark-message-seen.dto';
@@ -370,6 +376,39 @@ export class ChatWsGateway
     };
   }
 
+  @SubscribeMessage('conversation.message.edit')
+  async editMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: EditMessageRequest,
+    @CurrentUserId() authUserId: string,
+  ): Promise<EditMessageResponse> {
+    const conversation = await this.queryBus.execute(
+      new GetUserConversationQuery(data.conversationId, authUserId),
+    );
+
+    const isMember = conversation.members.some((m) => m.userId === authUserId);
+    if (!isMember) {
+      throw new WsException('Conversation not found or access denied');
+    }
+
+    const editedMessage: MessageEntity = await this.commandBus.execute(
+      new EditMessageCommand(
+        data.messageId,
+        data.conversationId,
+        authUserId,
+        data.text,
+      ),
+    );
+
+    return {
+      id: editedMessage.id,
+      content: editedMessage.text,
+      editedAt: (
+        editedMessage.editedAt || editedMessage.updatedAt
+      ).toISOString(),
+    };
+  }
+
   @SubscribeMessage('conversation.message.list')
   async getConversationMessageList(
     @ConnectedSocket() client: Socket,
@@ -434,6 +473,7 @@ export class ChatWsGateway
             id: item.id,
             content: item.text,
             createdAt: item.createdAt,
+            editedAt: item.editedAt ?? null,
             seen: false,
             user: user
               ? {

@@ -229,4 +229,77 @@ describe('ChatWsGateway (e2e)', () => {
       },
     );
   });
+
+  it('should edit a message and broadcast conversation.message.edited', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'Original message' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const msgId = createRes.chat.id;
+
+        clientSocket2.on('conversation.message.edited', (data) => {
+          expect(data.id).toBe(msgId);
+          expect(data.conversationId).toBe(convId);
+          expect(data.content).toBe('Updated message text');
+          expect(data.editedAt).toBeDefined();
+
+          // Verify conversation.message.list includes editedAt
+          clientSocket1.emit(
+            'conversation.message.list',
+            { conversationId: convId, page: 1, pageSize: 10 },
+            (listRes: any) => {
+              expect(listRes.messages.list.length).toBe(1);
+              expect(listRes.messages.list[0].id).toBe(msgId);
+              expect(listRes.messages.list[0].content).toBe(
+                'Updated message text',
+              );
+              expect(listRes.messages.list[0].editedAt).toBeDefined();
+              done();
+            },
+          );
+        });
+
+        clientSocket1.emit(
+          'conversation.message.edit',
+          {
+            conversationId: convId,
+            messageId: msgId,
+            text: 'Updated message text',
+          },
+          (editAck: any) => {
+            expect(editAck.id).toBe(msgId);
+            expect(editAck.content).toBe('Updated message text');
+            expect(editAck.editedAt).toBeDefined();
+          },
+        );
+      },
+    );
+  });
+
+  it('should reject editing a message when user is not the owner', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'User 1 message' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const msgId = createRes.chat.id;
+
+        // User 2 attempts to edit User 1's message
+        clientSocket2.emit(
+          'conversation.message.edit',
+          {
+            conversationId: convId,
+            messageId: msgId,
+            text: 'Malicious update',
+          },
+          (errRes: any) => {
+            expect(errRes.statusCode).toBe(403);
+            expect(errRes.code).toBe('CHAT_NOT_MESSAGE_OWNER');
+            done();
+          },
+        );
+      },
+    );
+  });
 });

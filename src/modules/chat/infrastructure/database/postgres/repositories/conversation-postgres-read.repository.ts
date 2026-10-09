@@ -293,6 +293,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
       type: m.type,
       senderId: m.sender ? m.sender.user_id : m.sender_id,
       createdAt: m.created_at.toISOString(),
+      editedAt: m.edited_at ? m.edited_at.toISOString() : null,
     }));
 
     return PaginationHelper.createResult(dtos, count, pagination);

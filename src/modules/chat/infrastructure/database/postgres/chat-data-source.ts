@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { AppDataSource } from '@infrastructure/database/postgres/config/data-source';
+import { AppDataSource } from '../../../../../infrastructure/database/postgres/config/data-source';
 
 export const ChatDataSource = new DataSource({
   ...AppDataSource.options,

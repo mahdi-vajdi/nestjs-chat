@@ -4,4 +4,5 @@ export interface MessageReadDto {
   type: string;
   senderId: string;
   createdAt: string;
+  editedAt?: string | null;
 }

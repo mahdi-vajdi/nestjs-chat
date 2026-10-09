@@ -111,6 +111,39 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
     return entity;
   }
 
+  async getMessageById(id: string): Promise<MessageEntity | null> {
+    const message = await this.dataSource.getRepository(Message).findOne({
+      where: { id },
+      relations: { sender: true, conversation: true },
+    });
+
+    if (!message) {
+      return null;
+    }
+
+    const deletedMessages = await this.dataSource
+      .getRepository(DeletedMessage)
+      .find({
+        where: { message_id: id },
+      });
+
+    const entity = Message.toDomain(message);
+    deletedMessages.forEach((dm) => entity.deleteForUser(dm.user_id));
+
+    return entity;
+  }
+
+  async updateMessage(messageEntity: MessageEntity): Promise<MessageEntity> {
+    await this.dataSource.getRepository(Message).update(messageEntity.id, {
+      text: messageEntity.text,
+      edited_at: messageEntity.editedAt ?? null,
+      updated_at: messageEntity.updatedAt,
+    });
+
+    const updated = await this.getMessageById(messageEntity.id);
+    return updated!;
+  }
+
   async deleteConversation(id: string): Promise<boolean> {
     const res = await this.dataSource.transaction(async (entityManager) => {
       const [, deleteConversation] = await Promise.all([

@@ -115,7 +115,7 @@ Commands (write operations) and Queries (read operations) are separated via `@ne
 
 ### Multi-Device Real-Time Sync
 
-WebSocket connections are authenticated into per-user rooms (`user-<userId>`). Outgoing messages, new conversation creations, and read receipts are broadcast to both the recipient and the sender's user room, enabling real-time synchronization across multiple devices and open browser tabs.
+WebSocket connections are authenticated into per-user rooms (`user-<userId>`). Outgoing messages, message edits, new conversation creations, and read receipts are broadcast to both the recipient and the sender's user room, enabling real-time synchronization across multiple devices and open browser tabs.
 
 ---
 
@@ -139,6 +139,7 @@ WebSocket connections are authenticated into per-user rooms (`user-<userId>`). O
 ## Features
 
 - **Real-Time Direct Messaging**: 1-on-1 conversations with low-latency delivery over Socket.IO.
+- **Message Editing with Real-Time Sync**: Senders can edit sent text messages; updates broadcast instantly to all participants and sync across the sender's devices.
 - **Multi-Instance Horizontal Scaling**: Redis-backed Socket.IO adapter distributes WebSocket events across container replicas.
 - **Multi-Device & Multi-Tab Sync**: Per-user room routing ensures a user's sent messages and read receipts mirror instantly across all active sessions.
 - **Read Receipts & Unread Counters**: Message viewing updates `last_seen_message_id` and recalculates unread counts per conversation member.
@@ -329,6 +330,7 @@ Clients emit the following events to interact with the chat service:
 | `conversation.create` | `{ targetUserId: string, content: string }` | Creates a direct conversation and dispatches the first message. |
 | `conversation.list` | `{ page?: number, pageSize?: number, filter?: string, targetUserId?: string }` | Fetches paginated conversations with last message and unread count. |
 | `conversation.message.send` | `{ conversationId: string, text: string }` | Sends a text message to an existing conversation. |
+| `conversation.message.edit` | `{ conversationId: string, messageId: string, text: string }` | Edits an existing text message sent by the authenticated user. |
 | `conversation.message.list` | `{ conversationId: string, page?: number, pageSize?: number }` | Retrieves paginated message history for a conversation. |
 | `conversation.message.markSeen` | `{ conversationId: string, messageId: string }` | Updates user's read receipt up to the specified message. |
 
@@ -341,6 +343,7 @@ Clients receive the following broadcast and direct events:
 | `ready` | None | Emitted to connecting socket upon successful authorization. |
 | `conversation.created` | Conversation metadata, last message, sender details | Emitted to both sender and recipient user rooms. |
 | `conversation.message.sent` | Message ID, content, timestamp, sender info | Emitted to recipient and sender user rooms for sync. |
+| `conversation.message.edited` | Message ID, conversation ID, updated content, `editedAt` | Emitted to all participants and sender rooms upon edit. |
 | `conversation.message.seen` | `{ conversationId: string, messageId: string }` | Emitted to all conversation participants when messages are read. |
 | `user.blocked` | `{ blockerId: string, blockedId: string }` | Emitted to both parties when a block relation is created. |
 | `user.unblocked` | `{ blockerId: string, blockedId: string }` | Emitted to both parties when a block relation is removed. |

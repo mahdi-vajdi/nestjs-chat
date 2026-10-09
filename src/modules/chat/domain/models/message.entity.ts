@@ -5,14 +5,21 @@ import { v7 as uuidv7 } from 'uuid';
 
 import { AggregateRoot } from '@common/domain/aggregate-root';
 import { MessageCreatedDomainEvent } from '@modules/chat/domain/events/message-created.domain-event';
+import { MessageEditedDomainEvent } from '@modules/chat/domain/events/message-edited.domain-event';
+import {
+  ChatDomainError,
+  MessageNotFoundException,
+  NotMessageOwnerException,
+} from '@modules/chat/domain/chat.exceptions';
 
 export class MessageEntity extends AggregateRoot<string> {
-  private readonly _text: string;
+  private _text: string;
   private readonly _type: MessageType;
   private readonly _senderId: string;
   private readonly _conversationId: string;
   private readonly _deletedForUserIds: string[];
   private _deletedAt?: Date;
+  private _editedAt?: Date;
 
   // Transient properties
   private _sender?: Partial<ConversationMemberEntity>;
@@ -42,6 +49,7 @@ export class MessageEntity extends AggregateRoot<string> {
     conversationId: string,
     deletedForUserIds: string[] = [],
     deletedAt?: Date,
+    editedAt?: Date,
   ) {
     super(id, createdAt, updatedAt);
     this._text = text;
@@ -50,6 +58,7 @@ export class MessageEntity extends AggregateRoot<string> {
     this._conversationId = conversationId;
     this._deletedForUserIds = deletedForUserIds;
     this._deletedAt = deletedAt;
+    this._editedAt = editedAt;
   }
 
   public static create(
@@ -96,6 +105,7 @@ export class MessageEntity extends AggregateRoot<string> {
     createdAt: Date,
     updatedAt: Date,
     deletedAt?: Date,
+    editedAt?: Date,
   ): MessageEntity {
     return new MessageEntity(
       id,
@@ -107,6 +117,7 @@ export class MessageEntity extends AggregateRoot<string> {
       conversationId,
       deletedForUserIds,
       deletedAt,
+      editedAt,
     );
   }
 
@@ -127,6 +138,48 @@ export class MessageEntity extends AggregateRoot<string> {
   }
   public get deletedAt(): Date | undefined {
     return this._deletedAt;
+  }
+  public get editedAt(): Date | undefined {
+    return this._editedAt;
+  }
+
+  public edit(newText: string, editorMemberId: string): void {
+    if (this._deletedAt) {
+      throw new MessageNotFoundException('Cannot edit a deleted message');
+    }
+
+    if (editorMemberId !== this._senderId) {
+      throw new NotMessageOwnerException();
+    }
+
+    if (this._type !== MessageType.TEXT) {
+      throw new ChatDomainError('Only text messages can be edited');
+    }
+
+    const trimmedText = newText ? newText.trim() : '';
+    if (!trimmedText) {
+      throw new ChatDomainError('Message text cannot be empty');
+    }
+
+    if (this._text === newText) {
+      return;
+    }
+
+    this._text = newText;
+    const now = new Date();
+    this._editedAt = now;
+    this.updatedAt = now;
+
+    this.apply(
+      new MessageEditedDomainEvent(
+        this.id,
+        this._conversationId,
+        this._senderId,
+        this._text,
+        this._deletedForUserIds,
+        this._editedAt,
+      ),
+    );
   }
 
   public deleteForUser(userId: string): void {
