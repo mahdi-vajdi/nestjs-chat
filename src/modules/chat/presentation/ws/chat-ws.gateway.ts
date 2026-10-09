@@ -1,4 +1,3 @@
-import { GetUserConversationIdsQuery } from '@modules/chat/application/queries/get-user-conversation-ids/get-user-conversation-ids.query';
 import { CreateDirectConversationCommand } from '@modules/chat/application/commands/create-direct-conversation/create-direct-conversation.command';
 import { CreateMessageCommand } from '@modules/chat/application/commands/create-message/create-message.command';
 import { DeleteConversationCommand } from '@modules/chat/application/commands/delete-conversation/delete-conversation.command';
@@ -77,15 +76,6 @@ export class ChatWsGateway
     try {
       const authPayload = await client.data['authPromise'];
 
-      const conversationIds = await this.queryBus.execute(
-        new GetUserConversationIdsQuery(authPayload.sub, {}),
-      );
-
-      this.logger.debug(
-        `Joining user ${authPayload.sub} to conversations: ${conversationIds}`,
-      );
-      client.join(conversationIds);
-
       const userEventsRoom = `user-${authPayload.sub}`;
       this.logger.debug(
         `Joining user ${authPayload.sub} to room ${userEventsRoom}`,
@@ -153,30 +143,45 @@ export class ChatWsGateway
       throw e;
     }
 
-    const userIds = [targetUser.id];
-    const rooms = userIds
-      .filter((userId) => !createMessage.deletedForUserIds.includes(userId))
-      .map((userId) => `user-${userId}`);
-    this.logger.debug(
-      `broadcasting 'UserChatCreated' event to the rooms: ${rooms}`,
-    );
-    this.logger.log(
-      `user ${currentUser.id} joined to room ${createConversation.id}`,
-    );
+    if (!createMessage.deletedForUserIds.includes(targetUser.id)) {
+      await this.broadcast(
+        client,
+        [`user-${targetUser.id}`],
+        new ConversationCreatedEvent({
+          id: createMessage.conversationId,
+          name: `${currentUser.firstName} ${currentUser.lastName}`,
+          avatar: currentUser.avatar,
+          username: currentUser.username,
+          notSeenCount: 1,
+          lastMessage: {
+            id: createMessage.id,
+            content: createMessage.text,
+            createdAt: createMessage.createdAt.toISOString(),
+            seen: false,
+            user: {
+              id: currentUser.id,
+              name: `${currentUser.firstName} ${currentUser.lastName}`,
+            },
+          },
+        }),
+      );
+    }
+
+    // Broadcast to sender's other devices/tabs
     await this.broadcast(
       client,
-      rooms,
+      [`user-${currentUser.id}`],
       new ConversationCreatedEvent({
         id: createMessage.conversationId,
-        name: `${currentUser.firstName} ${currentUser.lastName}`,
-        avatar: currentUser.avatar,
-        username: currentUser.username,
-        notSeenCount: 1,
+        name: `${targetUser.firstName} ${targetUser.lastName}`,
+        avatar: targetUser.avatar,
+        username: targetUser.username,
+        notSeenCount: 0,
         lastMessage: {
           id: createMessage.id,
           content: createMessage.text,
           createdAt: createMessage.createdAt.toISOString(),
-          seen: false,
+          seen: true,
           user: {
             id: currentUser.id,
             name: `${currentUser.firstName} ${currentUser.lastName}`,
@@ -481,12 +486,14 @@ export class ChatWsGateway
       ),
     );
 
-    // Broadcast the event to other members of the conversation
+    // Broadcast the event to all members including sender's other devices
+    const recipientRooms = conversation.members.map(
+      (member) => `user-${member.userId}`,
+    );
+
     await this.broadcast(
       client,
-      conversation.members
-        .filter((member) => member.userId !== authUserId)
-        .map((member) => `user-${member.userId}`),
+      recipientRooms,
       new MessageSeenEvent({
         conversationId: conversation.id,
         messageId: data.messageId,

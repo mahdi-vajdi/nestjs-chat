@@ -67,8 +67,12 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
         this.userIntegrationPort.getUserById(targetMember.userId),
       ]);
 
-      let rooms = [`user-${targetUser.id}`];
-      rooms = rooms.filter((x) => !event.deletedForUserIds.includes(x));
+      const rooms: string[] = [];
+      if (!event.deletedForUserIds.includes(targetUser.id)) {
+        rooms.push(`user-${targetUser.id}`);
+      }
+      // Also broadcast to the sender's user room for multi-device sync
+      rooms.push(`user-${currentUser.id}`);
 
       await this.chatWsGateway.serverBroadcast<UserMessageCreated>(
         this.chatWsGateway.server,
@@ -86,9 +90,9 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
           content: event.text,
           conversation: {
             id: conversationDto.id,
-            name: conversationDto.id,
-            avatar: conversationDto.picture,
-            username: conversationDto.identifier,
+            name: `${currentUser.firstName} ${currentUser.lastName}`,
+            avatar: currentUser.avatar,
+            username: currentUser.username,
           },
         }),
       );

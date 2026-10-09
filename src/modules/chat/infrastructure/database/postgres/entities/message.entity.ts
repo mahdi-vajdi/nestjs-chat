@@ -30,6 +30,7 @@ export class Message {
   sender_id: string;
 
   @Column({ type: 'uuid' })
+  @Index('messages_conversation_id_idx')
   conversation_id: string;
 
   @CreateDateColumn()
@@ -44,6 +45,11 @@ export class Message {
   @ManyToOne(() => Conversation, (c) => c.messages, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
+  })
+  @JoinColumn({
+    name: 'conversation_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'messages_conversation_id_fk',
   })
   conversation: Conversation;
 

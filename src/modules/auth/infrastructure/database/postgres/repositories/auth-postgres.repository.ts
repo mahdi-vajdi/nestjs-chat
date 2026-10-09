@@ -33,4 +33,56 @@ export class AuthPostgresRepository implements AuthRepositoryPort {
 
     return refreshToken ? RefreshToken.toDomain(refreshToken) : null;
   }
+
+  async getRefreshTokenIncludingDeleted(
+    identifier: string,
+    userId: string,
+  ): Promise<RefreshTokenEntity | null> {
+    const refreshToken = await this.refreshTokenRepository
+      .createQueryBuilder('rt')
+      .withDeleted()
+      .where('rt.user_id = :userId', { userId })
+      .andWhere('rt.identifier = :identifier', { identifier })
+      .getOne();
+
+    return refreshToken ? RefreshToken.toDomain(refreshToken) : null;
+  }
+
+  async rotateRefreshToken(
+    oldToken: RefreshTokenEntity,
+    newToken: RefreshTokenEntity,
+  ): Promise<void> {
+    await this.refreshTokenRepository.manager.transaction(
+      async (entityManager) => {
+        await entityManager.save(RefreshToken.fromDomain(oldToken));
+        await entityManager.save(RefreshToken.fromDomain(newToken));
+      },
+    );
+  }
+
+  async revokeRefreshToken(
+    identifier: string,
+    userId: string,
+  ): Promise<boolean> {
+    const result = await this.refreshTokenRepository
+      .createQueryBuilder()
+      .softDelete()
+      .from(RefreshToken)
+      .where('user_id = :userId', { userId })
+      .andWhere('identifier = :identifier', { identifier })
+      .execute();
+
+    return (result.affected ?? 0) > 0;
+  }
+
+  async revokeAllRefreshTokens(userId: string): Promise<boolean> {
+    const result = await this.refreshTokenRepository
+      .createQueryBuilder()
+      .softDelete()
+      .from(RefreshToken)
+      .where('user_id = :userId', { userId })
+      .execute();
+
+    return (result.affected ?? 0) > 0;
+  }
 }

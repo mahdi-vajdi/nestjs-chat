@@ -12,6 +12,8 @@ import {
 import { RefreshTokenEntity } from '@modules/auth/domain/models/refresh-token.entity';
 import * as bcrypt from 'bcrypt';
 
+import { UserIntegrationPort } from '@modules/auth/application/ports/user-integration.port';
+
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),
   hash: jest.fn(),
@@ -21,6 +23,7 @@ describe('RefreshTokensHandler', () => {
   let handler: RefreshTokensHandler;
   let tokenService: jest.Mocked<TokenService>;
   let authRepository: jest.Mocked<AuthRepositoryPort>;
+  let userIntegrationPort: jest.Mocked<UserIntegrationPort>;
   let publisher: jest.Mocked<EventPublisher>;
 
   beforeEach(async () => {
@@ -32,8 +35,16 @@ describe('RefreshTokensHandler', () => {
 
     authRepository = {
       getRefreshToken: jest.fn(),
+      getRefreshTokenIncludingDeleted: jest.fn(),
       save: jest.fn(),
+      rotateRefreshToken: jest.fn(),
+      revokeRefreshToken: jest.fn(),
+      revokeAllRefreshTokens: jest.fn(),
     } as unknown as jest.Mocked<AuthRepositoryPort>;
+
+    userIntegrationPort = {
+      getUserById: jest.fn(),
+    } as unknown as jest.Mocked<UserIntegrationPort>;
 
     publisher = {
       mergeObjectContext: jest.fn().mockImplementation((entity) => {
@@ -47,6 +58,7 @@ describe('RefreshTokensHandler', () => {
         RefreshTokensHandler,
         { provide: TokenService, useValue: tokenService },
         { provide: AuthRepositoryPort, useValue: authRepository },
+        { provide: UserIntegrationPort, useValue: userIntegrationPort },
         { provide: EventPublisher, useValue: publisher },
       ],
     }).compile();
@@ -55,16 +67,18 @@ describe('RefreshTokensHandler', () => {
   });
 
   describe('execute', () => {
-    const command = new RefreshTokensCommand('valid-token', UserRole.USER);
+    const command = new RefreshTokensCommand('valid-token');
     const mockPayload = { sub: 'user-1', jti: 'jti-1' };
-    const mockEntity = RefreshTokenEntity.create(
-      'user-1',
-      'hashed-token',
-      'jti-1',
-    );
+    let mockEntity: RefreshTokenEntity;
+    const mockUser = {
+      id: 'user-1',
+      role: UserRole.USER,
+      createdAt: new Date(),
+    };
 
     beforeEach(() => {
       jest.clearAllMocks();
+      mockEntity = RefreshTokenEntity.create('user-1', 'hashed-token', 'jti-1');
     });
 
     it('should throw InvalidRefreshTokenException if verify fails', async () => {
@@ -77,16 +91,39 @@ describe('RefreshTokensHandler', () => {
 
     it('should throw InvalidRefreshTokenException if token not found in db', async () => {
       tokenService.verifyRefreshToken.mockResolvedValue(mockPayload);
-      authRepository.getRefreshToken.mockResolvedValue(null);
+      authRepository.getRefreshTokenIncludingDeleted.mockResolvedValue(null);
 
       await expect(handler.execute(command)).rejects.toThrow(
         InvalidRefreshTokenException,
       );
     });
 
+    it('should detect token reuse and revoke all sessions if token was already deleted', async () => {
+      const revokedEntity = RefreshTokenEntity.create(
+        'user-1',
+        'hashed-token',
+        'jti-1',
+      );
+      revokedEntity.revoke();
+
+      tokenService.verifyRefreshToken.mockResolvedValue(mockPayload);
+      authRepository.getRefreshTokenIncludingDeleted.mockResolvedValue(
+        revokedEntity,
+      );
+
+      await expect(handler.execute(command)).rejects.toThrow(
+        InvalidRefreshTokenException,
+      );
+      expect(authRepository.revokeAllRefreshTokens).toHaveBeenCalledWith(
+        'user-1',
+      );
+    });
+
     it('should throw InvalidRefreshTokenException if hash compare fails', async () => {
       tokenService.verifyRefreshToken.mockResolvedValue(mockPayload);
-      authRepository.getRefreshToken.mockResolvedValue(mockEntity);
+      authRepository.getRefreshTokenIncludingDeleted.mockResolvedValue(
+        mockEntity,
+      );
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(handler.execute(command)).rejects.toThrow(
@@ -94,32 +131,51 @@ describe('RefreshTokensHandler', () => {
       );
     });
 
-    it('should revoke old token, save new, and return output', async () => {
+    it('should throw InvalidRefreshTokenException if user is not found', async () => {
       tokenService.verifyRefreshToken.mockResolvedValue(mockPayload);
-      authRepository.getRefreshToken.mockResolvedValue(mockEntity);
+      authRepository.getRefreshTokenIncludingDeleted.mockResolvedValue(
+        mockEntity,
+      );
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      userIntegrationPort.getUserById.mockResolvedValue(null);
+
+      await expect(handler.execute(command)).rejects.toThrow(
+        InvalidRefreshTokenException,
+      );
+    });
+
+    it('should revoke old token, rotate new, and return output', async () => {
+      tokenService.verifyRefreshToken.mockResolvedValue(mockPayload);
+      authRepository.getRefreshTokenIncludingDeleted.mockResolvedValue(
+        mockEntity,
+      );
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      userIntegrationPort.getUserById.mockResolvedValue(mockUser);
       tokenService.signAccessToken.mockResolvedValue('new-access');
       tokenService.signRefreshToken.mockResolvedValue({
         token: 'new-refresh',
         jti: 'new-jti',
       });
       (bcrypt.hash as jest.Mock).mockResolvedValue('new-hash');
-      authRepository.save.mockResolvedValue({} as any);
+      authRepository.rotateRefreshToken.mockResolvedValue(undefined);
 
       const result = await handler.execute(command);
 
       expect(mockEntity.deletedAt).not.toBeNull();
-      expect(authRepository.save).toHaveBeenCalledTimes(2);
+      expect(authRepository.rotateRefreshToken).toHaveBeenCalledTimes(1);
       expect(result).toEqual({
         accessToken: 'new-access',
         refreshToken: 'new-refresh',
       });
     });
 
-    it('should fallback and throw TokenGenerationException if save fails', async () => {
+    it('should throw TokenGenerationException if rotateRefreshToken fails', async () => {
       tokenService.verifyRefreshToken.mockResolvedValue(mockPayload);
-      authRepository.getRefreshToken.mockResolvedValue(mockEntity);
+      authRepository.getRefreshTokenIncludingDeleted.mockResolvedValue(
+        mockEntity,
+      );
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      userIntegrationPort.getUserById.mockResolvedValue(mockUser);
       tokenService.signAccessToken.mockResolvedValue('new-access');
       tokenService.signRefreshToken.mockResolvedValue({
         token: 'new-refresh',
@@ -127,16 +183,13 @@ describe('RefreshTokensHandler', () => {
       });
       (bcrypt.hash as jest.Mock).mockResolvedValue('new-hash');
 
-      authRepository.save
-        .mockResolvedValueOnce({} as any) // revoke success
-        .mockRejectedValueOnce(new Error()) // save new token fails
-        .mockResolvedValueOnce({} as any); // restore success
+      authRepository.rotateRefreshToken.mockRejectedValue(
+        new Error('DB failure'),
+      );
 
       await expect(handler.execute(command)).rejects.toThrow(
         TokenGenerationException,
       );
-      expect(mockEntity.deletedAt).toBeNull(); // restored
-      expect(authRepository.save).toHaveBeenCalledTimes(3);
     });
   });
 });

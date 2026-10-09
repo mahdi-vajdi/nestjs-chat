@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
@@ -13,11 +14,17 @@ import { Message } from '@modules/chat/infrastructure/database/postgres/entities
 import { ConversationMemberEntity } from '@modules/chat/domain/models/conversation-member.model';
 
 @Entity({ schema: 'chat', name: 'conversation_members' })
+@Index(
+  'conversation_members_conversation_user_uniq',
+  ['conversation_id', 'user_id'],
+  { unique: true },
+)
 export class ConversationMember {
   @PrimaryColumn('uuid')
   id: string;
 
   @Column({ type: 'uuid' })
+  @Index('conversation_members_user_id_idx')
   user_id: string;
 
   @Column({ type: 'uuid' })

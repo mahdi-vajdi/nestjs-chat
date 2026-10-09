@@ -160,4 +160,62 @@ describe('AuthController (e2e)', () => {
       .send(signinPayload)
       .expect(401);
   });
+
+  it('/v1/auth/refresh (POST) - success and rotation', async () => {
+    const signupRes = await request(app.getHttpServer())
+      .post('/v1/auth/signup')
+      .send({
+        email: 'refresh@test.com',
+        username: 'refreshtest',
+        password: 'Password123!',
+        firstName: 'Refresh',
+        lastName: 'Test',
+      })
+      .expect(201);
+
+    const oldRefreshToken = signupRes.body.refreshToken;
+
+    const refreshRes = await request(app.getHttpServer())
+      .post('/v1/auth/refresh')
+      .send({ refreshToken: oldRefreshToken })
+      .expect(201);
+
+    expect(refreshRes.body.accessToken).toBeDefined();
+    expect(refreshRes.body.refreshToken).toBeDefined();
+    expect(refreshRes.body.refreshToken).not.toBe(oldRefreshToken);
+
+    // Old refresh token must be rejected upon reuse
+    await request(app.getHttpServer())
+      .post('/v1/auth/refresh')
+      .send({ refreshToken: oldRefreshToken })
+      .expect(401);
+  });
+
+  it('/v1/auth/logout (POST) - success revoking refresh token', async () => {
+    const signupRes = await request(app.getHttpServer())
+      .post('/v1/auth/signup')
+      .send({
+        email: 'logout@test.com',
+        username: 'logouttest',
+        password: 'Password123!',
+        firstName: 'Logout',
+        lastName: 'Test',
+      })
+      .expect(201);
+
+    const accessToken = signupRes.body.accessToken;
+    const refreshToken = signupRes.body.refreshToken;
+
+    await request(app.getHttpServer())
+      .post('/v1/auth/logout')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ refreshToken })
+      .expect(201);
+
+    // After logout, refresh token should no longer work
+    await request(app.getHttpServer())
+      .post('/v1/auth/refresh')
+      .send({ refreshToken })
+      .expect(401);
+  });
 });

@@ -12,9 +12,17 @@ Chatterbox is a real-time chat application built with NestJS, designed for scala
 - **Database:** PostgreSQL managed with TypeORM, including support for migrations.
 - **API Documentation:** Swagger (OpenAPI) integration for easy API exploration and testing.
 - **Configuration Management:** Flexible configuration using `@nestjs/config` and `.env` files.
-- **Logging:** Comprehensive logging with Winston.
+- **Logging:** Structured logging with Pino (`nestjs-pino`).
 - **Input Validation:** Uses `class-validator` and `class-transformer` for robust request validation.
 - **Structured Codebase:** Follows a modular approach with clear separation of concerns (application, infrastructure, presentation layers).
+
+---
+
+## Roadmap
+
+Chatterbox currently supports 1-on-1 text messaging with read receipts and user blocking. Planned work includes group chats, message edit/delete, typing indicators and presence, push notifications, media attachments, reactions, and search.
+
+See the full, prioritized plan in [ROADMAP.md](./ROADMAP.md). Contributions are welcome.
 
 ---
 
@@ -77,7 +85,13 @@ Before you begin, ensure you have the following installed:
    Run database migrations to create the necessary tables:
 
    ```bash
+   # Run all pending migrations
    yarn migration:run
+
+   # Or generate migrations for a specific module
+   yarn migration:generate:auth
+   yarn migration:generate:user
+   yarn migration:generate:chat
    ```
 
    *(**Note:** If using Docker Compose, you will run migrations inside the container as shown in the next section.)*
@@ -174,16 +188,22 @@ The following environment variables need to be configured in your `.env` file:
 
 | Variable | Description |
 |---|---|
+| `NODE_ENV` | Runtime environment (`development`, `production`, `test`). |
+| `DEBUG_MODE` | Enable debug mode (`true`/`false`). |
 | `POSTGRES_HOST` | PostgreSQL server host. |
 | `POSTGRES_PORT` | PostgreSQL server port. |
 | `POSTGRES_USERNAME` | PostgreSQL username. |
 | `POSTGRES_PASSWORD` | PostgreSQL password. |
 | `POSTGRES_DATABASE` | PostgreSQL database name. |
+| `POSTGRES_SCHEMA` | PostgreSQL default schema (`public`). |
 | `POSTGRES_LOG` | Enable/disable TypeORM logging (`true`/`false`). |
 | `POSTGRES_SLOW_QUERY_LIMIT` | Slow query limit in milliseconds for logging. |
+| `POSTGRES_SSL` | Enable PostgreSQL SSL connection (`true`/`false`). |
+| `POSTGRES_APPLICATION_NAME` | PostgreSQL client application name identifier. |
+| `POSTGRES_POOL_SIZE` | Database connection pool max size. |
 | `LOG_USE_FILE` | Whether to log to a file (`true`/`false`). |
 | `LOG_FILE` | Path to the log file (if `LOG_USE_FILE` is `true`). |
-| `LOG_LEVEL` | Logging level (e.g., `debug`, `info`, `warn`, `error`). |
+| `LOG_LEVEL` | Logging level (`debug`, `info`, `warn`, `error`). |
 | `PORT` | Port number for the HTTP server. |
 | `REDIS_HOST` | Redis server host. |
 | `REDIS_PORT` | Redis server port. |
@@ -209,14 +229,22 @@ The `Makefile` provides convenient commands for managing RSA keys used for JWT a
 
 ## Project Structure
 
-A brief overview of the main directories in `src/`:
+A brief overview of the directory structure in `src/`:
 
 - **`src/main.ts`**: Application entry point, initializes NestJS app, Swagger, WebSocket adapter, etc.
 - **`src/app.module.ts`**: Root module of the application.
-- **`src/application/`**: Contains core business logic, services, and use cases for different domains (e.g., `auth`, `chat`, `user`).
-- **`src/common/`**: Shared utilities, decorators, enums, constants, and base classes used across the application.
-- **`src/infrastructure/`**: Handles external concerns like database interactions (TypeORM entities, repositories), third-party service integrations (Redis, logging), and WebSocket adapters.
-- **`src/presentation/`**: Manages how the application interacts with the outside world. Includes HTTP controllers, WebSocket gateways, Data Transfer Objects (DTOs), and guards.
+- **`src/modules/`**: Modular Bounded Contexts adhering to DDD and Clean Architecture:
+  - **`auth/`**: Authentication, JWT lifecycle, refresh token rotation, access guards.
+  - **`chat/`**: Conversations, messages, read receipts, WebSocket gateway.
+  - **`user/`**: User management, user blocking, profiles.
+  - *Each module encapsulates*:
+    - `domain/`: Pure business entities, aggregates, domain events, and domain exceptions.
+    - `application/`: CQRS commands, queries, event handlers, and port interfaces.
+    - `infrastructure/`: Adapters, TypeORM repositories, entities, and database migrations.
+    - `presentation/`: HTTP controllers, WebSocket gateways, DTOs, and transport guards.
+    - `contracts/`: Public events and contracts exposed for cross-module integration.
+- **`src/common/`**: Shared cross-cutting concerns (base entities, decorators, pagination, exception filters).
+- **`src/infrastructure/`**: Core infrastructure configuration (PostgreSQL datasources, Redis client, Pino logging, Socket.IO Redis adapter).
 
 ---
 
