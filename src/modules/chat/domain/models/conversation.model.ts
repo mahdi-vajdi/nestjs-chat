@@ -136,9 +136,13 @@ export class ConversationEntity extends AggregateRoot<string> {
 
   public markAsRead(userId: string, messageId: string): void {
     const member = this.members.find((m) => m.userId === userId);
-    if (member) {
-      member.updateLastSeenMessage(messageId);
+    if (!member) {
+      throw new Error(`User ${userId} is not a member`);
     }
+    if (member.lastSeenMessageId === messageId) {
+      throw new Error(`Message ${messageId} is already marked as read`);
+    }
+    member.updateLastSeenMessage(messageId);
   }
 
   public softDelete(): void {
