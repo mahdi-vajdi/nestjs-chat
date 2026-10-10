@@ -4,6 +4,7 @@ export interface ConversationMemberReadDto {
   id: string;
   userId: string;
   lastSeenMessageId: string | null;
+  lastSeenMessage: { createdAt: string } | null;
   lastMessageId: string | null;
 }
 

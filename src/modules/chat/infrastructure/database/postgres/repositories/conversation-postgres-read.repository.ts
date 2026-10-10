@@ -62,7 +62,8 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
         'cm',
         'cm.user_id = :userId',
         { userId },
-      );
+      )
+      .leftJoinAndSelect('cm.lastSeenMessage', 'lastSeenMessage');
 
     if (options.withLastMessage) {
       query
@@ -166,6 +167,11 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
           id: cm.id,
           userId: cm.user_id,
           lastSeenMessageId: cm.last_seen_message_id,
+          lastSeenMessage: cm.lastSeenMessage
+            ? {
+                createdAt: cm.lastSeenMessage.created_at.toISOString(),
+              }
+            : null,
           lastMessageId: cm.last_message_id,
         })),
       };
@@ -186,6 +192,11 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
           id: m.id,
           userId: m.user_id,
           lastSeenMessageId: m.last_seen_message_id,
+          lastSeenMessage: m.lastSeenMessage
+            ? {
+                createdAt: m.lastSeenMessage.created_at.toISOString(),
+              }
+            : null,
           lastMessageId: m.last_message_id,
         });
       });
@@ -251,7 +262,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
         lastSeenMessageId: cm.last_seen_message_id,
         lastSeenMessage: cm.lastSeenMessage
           ? {
-              createdAt: cm.lastSeenMessage.created_at,
+              createdAt: cm.lastSeenMessage.created_at.toISOString(),
             }
           : null,
         lastMessageId: cm.last_message_id,
