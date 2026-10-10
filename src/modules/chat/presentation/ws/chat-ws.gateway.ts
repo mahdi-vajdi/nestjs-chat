@@ -270,7 +270,7 @@ export class ChatWsGateway
           picture: item.picture,
           identifier: item.identifier,
           lastMessage: null,
-          notSeenCount: currentMember?.notSeenCount ?? 0,
+          notSeenCount: item?.notSeenCount ?? 0,
         };
 
         if (isDirect && otherMember) {

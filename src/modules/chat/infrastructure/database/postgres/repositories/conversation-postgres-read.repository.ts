@@ -124,7 +124,9 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
               { userId },
             )
             .where('m.conversation_id = cm.conversation_id')
-            .andWhere('m.id > cm.last_seen_message_id'),
+            .andWhere(
+              '(cm.last_seen_message_id IS NULL OR m.id > cm.last_seen_message_id)',
+            ),
         'notSeenCount',
       )
       .getRawMany();
