@@ -62,7 +62,8 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
         'cm',
         'cm.user_id = :userId',
         { userId },
-      );
+      )
+      .leftJoinAndSelect('cm.lastSeenMessage', 'lastSeenMessage');
 
     if (options.withLastMessage) {
       query
@@ -123,7 +124,9 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
               { userId },
             )
             .where('m.conversation_id = cm.conversation_id')
-            .andWhere('m.id > cm.last_seen_message_id'),
+            .andWhere(
+              '(cm.last_seen_message_id IS NULL OR m.id > cm.last_seen_message_id)',
+            ),
         'notSeenCount',
       )
       .getRawMany();
@@ -166,6 +169,11 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
           id: cm.id,
           userId: cm.user_id,
           lastSeenMessageId: cm.last_seen_message_id,
+          lastSeenMessage: cm.lastSeenMessage
+            ? {
+                createdAt: cm.lastSeenMessage.created_at.toISOString(),
+              }
+            : null,
           lastMessageId: cm.last_message_id,
         })),
       };
@@ -186,6 +194,11 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
           id: m.id,
           userId: m.user_id,
           lastSeenMessageId: m.last_seen_message_id,
+          lastSeenMessage: m.lastSeenMessage
+            ? {
+                createdAt: m.lastSeenMessage.created_at.toISOString(),
+              }
+            : null,
           lastMessageId: m.last_message_id,
         });
       });
@@ -221,6 +234,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
     const res = await this.conversationRepository
       .createQueryBuilder('c')
       .innerJoinAndSelect('c.conversationMembers', 'cm')
+      .leftJoinAndSelect('cm.lastSeenMessage', 'lsm')
       .where('c.id = :conversationId', { conversationId })
       .andWhereExists(
         this.conversationMemberRepository
@@ -248,6 +262,11 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
         id: cm.id,
         userId: cm.user_id,
         lastSeenMessageId: cm.last_seen_message_id,
+        lastSeenMessage: cm.lastSeenMessage
+          ? {
+              createdAt: cm.lastSeenMessage.created_at.toISOString(),
+            }
+          : null,
         lastMessageId: cm.last_message_id,
       })),
     };
