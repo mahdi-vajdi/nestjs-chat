@@ -290,7 +290,7 @@ export class ChatWsGateway
     return {
       meta: conversationList.meta,
       data: conversationList.data.map((item) => {
-        const currentMember = item.members.find((m) => m.userId == authUserId);
+        const currentMember = item.members.find((m) => m.userId === authUserId);
 
         const otherMember = item.members.find((m) => m.userId !== authUserId);
         const isDirect = item.type === ConversationType.DIRECT;
@@ -520,6 +520,7 @@ export class ChatWsGateway
     userIds = Array.from(new Set(userIds));
 
     const users = await this.userIntegrationPort.getUsersByIds(userIds);
+    const usersById = new Map(users.map((user) => [user.id, user]));
 
     const blockedUserIds = await this.userIntegrationPort.getBlockedUsersIds(
       authUserId,
@@ -531,6 +532,8 @@ export class ChatWsGateway
     const otherMember = conversation.members.find(
       (m) => m.userId !== authUserId,
     );
+    const otherUser =
+      isDirect && otherMember ? usersById.get(otherMember.userId) : null;
     const otherLastSeenAt = otherMember?.lastSeenMessage?.createdAt;
 
     const me = conversation.members.find((m) => m.userId === authUserId);
@@ -538,20 +541,11 @@ export class ChatWsGateway
 
     return {
       id: conversation.id,
-      name:
-        conversation.type == ConversationType.DIRECT
-          ? users.find((m) => m.id != authUserId)?.firstName
-          : conversation.title,
-      avatar:
-        conversation.type == ConversationType.DIRECT
-          ? users.find((m) => m.id != authUserId)?.avatar
-          : conversation.title,
-      username:
-        conversation.type == ConversationType.DIRECT
-          ? users.find((m) => m.id != authUserId)?.username
-          : conversation.identifier,
+      name: isDirect ? otherUser?.firstName : conversation.title,
+      avatar: isDirect ? otherUser?.avatar : conversation.picture,
+      username: isDirect ? otherUser?.username : conversation.identifier,
       members: users
-        .filter((user) => user.id != authUserId)
+        .filter((user) => user.id !== authUserId)
         .map((m) => ({
           id: m.id,
           avatar: m.avatar,
@@ -564,10 +558,12 @@ export class ChatWsGateway
         page: messageList.meta.page,
         pageSize: messageList.meta.pageSize,
         list: messageList.data.map((item) => {
-          const user = users.find((u) => u.id == item.senderId);
+          const user = usersById.get(item.senderId);
           let replyTo = null;
           if (item.replyTo) {
-            const replyUser = users.find((u) => u.id == item.replyTo?.senderId);
+            const replyUser = item.replyTo.senderId
+              ? usersById.get(item.replyTo.senderId)
+              : null;
             replyTo = {
               id: item.replyTo.id,
               content: item.replyTo.text,

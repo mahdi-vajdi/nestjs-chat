@@ -594,6 +594,38 @@ describe('ChatWsGateway', () => {
       // Received message: current user last saw at later (>= now), so seen = true
       expect(result.messages.list[1].seen).toBe(true);
     });
+
+    it('should return group conversation title, picture, and identifier for non-direct conversations', async () => {
+      queryBus.execute
+        .mockResolvedValueOnce({
+          id: 'conv-group',
+          type: 'GROUP' as any,
+          title: 'My Group',
+          picture: 'group-pic.png',
+          identifier: 'my-group',
+          members: [{ userId: 'user-1' }, { userId: 'user-2' }],
+        })
+        .mockResolvedValueOnce({
+          meta: { total: 0, page: 1, pageSize: 10 },
+          data: [],
+        });
+
+      userIntegrationPort.getUsersByIds.mockResolvedValue([
+        { id: 'user-1', firstName: 'Me' },
+        { id: 'user-2', firstName: 'Other' },
+      ] as any);
+      userIntegrationPort.getBlockedUsersIds.mockResolvedValue([]);
+
+      const result = await gateway.getConversationMessageList(
+        {} as any,
+        { conversationId: 'conv-group', page: 1, pageSize: 10 },
+        'user-1',
+      );
+
+      expect(result.name).toBe('My Group');
+      expect(result.avatar).toBe('group-pic.png');
+      expect(result.username).toBe('my-group');
+    });
   });
 
   describe('deleteMessage', () => {

@@ -196,6 +196,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
       .createQueryBuilder('cm')
       .leftJoinAndSelect('cm.lastSeenMessage', 'lastSeenMessage')
       .where('cm.conversation_id IN (:...conversationIds)', { conversationIds })
+      .andWhere('cm.user_id != :userId', { userId })
       .getMany();
 
     dtos.forEach((dto) => {
