@@ -212,6 +212,119 @@ describe('ChatWsGateway', () => {
       );
       expect(result.data).toEqual([]);
     });
+
+    it('should compute seen status for own and received messages in direct conversation', async () => {
+      const now = new Date();
+      const earlier = new Date(now.getTime() - 60000);
+      const later = new Date(now.getTime() + 60000);
+
+      queryBus.execute.mockResolvedValue({
+        meta: { total: 2, page: 1, pageSize: 10 },
+        data: [
+          {
+            id: 'conv-seen',
+            type: ConversationType.DIRECT,
+            notSeenCount: 0,
+            members: [
+              {
+                userId: 'user-1',
+                lastSeenMessage: { createdAt: later.toISOString() },
+              },
+              {
+                userId: 'user-2',
+                lastSeenMessage: { createdAt: later.toISOString() },
+              },
+            ],
+            lastMessage: {
+              id: 'msg-seen',
+              senderId: 'user-1',
+              createdAt: now.toISOString(),
+            },
+          },
+          {
+            id: 'conv-unseen',
+            type: ConversationType.DIRECT,
+            notSeenCount: 1,
+            members: [
+              {
+                userId: 'user-1',
+                lastSeenMessage: { createdAt: earlier.toISOString() },
+              },
+              {
+                userId: 'user-2',
+                lastSeenMessage: { createdAt: earlier.toISOString() },
+              },
+            ],
+            lastMessage: {
+              id: 'msg-unseen',
+              senderId: 'user-1',
+              createdAt: now.toISOString(),
+            },
+          },
+        ],
+      });
+
+      userIntegrationPort.getUsersByIds.mockResolvedValue([
+        { id: 'user-1', firstName: 'John', lastName: 'Doe', username: 'john' },
+        {
+          id: 'user-2',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          username: 'jane',
+        },
+      ] as any);
+
+      const result = await gateway.getUserConversationList(
+        { page: 1, pageSize: 10 } as any,
+        'user-1',
+      );
+
+      expect(result.data[0].lastMessage?.seen).toBe(true);
+      expect(result.data[1].lastMessage?.seen).toBe(false);
+    });
+
+    it('should compute seen: false for own message in group conversation', async () => {
+      const now = new Date();
+      const later = new Date(now.getTime() + 60000);
+
+      queryBus.execute.mockResolvedValue({
+        meta: { total: 1, page: 1, pageSize: 10 },
+        data: [
+          {
+            id: 'conv-group',
+            type: 'GROUP' as any,
+            title: 'Group Chat',
+            notSeenCount: 0,
+            members: [
+              {
+                userId: 'user-1',
+                lastSeenMessage: { createdAt: later.toISOString() },
+              },
+              {
+                userId: 'user-2',
+                lastSeenMessage: { createdAt: later.toISOString() },
+              },
+            ],
+            lastMessage: {
+              id: 'msg-group',
+              senderId: 'user-1',
+              createdAt: now.toISOString(),
+            },
+          },
+        ],
+      });
+
+      userIntegrationPort.getUsersByIds.mockResolvedValue([
+        { id: 'user-1', firstName: 'John', lastName: 'Doe', username: 'john' },
+      ] as any);
+
+      const result = await gateway.getUserConversationList(
+        { page: 1, pageSize: 10 } as any,
+        'user-1',
+      );
+
+      expect(result.data[0].lastMessage?.seen).toBe(false);
+    });
   });
 
   describe('createMessage', () => {
@@ -316,6 +429,62 @@ describe('ChatWsGateway', () => {
       );
       expect(result.messages.list[0].id).toBe('msg-1');
       expect(result.members).toHaveLength(1); // excluding authUserId
+    });
+
+    it('should compute seen status correctly for own and received messages', async () => {
+      const now = new Date();
+      const earlier = new Date(now.getTime() - 60000);
+      const later = new Date(now.getTime() + 60000);
+
+      queryBus.execute
+        .mockResolvedValueOnce({
+          id: 'conv-1',
+          type: ConversationType.DIRECT,
+          members: [
+            {
+              userId: 'user-1',
+              lastSeenMessage: { createdAt: later.toISOString() },
+            },
+            {
+              userId: 'user-2',
+              lastSeenMessage: { createdAt: earlier.toISOString() },
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          meta: { total: 2, page: 1, pageSize: 10 },
+          data: [
+            {
+              id: 'msg-own',
+              senderId: 'user-1',
+              text: 'my message',
+              createdAt: now.toISOString(),
+            },
+            {
+              id: 'msg-received',
+              senderId: 'user-2',
+              text: 'their message',
+              createdAt: now.toISOString(),
+            },
+          ],
+        });
+
+      userIntegrationPort.getUsersByIds.mockResolvedValue([
+        { id: 'user-1', firstName: 'Me' },
+        { id: 'user-2', firstName: 'Other' },
+      ] as any);
+      userIntegrationPort.getBlockedUsersIds.mockResolvedValue([]);
+
+      const result = await gateway.getConversationMessageList(
+        {} as any,
+        { conversationId: 'conv-1', page: 1, pageSize: 10 },
+        'user-1',
+      );
+
+      // Own message: other member last saw at earlier (< now), so seen = false
+      expect(result.messages.list[0].seen).toBe(false);
+      // Received message: current user last saw at later (>= now), so seen = true
+      expect(result.messages.list[1].seen).toBe(true);
     });
   });
 

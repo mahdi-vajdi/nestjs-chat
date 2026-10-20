@@ -23,6 +23,7 @@ import {
   GetUserConversationListRequest,
   UserConversationListItem,
 } from '@modules/chat/presentation/ws/dtos/get-user-conversation-list.dto';
+import { ConversationMemberReadDto } from '@modules/chat/application/dtos/conversation-read.dto';
 import { PaginationHelper } from '@common/pagination/pagination.helper';
 import { UserIntegrationPort } from '@modules/chat/application/ports/user-integration.port';
 import { CurrentUserId } from '@common/decorators/current-user-id.decorator';
@@ -240,6 +241,13 @@ export class ChatWsGateway
       }),
     );
 
+    if (conversationList.data.length === 0) {
+      return {
+        meta: conversationList.meta,
+        data: [],
+      };
+    }
+
     const conversationsUserIds = conversationList.data
       .map((c) => c.lastMessage?.senderId)
       .filter((id) => id != null);
@@ -249,12 +257,24 @@ export class ChatWsGateway
     allUsersInvolved.push(...conversationsUserIds);
     const uniqueUserIds = Array.from(new Set(allUsersInvolved)) as string[];
 
-    const users = await this.userIntegrationPort.getUsersByIds(uniqueUserIds);
+    const users =
+      uniqueUserIds.length > 0
+        ? ((await this.userIntegrationPort.getUsersByIds(uniqueUserIds)) ?? [])
+        : [];
     const usersById = new Map(users.map((u) => [u.id, u]));
 
-    const isSeenBy = (member: any, messageCreatedAt: Date) =>
-      !!member?.lastSeenMessage &&
-      messageCreatedAt <= member.lastSeenMessage.createdAt;
+    const isSeenBy = (
+      member: ConversationMemberReadDto | undefined,
+      messageCreatedAt: string | Date,
+    ): boolean => {
+      if (!member?.lastSeenMessage?.createdAt) {
+        return false;
+      }
+      return (
+        new Date(messageCreatedAt).getTime() <=
+        new Date(member.lastSeenMessage.createdAt).getTime()
+      );
+    };
 
     return {
       meta: conversationList.meta,
@@ -390,6 +410,8 @@ export class ChatWsGateway
       users.map((user) => user.id),
     );
 
+    const isDirect = conversation.type === ConversationType.DIRECT;
+
     const otherMember = conversation.members.find(
       (m) => m.userId !== authUserId,
     );
@@ -428,13 +450,21 @@ export class ChatWsGateway
         list: messageList.data.map((item) => {
           const user = users.find((u) => u.id == item.senderId);
           const isOwn = item.senderId === authUserId;
-          const seenAt = isOwn ? otherLastSeenAt : myLastSeenAt;
+          const seenAt = isOwn
+            ? isDirect
+              ? otherLastSeenAt
+              : null
+            : myLastSeenAt;
+
+          const seen =
+            !!seenAt &&
+            new Date(item.createdAt).getTime() <= new Date(seenAt).getTime();
 
           const message = {
             id: item.id,
             content: item.text,
             createdAt: item.createdAt,
-            seen: !!seenAt && item.createdAt <= seenAt,
+            seen,
             user: user
               ? {
                   id: user.id,

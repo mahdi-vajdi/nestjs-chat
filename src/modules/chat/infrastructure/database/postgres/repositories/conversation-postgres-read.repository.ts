@@ -17,6 +17,15 @@ import {
 } from '@common/pagination/pagination.interface';
 import { PaginationHelper } from '@common/pagination/pagination.helper';
 
+function formatDateToIso(
+  date: Date | string | null | undefined,
+): string | null {
+  if (!date) return null;
+  if (typeof date === 'string') return date;
+  if (date instanceof Date) return date.toISOString();
+  return new Date(date).toISOString();
+}
+
 @Injectable()
 export class ConversationPostgresReadRepository implements ConversationReadRepositoryPort {
   constructor(
@@ -151,8 +160,8 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
         identifier: conv.identifier,
         title: conv.title,
         picture: conv.picture,
-        createdAt: conv.created_at.toISOString(),
-        updatedAt: conv.updated_at.toISOString(),
+        createdAt: formatDateToIso(conv.created_at)!,
+        updatedAt: formatDateToIso(conv.updated_at)!,
         notSeenCount: notSeenCountsMap.get(conv.id) || 0,
         lastMessage: currentMember?.lastMessage
           ? {
@@ -162,7 +171,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
               senderId: currentMember.lastMessage.sender
                 ? currentMember.lastMessage.sender.user_id
                 : currentMember.lastMessage.sender_id,
-              createdAt: currentMember.lastMessage.created_at.toISOString(),
+              createdAt: formatDateToIso(currentMember.lastMessage.created_at)!,
             }
           : null,
         members: conv.conversationMembers.map((cm) => ({
@@ -171,7 +180,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
           lastSeenMessageId: cm.last_seen_message_id,
           lastSeenMessage: cm.lastSeenMessage
             ? {
-                createdAt: cm.lastSeenMessage.created_at.toISOString(),
+                createdAt: formatDateToIso(cm.lastSeenMessage.created_at)!,
               }
             : null,
           lastMessageId: cm.last_message_id,
@@ -182,6 +191,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
     // Populate other members for direct conversations manually if needed
     const allMembers = await this.conversationMemberRepository
       .createQueryBuilder('cm')
+      .leftJoinAndSelect('cm.lastSeenMessage', 'lastSeenMessage')
       .where('cm.conversation_id IN (:...conversationIds)', { conversationIds })
       .getMany();
 
@@ -196,7 +206,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
           lastSeenMessageId: m.last_seen_message_id,
           lastSeenMessage: m.lastSeenMessage
             ? {
-                createdAt: m.lastSeenMessage.created_at.toISOString(),
+                createdAt: formatDateToIso(m.lastSeenMessage.created_at)!,
               }
             : null,
           lastMessageId: m.last_message_id,
@@ -254,8 +264,8 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
       identifier: res.identifier,
       title: res.title,
       picture: res.picture,
-      createdAt: res.created_at.toISOString(),
-      updatedAt: res.updated_at.toISOString(),
+      createdAt: formatDateToIso(res.created_at)!,
+      updatedAt: formatDateToIso(res.updated_at)!,
       notSeenCount: 0,
       lastMessage: null,
       members: res.conversationMembers.map((cm) => ({
@@ -264,7 +274,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
         lastSeenMessageId: cm.last_seen_message_id,
         lastSeenMessage: cm.lastSeenMessage
           ? {
-              createdAt: cm.lastSeenMessage.created_at.toISOString(),
+              createdAt: formatDateToIso(cm.lastSeenMessage.created_at)!,
             }
           : null,
         lastMessageId: cm.last_message_id,

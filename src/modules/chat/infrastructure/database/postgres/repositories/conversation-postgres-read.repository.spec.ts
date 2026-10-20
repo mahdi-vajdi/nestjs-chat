@@ -117,8 +117,9 @@ describe('ConversationPostgresReadRepository', () => {
       expect(result.meta.total).toBe(0);
     });
 
-    it('should return mapped conversations', async () => {
+    it('should return mapped conversations with members lastSeenMessage', async () => {
       const convDate = new Date();
+      const lastSeenDate = new Date();
       queryBuilderMock.getManyAndCount.mockResolvedValue([
         [
           {
@@ -126,7 +127,14 @@ describe('ConversationPostgresReadRepository', () => {
             type: ConversationType.DIRECT,
             created_at: convDate,
             updated_at: convDate,
-            conversationMembers: [{ user_id: 'user-1' }],
+            conversationMembers: [
+              {
+                id: 'cm-1',
+                user_id: 'user-1',
+                last_seen_message_id: 'msg-1',
+                lastSeenMessage: { created_at: lastSeenDate },
+              },
+            ],
           },
         ],
         1,
@@ -135,7 +143,13 @@ describe('ConversationPostgresReadRepository', () => {
         { conversationId: 'conv-1', notSeenCount: '1' },
       ]);
       queryBuilderMock.getMany.mockResolvedValue([
-        { conversation_id: 'conv-1', user_id: 'user-2' },
+        {
+          id: 'cm-2',
+          conversation_id: 'conv-1',
+          user_id: 'user-2',
+          last_seen_message_id: 'msg-2',
+          lastSeenMessage: { created_at: lastSeenDate },
+        },
       ]);
 
       const result = await repository.getUserConversationList('user-1', {
@@ -145,6 +159,13 @@ describe('ConversationPostgresReadRepository', () => {
       expect(result.data).toHaveLength(1);
       expect(result.data[0].id).toBe('conv-1');
       expect(result.data[0].notSeenCount).toBe(1);
+      expect(result.data[0].members).toHaveLength(2);
+      expect(result.data[0].members[0].lastSeenMessage?.createdAt).toBe(
+        lastSeenDate.toISOString(),
+      );
+      expect(result.data[0].members[1].lastSeenMessage?.createdAt).toBe(
+        lastSeenDate.toISOString(),
+      );
     });
   });
 
