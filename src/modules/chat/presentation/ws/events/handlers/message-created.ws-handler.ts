@@ -140,6 +140,7 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
           },
           replyToMessageId: event.replyToMessageId ?? null,
           replyTo,
+          clientMessageId: event.clientMessageId ?? null,
         }),
       );
     } catch {

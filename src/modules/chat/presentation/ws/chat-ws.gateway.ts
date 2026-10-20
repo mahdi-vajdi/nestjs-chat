@@ -367,6 +367,7 @@ export class ChatWsGateway
         conversation.id,
         blockStatus.isBlocked ? [targetUser.id] : [],
         data.replyToMessageId,
+        data.clientMessageId,
       ),
     );
 
@@ -412,6 +413,7 @@ export class ChatWsGateway
       content: createMessage.text,
       replyToMessageId: createMessage.replyToMessageId ?? null,
       replyTo,
+      clientMessageId: createMessage.clientMessageId ?? null,
     };
   }
 
@@ -576,6 +578,7 @@ export class ChatWsGateway
               : null,
             replyToMessageId: item.replyToMessageId ?? null,
             replyTo,
+            clientMessageId: item.clientMessageId ?? null,
           };
 
           if (message.user?.id === authUserId) {

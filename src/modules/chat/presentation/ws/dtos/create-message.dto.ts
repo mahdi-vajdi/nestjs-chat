@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  MaxLength,
   MinLength,
 } from 'class-validator';
 
@@ -20,6 +21,12 @@ export class CreateMessageRequest {
   @IsString()
   @IsUUID()
   replyToMessageId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(255)
+  clientMessageId?: string;
 }
 
 export class CreateMessageResponseUser {
@@ -47,4 +54,5 @@ export class CreateMessageResponseResponse {
   createdAt: string;
   user: CreateMessageResponseUser;
   replyTo?: CreateMessageReplyTo | null;
+  clientMessageId?: string | null;
 }

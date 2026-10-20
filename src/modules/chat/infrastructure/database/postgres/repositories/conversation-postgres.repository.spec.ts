@@ -159,6 +159,83 @@ describe('ConversationPostgresRepository', () => {
     });
   });
 
+  describe('getMessageByClientMessageId', () => {
+    it('should return null when message not found by clientMessageId', async () => {
+      repoMock.findOne.mockResolvedValue(null);
+      const result = await repository.getMessageByClientMessageId(
+        'conv-1',
+        'member-1',
+        'client-1',
+      );
+      expect(result).toBeNull();
+    });
+
+    it('should return domain entity when message found by clientMessageId', async () => {
+      const dbMsg = {
+        id: 'msg-1',
+        text: 'hello',
+        type: MessageType.TEXT,
+        sender_id: 'member-1',
+        conversation_id: 'conv-1',
+        created_at: new Date(),
+        updated_at: new Date(),
+        client_message_id: 'client-1',
+      };
+      repoMock.findOne.mockResolvedValue(dbMsg);
+      repoMock.find.mockResolvedValue([]);
+
+      const result = await repository.getMessageByClientMessageId(
+        'conv-1',
+        'member-1',
+        'client-1',
+      );
+
+      expect(result).toBeInstanceOf(MessageEntity);
+      expect(result?.id).toBe('msg-1');
+      expect(result?.clientMessageId).toBe('client-1');
+    });
+  });
+
+  describe('saveMessage with clientMessageId race condition', () => {
+    it('should catch 23505 unique constraint violation and return existing message', async () => {
+      const msg = MessageEntity.create(
+        'hello race',
+        MessageType.TEXT,
+        'member-1',
+        'conv-1',
+        [],
+        null,
+        'client-race-key',
+      );
+
+      const conflictError: any = new Error('duplicate key');
+      conflictError.code = '23505';
+      dataSourceMock.transaction.mockRejectedValue(conflictError);
+
+      const existingMsg = MessageEntity.create(
+        'hello race',
+        MessageType.TEXT,
+        'member-1',
+        'conv-1',
+        [],
+        null,
+        'client-race-key',
+      );
+      jest
+        .spyOn(repository, 'getMessageByClientMessageId')
+        .mockResolvedValue(existingMsg);
+
+      const result = await repository.saveMessage(msg);
+
+      expect(result).toBe(existingMsg);
+      expect(repository.getMessageByClientMessageId).toHaveBeenCalledWith(
+        'conv-1',
+        'member-1',
+        'client-race-key',
+      );
+    });
+  });
+
   describe('deleteConversation', () => {
     it('should delete conversation and return true', async () => {
       queryBuilderMock.execute.mockResolvedValue({ affected: 1 });

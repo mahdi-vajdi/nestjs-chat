@@ -23,6 +23,7 @@ export class UserMessageCreated {
   user: UserMessageCreatedUser;
   replyToMessageId?: string | null;
   replyTo?: UserMessageCreatedReplyTo | null;
+  clientMessageId?: string | null;
 }
 
 export class UserMessageCreatedConversation {

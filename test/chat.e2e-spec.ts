@@ -584,4 +584,143 @@ describe('ChatWsGateway (e2e)', () => {
       },
     );
   });
+
+  it('should send a message with clientMessageId and echo clientMessageId in ack and broadcast', (done) => {
+    const clientKey = 'client-uuid-test-1';
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'First' },
+      (createRes: any) => {
+        const convId = createRes.id;
+
+        clientSocket2.on('conversation.message.sent', (msg) => {
+          if (msg.content === 'First') return;
+          expect(msg.content).toBe('Message with clientMessageId');
+          expect(msg.clientMessageId).toBe(clientKey);
+          done();
+        });
+
+        clientSocket1.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Message with clientMessageId',
+            clientMessageId: clientKey,
+          },
+          (res: any) => {
+            expect(res.content).toBe('Message with clientMessageId');
+            expect(res.clientMessageId).toBe(clientKey);
+          },
+        );
+      },
+    );
+  });
+
+  it('should deduplicate retry sends with identical clientMessageId and suppress duplicate broadcasts', (done) => {
+    const clientKey = 'client-uuid-test-retry';
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'First' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        let recipientBroadcastCount = 0;
+
+        clientSocket2.on('conversation.message.sent', (msg) => {
+          if (msg.content === 'First') return;
+          if (msg.content === 'Idempotent message') {
+            recipientBroadcastCount++;
+          }
+        });
+
+        // 1. Initial send
+        clientSocket1.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Idempotent message',
+            clientMessageId: clientKey,
+          },
+          (firstRes: any) => {
+            expect(firstRes.content).toBe('Idempotent message');
+            expect(firstRes.clientMessageId).toBe(clientKey);
+            const originalMessageId = firstRes.id;
+
+            // 2. Retry send with identical clientMessageId
+            clientSocket1.emit(
+              'conversation.message.send',
+              {
+                conversationId: convId,
+                text: 'Idempotent message',
+                clientMessageId: clientKey,
+              },
+              (secondRes: any) => {
+                // Must return the exact same message id!
+                expect(secondRes.id).toBe(originalMessageId);
+                expect(secondRes.clientMessageId).toBe(clientKey);
+
+                // Wait a brief moment to ensure no duplicate broadcast arrived at clientSocket2
+                setTimeout(() => {
+                  expect(recipientBroadcastCount).toBe(1);
+
+                  // 3. Verify message list only contains 2 messages (First + Idempotent message)
+                  clientSocket1.emit(
+                    'conversation.message.list',
+                    { conversationId: convId, page: 1, pageSize: 15 },
+                    (listRes: any) => {
+                      expect(listRes.messages.list.length).toBe(2);
+                      const idempotentMsg = listRes.messages.list.find(
+                        (m: any) => m.id === originalMessageId,
+                      );
+                      expect(idempotentMsg).toBeDefined();
+                      expect(idempotentMsg.clientMessageId).toBe(clientKey);
+                      done();
+                    },
+                  );
+                }, 100);
+              },
+            );
+          },
+        );
+      },
+    );
+  });
+
+  it('should reject retry with identical clientMessageId if message text is altered', (done) => {
+    const clientKey = 'client-uuid-test-conflict';
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'First' },
+      (createRes: any) => {
+        const convId = createRes.id;
+
+        // 1. Initial send
+        clientSocket1.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Original content',
+            clientMessageId: clientKey,
+          },
+          (firstRes: any) => {
+            expect(firstRes.content).toBe('Original content');
+
+            // 2. Retry with same key but different text
+            clientSocket1.emit(
+              'conversation.message.send',
+              {
+                conversationId: convId,
+                text: 'Tampered different content',
+                clientMessageId: clientKey,
+              },
+              (errRes: any) => {
+                expect(errRes.statusCode).toBe(409);
+                expect(errRes.code).toBe('CHAT_IDEMPOTENCY_CONFLICT');
+                done();
+              },
+            );
+          },
+        );
+      },
+    );
+  });
 });

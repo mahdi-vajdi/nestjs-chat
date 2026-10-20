@@ -73,3 +73,15 @@ export class ChatDomainError extends DomainException {
     super(message, 'CHAT_DOMAIN_ERROR', 'BUSINESS_RULE');
   }
 }
+
+export class IdempotencyConflictException extends DomainException {
+  constructor(reason?: string) {
+    super(
+      reason
+        ? `Idempotency conflict: ${reason}`
+        : 'Idempotency conflict: clientMessageId was previously used with different message content',
+      'CHAT_IDEMPOTENCY_CONFLICT',
+      'CONFLICT',
+    );
+  }
+}

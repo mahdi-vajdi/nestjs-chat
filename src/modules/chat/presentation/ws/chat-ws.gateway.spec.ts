@@ -264,6 +264,46 @@ describe('ChatWsGateway', () => {
       );
       expect(result.id).toBe('msg-1');
       expect(result.content).toBe('hi');
+      expect(result.clientMessageId).toBeNull();
+    });
+
+    it('should create message with clientMessageId and echo it back in the response', async () => {
+      queryBus.execute.mockResolvedValue({
+        id: 'conv-1',
+        members: [{ userId: 'user-1' }, { userId: 'user-2' }],
+      });
+      userIntegrationPort.getUserById.mockResolvedValue({
+        id: 'user-1',
+        firstName: 'J',
+      } as any);
+      userIntegrationPort.getBlockStatus.mockResolvedValue({
+        isBlocker: false,
+        isBlocked: false,
+      });
+      commandBus.execute.mockResolvedValue({
+        id: 'msg-1',
+        createdAt: new Date(),
+        text: 'hi idempotent',
+        clientMessageId: 'client-key-123',
+      });
+
+      const result = await gateway.createMessage(
+        {} as any,
+        {
+          conversationId: 'conv-1',
+          text: 'hi idempotent',
+          clientMessageId: 'client-key-123',
+        },
+        'user-1',
+      );
+      expect(result.id).toBe('msg-1');
+      expect(result.content).toBe('hi idempotent');
+      expect(result.clientMessageId).toBe('client-key-123');
+      expect(commandBus.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          clientMessageId: 'client-key-123',
+        }),
+      );
     });
 
     it('should create message with replyTo and return reply preview', async () => {

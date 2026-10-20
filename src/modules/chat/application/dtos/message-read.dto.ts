@@ -17,4 +17,5 @@ export interface MessageReadDto {
   deletedAt?: string | null;
   replyToMessageId?: string | null;
   replyTo?: QuotedMessageReadDto | null;
+  clientMessageId?: string | null;
 }

@@ -342,6 +342,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
         deletedAt: m.deleted_at ? m.deleted_at.toISOString() : null,
         replyToMessageId: m.reply_to_message_id ?? null,
         replyTo,
+        clientMessageId: m.client_message_id ?? null,
       };
     });
 

@@ -48,6 +48,9 @@ export class Message {
   @Index('messages_reply_to_message_id_idx')
   reply_to_message_id: string | null;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  client_message_id: string | null;
+
   @ManyToOne(() => Message, {
     onDelete: 'SET NULL',
     onUpdate: 'CASCADE',
@@ -96,6 +99,7 @@ export class Message {
     message.deleted_at = entity.deletedAt;
     message.edited_at = entity.editedAt ?? null;
     message.reply_to_message_id = entity.replyToMessageId ?? null;
+    message.client_message_id = entity.clientMessageId ?? null;
 
     return message;
   }
@@ -115,6 +119,7 @@ export class Message {
       message.deleted_at,
       message.edited_at,
       message.reply_to_message_id,
+      message.client_message_id,
     );
 
     if (message.sender) {

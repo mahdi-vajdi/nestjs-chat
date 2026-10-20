@@ -272,4 +272,90 @@ describe('MessageEntity', () => {
       expect(message.replyToMessage).toBe(parentMock);
     });
   });
+
+  describe('idempotent sends (clientMessageId)', () => {
+    it('should create message with clientMessageId and emit MessageCreatedDomainEvent with it', () => {
+      const clientMessageId = 'client-uuid-12345';
+      const message = MessageEntity.create(
+        'Hello idempotency',
+        MessageType.TEXT,
+        memberId,
+        conversationId,
+        [],
+        null,
+        clientMessageId,
+      );
+
+      expect(message.clientMessageId).toBe(clientMessageId);
+
+      const events = message.getUncommittedEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(MessageCreatedDomainEvent);
+      const event = events[0] as MessageCreatedDomainEvent;
+      expect(event.clientMessageId).toBe(clientMessageId);
+    });
+
+    it('should trim clientMessageId when creating message', () => {
+      const message = MessageEntity.create(
+        'Hello idempotency',
+        MessageType.TEXT,
+        memberId,
+        conversationId,
+        [],
+        null,
+        '   trimmed-client-id   ',
+      );
+
+      expect(message.clientMessageId).toBe('trimmed-client-id');
+    });
+
+    it('should throw ChatDomainError if clientMessageId is empty or whitespace', () => {
+      expect(() =>
+        MessageEntity.create(
+          'Hello',
+          MessageType.TEXT,
+          memberId,
+          conversationId,
+          [],
+          null,
+          '   ',
+        ),
+      ).toThrow(ChatDomainError);
+    });
+
+    it('should throw ChatDomainError if clientMessageId exceeds 255 characters', () => {
+      const longId = 'a'.repeat(256);
+      expect(() =>
+        MessageEntity.create(
+          'Hello',
+          MessageType.TEXT,
+          memberId,
+          conversationId,
+          [],
+          null,
+          longId,
+        ),
+      ).toThrow(ChatDomainError);
+    });
+
+    it('should reconstruct message with clientMessageId', () => {
+      const clientMessageId = 'reconstructed-client-id';
+      const message = MessageEntity.reconstruct(
+        'msg-id-1',
+        'Text',
+        MessageType.TEXT,
+        memberId,
+        conversationId,
+        [],
+        new Date(),
+        new Date(),
+        undefined,
+        undefined,
+        null,
+        clientMessageId,
+      );
+
+      expect(message.clientMessageId).toBe(clientMessageId);
+    });
+  });
 });

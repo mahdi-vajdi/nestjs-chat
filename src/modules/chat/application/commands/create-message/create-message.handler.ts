@@ -6,6 +6,7 @@ import { MessageEntity } from '@modules/chat/domain/models/message.entity';
 import {
   ChatDomainError,
   ConversationNotFoundException,
+  IdempotencyConflictException,
   MessageNotFoundException,
   NotMessageOwnerException,
 } from '@modules/chat/domain/chat.exceptions';
@@ -30,6 +31,7 @@ export class CreateMessageHandler implements ICommandHandler<
       conversationId,
       deletedForUserIds,
       replyToMessageId,
+      clientMessageId,
     } = command;
 
     const conversation =
@@ -43,6 +45,26 @@ export class CreateMessageHandler implements ICommandHandler<
       throw new NotMessageOwnerException(
         'User is not a member of the conversation',
       );
+    }
+
+    if (clientMessageId) {
+      const existingMessage =
+        await this.commandRepo.getMessageByClientMessageId(
+          conversationId,
+          member.id,
+          clientMessageId.trim(),
+        );
+
+      if (existingMessage) {
+        if (existingMessage.text !== text) {
+          throw new IdempotencyConflictException();
+        }
+
+        this.logger.log(
+          `Idempotent hit for message ${existingMessage.id} with clientMessageId ${clientMessageId}`,
+        );
+        return existingMessage;
+      }
     }
 
     let replyMessage: MessageEntity | null = null;
@@ -75,6 +97,7 @@ export class CreateMessageHandler implements ICommandHandler<
         conversationId,
         deletedForUserIds,
         replyToMessageId,
+        clientMessageId,
       ),
     );
 

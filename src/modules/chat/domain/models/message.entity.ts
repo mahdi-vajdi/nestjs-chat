@@ -21,6 +21,7 @@ export class MessageEntity extends AggregateRoot<string> {
   private readonly _conversationId: string;
   private readonly _deletedForUserIds: string[];
   private readonly _replyToMessageId?: string | null;
+  private readonly _clientMessageId?: string | null;
   private _deletedAt?: Date;
   private _editedAt?: Date;
 
@@ -61,6 +62,7 @@ export class MessageEntity extends AggregateRoot<string> {
     deletedAt?: Date,
     editedAt?: Date,
     replyToMessageId?: string | null,
+    clientMessageId?: string | null,
   ) {
     super(id, createdAt, updatedAt);
     this._text = text;
@@ -71,6 +73,7 @@ export class MessageEntity extends AggregateRoot<string> {
     this._deletedAt = deletedAt;
     this._editedAt = editedAt;
     this._replyToMessageId = replyToMessageId ?? null;
+    this._clientMessageId = clientMessageId ?? null;
   }
 
   public static create(
@@ -80,11 +83,27 @@ export class MessageEntity extends AggregateRoot<string> {
     conversationId: string,
     deletedForUserIds: string[] = [],
     replyToMessageId?: string | null,
+    clientMessageId?: string | null,
   ): MessageEntity {
     const id = uuidv7();
     if (replyToMessageId && replyToMessageId === id) {
       throw new ChatDomainError('A message cannot reply to itself');
     }
+
+    let validatedClientMessageId: string | null = null;
+    if (clientMessageId !== undefined && clientMessageId !== null) {
+      const trimmed = clientMessageId.trim();
+      if (!trimmed) {
+        throw new ChatDomainError('clientMessageId cannot be empty');
+      }
+      if (trimmed.length > 255) {
+        throw new ChatDomainError(
+          'clientMessageId cannot exceed 255 characters',
+        );
+      }
+      validatedClientMessageId = trimmed;
+    }
+
     const createdAt = new Date();
     const message = new MessageEntity(
       id,
@@ -98,6 +117,7 @@ export class MessageEntity extends AggregateRoot<string> {
       undefined,
       undefined,
       replyToMessageId,
+      validatedClientMessageId,
     );
 
     message.apply(
@@ -109,6 +129,7 @@ export class MessageEntity extends AggregateRoot<string> {
         deletedForUserIds,
         createdAt,
         replyToMessageId,
+        validatedClientMessageId,
       ),
     );
 
@@ -127,6 +148,7 @@ export class MessageEntity extends AggregateRoot<string> {
     deletedAt?: Date,
     editedAt?: Date,
     replyToMessageId?: string | null,
+    clientMessageId?: string | null,
   ): MessageEntity {
     return new MessageEntity(
       id,
@@ -140,6 +162,7 @@ export class MessageEntity extends AggregateRoot<string> {
       deletedAt,
       editedAt,
       replyToMessageId,
+      clientMessageId,
     );
   }
 
@@ -157,6 +180,9 @@ export class MessageEntity extends AggregateRoot<string> {
   }
   public get replyToMessageId(): string | null | undefined {
     return this._replyToMessageId;
+  }
+  public get clientMessageId(): string | null | undefined {
+    return this._clientMessageId;
   }
   public get deletedForUserIds(): string[] {
     return [...this._deletedForUserIds];
