@@ -39,7 +39,7 @@ export class GlobalWsExceptionFilter extends BaseWsExceptionFilter {
 
     if (typeof client.emit === 'function' && pattern) {
       const args = host.getArgs();
-      const callback = args[args.length - 1];
+      const callback = args.find((arg) => typeof arg === 'function');
       if (typeof callback === 'function') {
         callback(response);
       } else {

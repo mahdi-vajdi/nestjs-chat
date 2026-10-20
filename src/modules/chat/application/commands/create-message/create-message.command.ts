@@ -7,5 +7,7 @@ export class CreateMessageCommand {
     public readonly senderId: string,
     public readonly conversationId: string,
     public readonly deletedForUserIds: string[] = [],
+    public readonly replyToMessageId?: string | null,
+    public readonly clientMessageId?: string | null,
   ) {}
 }

@@ -46,8 +46,42 @@ export class ConversationNotFoundException extends DomainException {
   }
 }
 
+export class MessageNotFoundException extends DomainException {
+  constructor(reason?: string) {
+    super(
+      reason ? `Message not found: ${reason}` : 'Message not found',
+      'CHAT_MESSAGE_NOT_FOUND',
+      'NOT_FOUND',
+    );
+  }
+}
+
+export class NotMessageOwnerException extends DomainException {
+  constructor(reason?: string) {
+    super(
+      reason
+        ? `You are not the owner of this message: ${reason}`
+        : 'You are not the owner of this message',
+      'CHAT_NOT_MESSAGE_OWNER',
+      'FORBIDDEN',
+    );
+  }
+}
+
 export class ChatDomainError extends DomainException {
   constructor(message: string) {
     super(message, 'CHAT_DOMAIN_ERROR', 'BUSINESS_RULE');
+  }
+}
+
+export class IdempotencyConflictException extends DomainException {
+  constructor(reason?: string) {
+    super(
+      reason
+        ? `Idempotency conflict: ${reason}`
+        : 'Idempotency conflict: clientMessageId was previously used with different message content',
+      'CHAT_IDEMPOTENCY_CONFLICT',
+      'CONFLICT',
+    );
   }
 }

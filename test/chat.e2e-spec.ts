@@ -229,4 +229,498 @@ describe('ChatWsGateway (e2e)', () => {
       },
     );
   });
+
+  it('should edit a message and broadcast conversation.message.edited', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'Original message' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const msgId = createRes.chat.id;
+
+        clientSocket2.on('conversation.message.edited', (data) => {
+          expect(data.id).toBe(msgId);
+          expect(data.conversationId).toBe(convId);
+          expect(data.content).toBe('Updated message text');
+          expect(data.editedAt).toBeDefined();
+
+          // Verify conversation.message.list includes editedAt
+          clientSocket1.emit(
+            'conversation.message.list',
+            { conversationId: convId, page: 1, pageSize: 10 },
+            (listRes: any) => {
+              expect(listRes.messages.list.length).toBe(1);
+              expect(listRes.messages.list[0].id).toBe(msgId);
+              expect(listRes.messages.list[0].content).toBe(
+                'Updated message text',
+              );
+              expect(listRes.messages.list[0].editedAt).toBeDefined();
+              done();
+            },
+          );
+        });
+
+        clientSocket1.emit(
+          'conversation.message.edit',
+          {
+            conversationId: convId,
+            messageId: msgId,
+            text: 'Updated message text',
+          },
+          (editAck: any) => {
+            expect(editAck.id).toBe(msgId);
+            expect(editAck.content).toBe('Updated message text');
+            expect(editAck.editedAt).toBeDefined();
+          },
+        );
+      },
+    );
+  });
+
+  it('should reject editing a message when user is not the owner', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'User 1 message' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const msgId = createRes.chat.id;
+
+        // User 2 attempts to edit User 1's message
+        clientSocket2.emit(
+          'conversation.message.edit',
+          {
+            conversationId: convId,
+            messageId: msgId,
+            text: 'Malicious update',
+          },
+          (errRes: any) => {
+            expect(errRes.statusCode).toBe(403);
+            expect(errRes.code).toBe('CHAT_NOT_MESSAGE_OWNER');
+            done();
+          },
+        );
+      },
+    );
+  });
+
+  it('should delete a message for me without affecting the recipient', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'Message for me delete test' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const msgId = createRes.chat.id;
+
+        // User 1 listens for deleted sync event on their socket
+        clientSocket1.once('conversation.message.deleted', (data) => {
+          expect(data.id).toBe(msgId);
+          expect(data.conversationId).toBe(convId);
+          expect(data.scope).toBe('ME');
+
+          // Check that User 1 no longer sees the message
+          clientSocket1.emit(
+            'conversation.message.list',
+            { conversationId: convId, page: 1, pageSize: 10 },
+            (list1Res: any) => {
+              expect(
+                list1Res.messages.list.find((m: any) => m.id === msgId),
+              ).toBeUndefined();
+
+              // Check that User 2 STILL sees the message
+              clientSocket2.emit(
+                'conversation.message.list',
+                { conversationId: convId, page: 1, pageSize: 10 },
+                (list2Res: any) => {
+                  const u2Msg = list2Res.messages.list.find(
+                    (m: any) => m.id === msgId,
+                  );
+                  expect(u2Msg).toBeDefined();
+                  expect(u2Msg.content).toBe('Message for me delete test');
+                  done();
+                },
+              );
+            },
+          );
+        });
+
+        // User 1 deletes for ME
+        clientSocket1.emit(
+          'conversation.message.delete',
+          {
+            conversationId: convId,
+            messageId: msgId,
+            scope: 'ME',
+          },
+          (delAck: any) => {
+            expect(delAck.id).toBe(msgId);
+            expect(delAck.scope).toBe('ME');
+          },
+        );
+      },
+    );
+  });
+
+  it('should delete a message for everyone, broadcast event, and tombstone the message', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'Confidential message' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const msgId = createRes.chat.id;
+
+        // Recipient (User 2) listens for deleted event
+        clientSocket2.once('conversation.message.deleted', (data) => {
+          expect(data.id).toBe(msgId);
+          expect(data.conversationId).toBe(convId);
+          expect(data.scope).toBe('EVERYONE');
+          expect(data.deletedAt).toBeDefined();
+
+          // User 2 fetches message list: text must be masked (null) and deletedAt set
+          clientSocket2.emit(
+            'conversation.message.list',
+            { conversationId: convId, page: 1, pageSize: 10 },
+            (listRes: any) => {
+              const msg = listRes.messages.list.find(
+                (m: any) => m.id === msgId,
+              );
+              expect(msg).toBeDefined();
+              expect(msg.content).toBeNull(); // Text is masked at read boundary!
+              expect(msg.deletedAt).toBeDefined();
+              done();
+            },
+          );
+        });
+
+        // User 1 deletes for EVERYONE
+        clientSocket1.emit(
+          'conversation.message.delete',
+          {
+            conversationId: convId,
+            messageId: msgId,
+            scope: 'EVERYONE',
+          },
+          (delAck: any) => {
+            expect(delAck.id).toBe(msgId);
+            expect(delAck.scope).toBe('EVERYONE');
+          },
+        );
+      },
+    );
+  });
+
+  it('should reject deleting a message for everyone when user is not the owner', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'User 1 message' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const msgId = createRes.chat.id;
+
+        // User 2 attempts to delete User 1's message for everyone
+        clientSocket2.emit(
+          'conversation.message.delete',
+          {
+            conversationId: convId,
+            messageId: msgId,
+            scope: 'EVERYONE',
+          },
+          (errRes: any) => {
+            expect(errRes.statusCode).toBe(403);
+            expect(errRes.code).toBe('CHAT_NOT_MESSAGE_OWNER');
+            done();
+          },
+        );
+      },
+    );
+  });
+
+  it('should send a reply to a message and broadcast with quoted preview', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'First question' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const parentMsgId = createRes.chat.id;
+
+        // User 1 listens for the reply from User 2
+        clientSocket1.on('conversation.message.sent', (msg) => {
+          if (msg.content === 'First question') return;
+          expect(msg.content).toBe('Here is my reply');
+          expect(msg.replyToMessageId).toBe(parentMsgId);
+          expect(msg.replyTo).toBeDefined();
+          expect(msg.replyTo.id).toBe(parentMsgId);
+          expect(msg.replyTo.content).toBe('First question');
+          expect(msg.replyTo.user.name).toBe('U 1');
+          done();
+        });
+
+        // User 2 sends reply
+        clientSocket2.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Here is my reply',
+            replyToMessageId: parentMsgId,
+          },
+          (res: any) => {
+            expect(res.content).toBe('Here is my reply');
+            expect(res.replyToMessageId).toBe(parentMsgId);
+            expect(res.replyTo).toBeDefined();
+            expect(res.replyTo.content).toBe('First question');
+          },
+        );
+      },
+    );
+  });
+
+  it('should list messages in conversation with replyTo preview', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'First question' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const parentMsgId = createRes.chat.id;
+
+        clientSocket2.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Replying now',
+            replyToMessageId: parentMsgId,
+          },
+          () => {
+            clientSocket1.emit(
+              'conversation.message.list',
+              { conversationId: convId, page: 1, pageSize: 15 },
+              (res: any) => {
+                expect(res.messages.list.length).toBe(2);
+                const replyMsg = res.messages.list.find(
+                  (m: any) => m.content === 'Replying now',
+                );
+                expect(replyMsg).toBeDefined();
+                expect(replyMsg.replyToMessageId).toBe(parentMsgId);
+                expect(replyMsg.replyTo).toBeDefined();
+                expect(replyMsg.replyTo.id).toBe(parentMsgId);
+                expect(replyMsg.replyTo.content).toBe('First question');
+                expect(replyMsg.replyTo.user.name).toBe('U');
+                done();
+              },
+            );
+          },
+        );
+      },
+    );
+  });
+
+  it('should dynamically mask quoted content when parent message is deleted for everyone', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'Sensitive parent message' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const parentMsgId = createRes.chat.id;
+
+        clientSocket2.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Reply to sensitive',
+            replyToMessageId: parentMsgId,
+          },
+          () => {
+            // User 1 deletes the parent message for everyone
+            clientSocket1.emit(
+              'conversation.message.delete',
+              {
+                conversationId: convId,
+                messageId: parentMsgId,
+                scope: 'EVERYONE',
+              },
+              () => {
+                // Fetch list - parent message text is masked, and quote preview in child message is also masked!
+                clientSocket2.emit(
+                  'conversation.message.list',
+                  { conversationId: convId, page: 1, pageSize: 15 },
+                  (res: any) => {
+                    const replyMsg = res.messages.list.find(
+                      (m: any) => m.content === 'Reply to sensitive',
+                    );
+                    expect(replyMsg).toBeDefined();
+                    expect(replyMsg.replyToMessageId).toBe(parentMsgId);
+                    expect(replyMsg.replyTo).toBeDefined();
+                    expect(replyMsg.replyTo.content).toBeNull(); // Masked at read boundary!
+                    done();
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  });
+
+  it('should reject reply when replyToMessageId does not exist', (done) => {
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'Initial message' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        const fakeMessageId = '00000000-0000-0000-0000-000000000000';
+
+        clientSocket2.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Reply to phantom',
+            replyToMessageId: fakeMessageId,
+          },
+          (errRes: any) => {
+            expect(errRes.statusCode).toBe(404);
+            expect(errRes.code).toBe('CHAT_MESSAGE_NOT_FOUND');
+            done();
+          },
+        );
+      },
+    );
+  });
+
+  it('should send a message with clientMessageId and echo clientMessageId in ack and broadcast', (done) => {
+    const clientKey = 'client-uuid-test-1';
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'First' },
+      (createRes: any) => {
+        const convId = createRes.id;
+
+        clientSocket2.on('conversation.message.sent', (msg) => {
+          if (msg.content === 'First') return;
+          expect(msg.content).toBe('Message with clientMessageId');
+          expect(msg.clientMessageId).toBe(clientKey);
+          done();
+        });
+
+        clientSocket1.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Message with clientMessageId',
+            clientMessageId: clientKey,
+          },
+          (res: any) => {
+            expect(res.content).toBe('Message with clientMessageId');
+            expect(res.clientMessageId).toBe(clientKey);
+          },
+        );
+      },
+    );
+  });
+
+  it('should deduplicate retry sends with identical clientMessageId and suppress duplicate broadcasts', (done) => {
+    const clientKey = 'client-uuid-test-retry';
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'First' },
+      (createRes: any) => {
+        const convId = createRes.id;
+        let recipientBroadcastCount = 0;
+
+        clientSocket2.on('conversation.message.sent', (msg) => {
+          if (msg.content === 'First') return;
+          if (msg.content === 'Idempotent message') {
+            recipientBroadcastCount++;
+          }
+        });
+
+        // 1. Initial send
+        clientSocket1.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Idempotent message',
+            clientMessageId: clientKey,
+          },
+          (firstRes: any) => {
+            expect(firstRes.content).toBe('Idempotent message');
+            expect(firstRes.clientMessageId).toBe(clientKey);
+            const originalMessageId = firstRes.id;
+
+            // 2. Retry send with identical clientMessageId
+            clientSocket1.emit(
+              'conversation.message.send',
+              {
+                conversationId: convId,
+                text: 'Idempotent message',
+                clientMessageId: clientKey,
+              },
+              (secondRes: any) => {
+                // Must return the exact same message id!
+                expect(secondRes.id).toBe(originalMessageId);
+                expect(secondRes.clientMessageId).toBe(clientKey);
+
+                // Wait a brief moment to ensure no duplicate broadcast arrived at clientSocket2
+                setTimeout(() => {
+                  expect(recipientBroadcastCount).toBe(1);
+
+                  // 3. Verify message list only contains 2 messages (First + Idempotent message)
+                  clientSocket1.emit(
+                    'conversation.message.list',
+                    { conversationId: convId, page: 1, pageSize: 15 },
+                    (listRes: any) => {
+                      expect(listRes.messages.list.length).toBe(2);
+                      const idempotentMsg = listRes.messages.list.find(
+                        (m: any) => m.id === originalMessageId,
+                      );
+                      expect(idempotentMsg).toBeDefined();
+                      expect(idempotentMsg.clientMessageId).toBe(clientKey);
+                      done();
+                    },
+                  );
+                }, 100);
+              },
+            );
+          },
+        );
+      },
+    );
+  });
+
+  it('should reject retry with identical clientMessageId if message text is altered', (done) => {
+    const clientKey = 'client-uuid-test-conflict';
+    clientSocket1.emit(
+      'conversation.create',
+      { targetUserId: user2Id, content: 'First' },
+      (createRes: any) => {
+        const convId = createRes.id;
+
+        // 1. Initial send
+        clientSocket1.emit(
+          'conversation.message.send',
+          {
+            conversationId: convId,
+            text: 'Original content',
+            clientMessageId: clientKey,
+          },
+          (firstRes: any) => {
+            expect(firstRes.content).toBe('Original content');
+
+            // 2. Retry with same key but different text
+            clientSocket1.emit(
+              'conversation.message.send',
+              {
+                conversationId: convId,
+                text: 'Tampered different content',
+                clientMessageId: clientKey,
+              },
+              (errRes: any) => {
+                expect(errRes.statusCode).toBe(409);
+                expect(errRes.code).toBe('CHAT_IDEMPOTENCY_CONFLICT');
+                done();
+              },
+            );
+          },
+        );
+      },
+    );
+  });
 });

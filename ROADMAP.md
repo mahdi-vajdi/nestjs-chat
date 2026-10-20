@@ -54,11 +54,14 @@ Known issues in the current code that should be fixed before building new featur
 ## Phase 1: Core messaging (P1)
 
 ### Message lifecycle
-- [ ] **Edit message** with `message.edited` event, `edited_at` field 📋
-- [ ] **Delete message**: "delete for me" and "delete for everyone" with a `message.deleted` event 📋
-  (The `deleted_messages` table exists today but is only used internally for block-shadowing.)
-- [ ] **Replies / quoted messages** (`reply_to_message_id`) 📋
-- [ ] **Idempotent sends** via client-generated `clientMessageId` to prevent duplicates on retry 📋
+- [x] **Edit message** with `conversation.message.edited` event, `edited_at` field
+  Implemented text message editing: domain invariants in `MessageEntity.edit()`, `MessageEditedDomainEvent`, isolated `updateMessage` repository method, `edited_at` DB migration, WebSocket `conversation.message.edit` handler, and real-time broadcast with multi-device sync and blocked-user isolation.
+- [x] **Delete message**: "delete for me" and "delete for everyone" with a `conversation.message.deleted` event
+  Implemented message deletion with two scopes: "delete for me" (persisted via `deleted_messages`, syncs to actor's devices) and "delete for everyone" (sender-only, tombstones message with `deleted_at`, masks text at read boundary while retaining in DB for analysis). Automatically recomputes `last_message_id` on conversation members and excludes deleted messages from unread counts.
+- [x] **Replies / quoted messages** (`reply_to_message_id`)
+  Implemented referential replies and dynamic quoted messages: domain invariants preventing self-replies and enforcing same-conversation boundaries in `MessageEntity.create()`, indexed foreign key forward migration with `ON DELETE SET NULL`, dynamic projection in `ConversationPostgresReadRepository` with real-time deletion masking, WebSocket acknowledgments and `conversation.message.sent` broadcasts embedding author and content previews, and comprehensive unit and e2e test suites.
+- [x] **Idempotent sends** via client-generated `clientMessageId` to prevent duplicates on retry
+  Implemented idempotent message sending: client-generated `clientMessageId` with domain invariants in `MessageEntity`, partial unique index on `(conversation_id, sender_id, client_message_id)` in forward DB migration, deduplication and payload conflict protection (`IdempotencyConflictException`) in `CreateMessageHandler`, race-condition recovery in `ConversationPostgresRepository`, projection in `ConversationPostgresReadRepository`, and correlation via WebSocket acknowledgments and `conversation.message.sent` broadcasts.
 
 ### Delivery and receipts
 - [ ] **Delivery states**: `SENT` → `DELIVERED` → `READ` (today there is only a boolean `seen`) 📋

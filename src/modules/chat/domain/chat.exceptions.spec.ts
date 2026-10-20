@@ -3,6 +3,7 @@ import {
   ChatDomainError,
   ConversationAlreadyExistsException,
   ConversationNotFoundException,
+  IdempotencyConflictException,
   TargetUserNotFoundException,
 } from './chat.exceptions';
 
@@ -12,6 +13,18 @@ describe('ChatExceptions', () => {
     expect(ex.message).toBe('message');
     expect(ex.code).toBe('CHAT_DOMAIN_ERROR');
     expect(ex.type).toBe('BUSINESS_RULE');
+  });
+
+  it('should instantiate IdempotencyConflictException correctly', () => {
+    const ex = new IdempotencyConflictException();
+    expect(ex.message).toBe(
+      'Idempotency conflict: clientMessageId was previously used with different message content',
+    );
+    expect(ex.code).toBe('CHAT_IDEMPOTENCY_CONFLICT');
+    expect(ex.type).toBe('CONFLICT');
+
+    const customEx = new IdempotencyConflictException('custom reason');
+    expect(customEx.message).toBe('Idempotency conflict: custom reason');
   });
 
   it('should instantiate ConversationNotFoundException correctly', () => {

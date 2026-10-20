@@ -18,14 +18,25 @@ describe('ConversationPostgresRepository', () => {
   beforeEach(async () => {
     queryBuilderMock = {
       where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getOne: jest.fn(),
       getMany: jest.fn(),
       softDelete: jest.fn().mockReturnThis(),
       from: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      into: jest.fn().mockReturnThis(),
+      values: jest.fn().mockReturnThis(),
+      orIgnore: jest.fn().mockReturnThis(),
+      setParameter: jest.fn().mockReturnThis(),
+      getQuery: jest.fn().mockReturnValue(''),
       execute: jest.fn(),
     };
 
     repoMock = {
       findOne: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue({}),
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilderMock),
     };
 
@@ -121,6 +132,109 @@ describe('ConversationPostgresRepository', () => {
       expect(entityManagerMock.save).toHaveBeenCalled();
       expect(result).toBeInstanceOf(MessageEntity);
       expect(result.id).toBe(msg.id);
+    });
+  });
+
+  describe('saveMessageDeletion', () => {
+    it('should save deletion relations, update message and recompute members last_message_id', async () => {
+      const msg = MessageEntity.create(
+        'hello',
+        MessageType.TEXT,
+        'user-1',
+        'conv-1',
+      );
+      msg.deleteForUser('user-1');
+
+      repoMock.find.mockResolvedValue([
+        { id: 'member-1', user_id: 'user-1', last_message_id: msg.id },
+      ]);
+      queryBuilderMock.getOne.mockResolvedValue({ id: 'msg-prev' });
+
+      jest.spyOn(repository, 'getMessageById').mockResolvedValue(msg);
+
+      const result = await repository.saveMessageDeletion(msg);
+
+      expect(queryBuilderMock.insert).toHaveBeenCalled();
+      expect(repoMock.update).toHaveBeenCalled();
+      expect(entityManagerMock.save).toHaveBeenCalled();
+      expect(result).toBe(msg);
+    });
+  });
+
+  describe('getMessageByClientMessageId', () => {
+    it('should return null when message not found by clientMessageId', async () => {
+      repoMock.findOne.mockResolvedValue(null);
+      const result = await repository.getMessageByClientMessageId(
+        'conv-1',
+        'member-1',
+        'client-1',
+      );
+      expect(result).toBeNull();
+    });
+
+    it('should return domain entity when message found by clientMessageId', async () => {
+      const dbMsg = {
+        id: 'msg-1',
+        text: 'hello',
+        type: MessageType.TEXT,
+        sender_id: 'member-1',
+        conversation_id: 'conv-1',
+        created_at: new Date(),
+        updated_at: new Date(),
+        client_message_id: 'client-1',
+      };
+      repoMock.findOne.mockResolvedValue(dbMsg);
+      repoMock.find.mockResolvedValue([]);
+
+      const result = await repository.getMessageByClientMessageId(
+        'conv-1',
+        'member-1',
+        'client-1',
+      );
+
+      expect(result).toBeInstanceOf(MessageEntity);
+      expect(result?.id).toBe('msg-1');
+      expect(result?.clientMessageId).toBe('client-1');
+    });
+  });
+
+  describe('saveMessage with clientMessageId race condition', () => {
+    it('should catch 23505 unique constraint violation and return existing message', async () => {
+      const msg = MessageEntity.create(
+        'hello race',
+        MessageType.TEXT,
+        'member-1',
+        'conv-1',
+        [],
+        null,
+        'client-race-key',
+      );
+
+      const conflictError: any = new Error('duplicate key');
+      conflictError.code = '23505';
+      dataSourceMock.transaction.mockRejectedValue(conflictError);
+
+      const existingMsg = MessageEntity.create(
+        'hello race',
+        MessageType.TEXT,
+        'member-1',
+        'conv-1',
+        [],
+        null,
+        'client-race-key',
+      );
+      jest
+        .spyOn(repository, 'getMessageByClientMessageId')
+        .mockResolvedValue(existingMsg);
+
+      const result = await repository.saveMessage(msg);
+
+      expect(result).toBe(existingMsg);
+      expect(repository.getMessageByClientMessageId).toHaveBeenCalledWith(
+        'conv-1',
+        'member-1',
+        'client-race-key',
+      );
     });
   });
 

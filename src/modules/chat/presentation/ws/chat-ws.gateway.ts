@@ -34,6 +34,17 @@ import { BaseWsGateway } from '@common/websocket/base-ws.gateway';
 import { ConversationCreatedEvent } from '@modules/chat/presentation/ws/events/conversation-created.event';
 import { CreateMessageRequest } from '@modules/chat/presentation/ws/dtos/create-message.dto';
 import { MarkConversationAsReadCommand } from '@modules/chat/application/commands/mark-conversation-as-read/mark-conversation-as-read.command';
+import { EditMessageCommand } from '@modules/chat/application/commands/edit-message/edit-message.command';
+import { DeleteMessageCommand } from '@modules/chat/application/commands/delete-message/delete-message.command';
+import {
+  EditMessageRequest,
+  EditMessageResponse,
+} from '@modules/chat/presentation/ws/dtos/edit-message.dto';
+import {
+  DeleteMessageRequest,
+  DeleteMessageResponse,
+} from '@modules/chat/presentation/ws/dtos/delete-message.dto';
+import { MessageEntity } from '@modules/chat/domain/models/message.entity';
 import { GetConversationMessageListRequest } from '@modules/chat/presentation/ws/dtos/get-conversation-message-list.dto';
 import { MessageSeenEvent } from '@modules/chat/presentation/ws/events/message-seen.event';
 import { MarkMessageSeenRequest } from '@modules/chat/presentation/ws/dtos/mark-message-seen.dto';
@@ -279,7 +290,7 @@ export class ChatWsGateway
     return {
       meta: conversationList.meta,
       data: conversationList.data.map((item) => {
-        const currentMember = item.members.find((m) => m.userId == authUserId);
+        const currentMember = item.members.find((m) => m.userId === authUserId);
 
         const otherMember = item.members.find((m) => m.userId !== authUserId);
         const isDirect = item.type === ConversationType.DIRECT;
@@ -364,8 +375,41 @@ export class ChatWsGateway
         authUserId,
         conversation.id,
         blockStatus.isBlocked ? [targetUser.id] : [],
+        data.replyToMessageId,
+        data.clientMessageId,
       ),
     );
+
+    let replyTo = null;
+    if (createMessage.replyToMessageId && createMessage.replyToMessage) {
+      const parentMsg = createMessage.replyToMessage;
+      const parentMember = conversation.members.find(
+        (m) => m.id === parentMsg.senderId,
+      );
+      const parentUserId = parentMember ? parentMember.userId : null;
+      let parentUser = null;
+      if (parentUserId) {
+        parentUser =
+          parentUserId === currentUser.id
+            ? currentUser
+            : parentUserId === targetUser.id
+              ? targetUser
+              : await this.userIntegrationPort.getUserById(parentUserId);
+      }
+
+      replyTo = {
+        id: parentMsg.id,
+        content: parentMsg.deletedAt ? null : parentMsg.text,
+        createdAt: parentMsg.createdAt.toISOString(),
+        senderId: parentUserId || parentMsg.senderId,
+        user: parentUser
+          ? {
+              id: parentUser.id,
+              name: `${parentUser.firstName} ${parentUser.lastName}`,
+            }
+          : null,
+      };
+    }
 
     return {
       id: createMessage.id,
@@ -376,6 +420,73 @@ export class ChatWsGateway
         name: `${currentUser.firstName} ${currentUser.lastName}`,
       },
       content: createMessage.text,
+      replyToMessageId: createMessage.replyToMessageId ?? null,
+      replyTo,
+      clientMessageId: createMessage.clientMessageId ?? null,
+    };
+  }
+
+  @SubscribeMessage('conversation.message.edit')
+  async editMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: EditMessageRequest,
+    @CurrentUserId() authUserId: string,
+  ): Promise<EditMessageResponse> {
+    const conversation = await this.queryBus.execute(
+      new GetUserConversationQuery(data.conversationId, authUserId),
+    );
+
+    const isMember = conversation.members.some((m) => m.userId === authUserId);
+    if (!isMember) {
+      throw new WsException('Conversation not found or access denied');
+    }
+
+    const editedMessage: MessageEntity = await this.commandBus.execute(
+      new EditMessageCommand(
+        data.messageId,
+        data.conversationId,
+        authUserId,
+        data.text,
+      ),
+    );
+
+    return {
+      id: editedMessage.id,
+      content: editedMessage.text,
+      editedAt: (
+        editedMessage.editedAt || editedMessage.updatedAt
+      ).toISOString(),
+    };
+  }
+
+  @SubscribeMessage('conversation.message.delete')
+  async deleteMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: DeleteMessageRequest,
+    @CurrentUserId() authUserId: string,
+  ): Promise<DeleteMessageResponse> {
+    const conversation = await this.queryBus.execute(
+      new GetUserConversationQuery(data.conversationId, authUserId),
+    );
+
+    const isMember = conversation.members.some((m) => m.userId === authUserId);
+    if (!isMember) {
+      throw new WsException('Conversation not found or access denied');
+    }
+
+    const deletedMessage: MessageEntity = await this.commandBus.execute(
+      new DeleteMessageCommand(
+        data.messageId,
+        data.conversationId,
+        authUserId,
+        data.scope,
+      ),
+    );
+
+    return {
+      id: deletedMessage.id,
+      conversationId: data.conversationId,
+      scope: data.scope,
     };
   }
 
@@ -401,9 +512,15 @@ export class ChatWsGateway
 
     let userIds = messageList.data.map((message) => message.senderId);
     userIds.push(...conversation.members.map((member) => member.userId));
+    for (const msg of messageList.data) {
+      if (msg.replyTo?.senderId) {
+        userIds.push(msg.replyTo.senderId);
+      }
+    }
     userIds = Array.from(new Set(userIds));
 
     const users = await this.userIntegrationPort.getUsersByIds(userIds);
+    const usersById = new Map(users.map((user) => [user.id, user]));
 
     const blockedUserIds = await this.userIntegrationPort.getBlockedUsersIds(
       authUserId,
@@ -415,6 +532,8 @@ export class ChatWsGateway
     const otherMember = conversation.members.find(
       (m) => m.userId !== authUserId,
     );
+    const otherUser =
+      isDirect && otherMember ? usersById.get(otherMember.userId) : null;
     const otherLastSeenAt = otherMember?.lastSeenMessage?.createdAt;
 
     const me = conversation.members.find((m) => m.userId === authUserId);
@@ -422,20 +541,11 @@ export class ChatWsGateway
 
     return {
       id: conversation.id,
-      name:
-        conversation.type == ConversationType.DIRECT
-          ? users.find((m) => m.id != authUserId)?.firstName
-          : conversation.title,
-      avatar:
-        conversation.type == ConversationType.DIRECT
-          ? users.find((m) => m.id != authUserId)?.avatar
-          : conversation.title,
-      username:
-        conversation.type == ConversationType.DIRECT
-          ? users.find((m) => m.id != authUserId)?.username
-          : conversation.identifier,
+      name: isDirect ? otherUser?.firstName : conversation.title,
+      avatar: isDirect ? otherUser?.avatar : conversation.picture,
+      username: isDirect ? otherUser?.username : conversation.identifier,
       members: users
-        .filter((user) => user.id != authUserId)
+        .filter((user) => user.id !== authUserId)
         .map((m) => ({
           id: m.id,
           avatar: m.avatar,
@@ -448,7 +558,26 @@ export class ChatWsGateway
         page: messageList.meta.page,
         pageSize: messageList.meta.pageSize,
         list: messageList.data.map((item) => {
-          const user = users.find((u) => u.id == item.senderId);
+          const user = usersById.get(item.senderId);
+          let replyTo = null;
+          if (item.replyTo) {
+            const replyUser = item.replyTo.senderId
+              ? usersById.get(item.replyTo.senderId)
+              : null;
+            replyTo = {
+              id: item.replyTo.id,
+              content: item.replyTo.text,
+              createdAt: item.replyTo.createdAt,
+              senderId: item.replyTo.senderId,
+              user: replyUser
+                ? {
+                    id: replyUser.id,
+                    name: replyUser.firstName,
+                  }
+                : null,
+            };
+          }
+
           const isOwn = item.senderId === authUserId;
           const seenAt = isOwn
             ? isDirect
@@ -462,8 +591,10 @@ export class ChatWsGateway
 
           const message = {
             id: item.id,
-            content: item.text,
+            content: item.deletedAt ? null : item.text,
             createdAt: item.createdAt,
+            editedAt: item.editedAt ?? null,
+            deletedAt: item.deletedAt ?? null,
             seen,
             user: user
               ? {
@@ -471,6 +602,9 @@ export class ChatWsGateway
                   name: user.firstName,
                 }
               : null,
+            replyToMessageId: item.replyToMessageId ?? null,
+            replyTo,
+            clientMessageId: item.clientMessageId ?? null,
           };
 
           return message;

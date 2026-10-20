@@ -2,7 +2,7 @@ import { MessageReadDto } from '@modules/chat/application/dtos/message-read.dto'
 import { ConversationReadDto } from '@modules/chat/application/dtos/conversation-read.dto';
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import { DataSource, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { DatabaseType } from '@infrastructure/database/database-type.enum';
 import { Message } from '@modules/chat/infrastructure/database/postgres/entities/message.entity';
 import { ConversationReadRepositoryPort } from '@modules/chat/application/ports/conversation-read-repository.port';
@@ -133,6 +133,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
               { userId },
             )
             .where('m.conversation_id = cm.conversation_id')
+            .andWhere('m.deleted_at IS NULL')
             .andWhere(
               '(cm.last_seen_message_id IS NULL OR m.id > cm.last_seen_message_id)',
             ),
@@ -166,7 +167,9 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
         lastMessage: currentMember?.lastMessage
           ? {
               id: currentMember.lastMessage.id,
-              text: currentMember.lastMessage.text,
+              text: currentMember.lastMessage.deleted_at
+                ? ''
+                : currentMember.lastMessage.text,
               type: currentMember.lastMessage.type,
               senderId: currentMember.lastMessage.sender
                 ? currentMember.lastMessage.sender.user_id
@@ -193,6 +196,7 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
       .createQueryBuilder('cm')
       .leftJoinAndSelect('cm.lastSeenMessage', 'lastSeenMessage')
       .where('cm.conversation_id IN (:...conversationIds)', { conversationIds })
+      .andWhere('cm.user_id != :userId', { userId })
       .getMany();
 
     dtos.forEach((dto) => {
@@ -289,12 +293,14 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
     userId: string,
     pagination: PaginationOptions,
   ): Promise<PaginatedResult<MessageReadDto>> {
-    const [messages, count] = await this.dataSource.transaction(
-      async (entityManager) => {
-        const queryRes = await entityManager
+    const [messages, count, deletedForMeReplyIds] =
+      await this.dataSource.transaction(async (entityManager) => {
+        const [rows, totalCount] = await entityManager
           .getRepository(Message)
           .createQueryBuilder('m')
           .innerJoinAndSelect('m.sender', 'cm')
+          .leftJoinAndSelect('m.reply_to_message', 'rm')
+          .leftJoinAndSelect('rm.sender', 'rm_sender')
           .where('m.conversation_id = :conversationId', { conversationId })
           .andWhere(() => {
             const sq = entityManager
@@ -312,17 +318,63 @@ export class ConversationPostgresReadRepository implements ConversationReadRepos
           .limit(pagination.limit)
           .getManyAndCount();
 
-        return queryRes;
-      },
-    );
+        const replyIds = rows
+          .map((m) => m.reply_to_message_id)
+          .filter((id): id is string => Boolean(id));
 
-    const dtos: MessageReadDto[] = messages.map((m) => ({
-      id: m.id,
-      text: m.text,
-      type: m.type,
-      senderId: m.sender ? m.sender.user_id : m.sender_id,
-      createdAt: m.created_at.toISOString(),
-    }));
+        const deletedReplySet = new Set<string>();
+        if (replyIds.length > 0) {
+          const deletedReplyMessages = await entityManager
+            .getRepository(DeletedMessage)
+            .find({
+              where: {
+                user_id: userId,
+                message_id: In(replyIds),
+              },
+            });
+          deletedReplyMessages.forEach((dm) =>
+            deletedReplySet.add(dm.message_id),
+          );
+        }
+
+        return [rows, totalCount, deletedReplySet] as const;
+      });
+
+    const dtos: MessageReadDto[] = messages.map((m) => {
+      const rm = m.reply_to_message;
+      let replyTo = null;
+      if (rm) {
+        const isDeletedForEveryone = rm.deleted_at != null;
+        const isDeletedForMe = deletedForMeReplyIds.has(rm.id);
+        const isDeleted = isDeletedForEveryone || isDeletedForMe;
+
+        replyTo = {
+          id: rm.id,
+          text: isDeleted ? null : rm.text,
+          type: rm.type,
+          senderId: rm.sender ? rm.sender.user_id : rm.sender_id,
+          createdAt: rm.created_at.toISOString(),
+          deletedAt: isDeletedForEveryone
+            ? rm.deleted_at!.toISOString()
+            : isDeletedForMe
+              ? new Date().toISOString()
+              : null,
+        };
+      }
+
+      return {
+        id: m.id,
+        text: m.deleted_at ? '' : m.text,
+        type: m.type,
+        senderId: m.sender ? m.sender.user_id : m.sender_id,
+        createdAt: m.created_at.toISOString(),
+        editedAt: m.edited_at ? m.edited_at.toISOString() : null,
+        deletedAt: m.deleted_at ? m.deleted_at.toISOString() : null,
+        replyToMessageId: m.reply_to_message_id ?? null,
+        replyTo,
+        clientMessageId: m.client_message_id ?? null,
+      };
+    });
 
     return PaginationHelper.createResult(dtos, count, pagination);
   }
