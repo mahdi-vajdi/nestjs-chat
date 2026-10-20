@@ -23,6 +23,7 @@ import {
   GetUserConversationListRequest,
   UserConversationListItem,
 } from '@modules/chat/presentation/ws/dtos/get-user-conversation-list.dto';
+import { ConversationMemberReadDto } from '@modules/chat/application/dtos/conversation-read.dto';
 import { PaginationHelper } from '@common/pagination/pagination.helper';
 import { UserIntegrationPort } from '@modules/chat/application/ports/user-integration.port';
 import { CurrentUserId } from '@common/decorators/current-user-id.decorator';
@@ -251,6 +252,13 @@ export class ChatWsGateway
       }),
     );
 
+    if (conversationList.data.length === 0) {
+      return {
+        meta: conversationList.meta,
+        data: [],
+      };
+    }
+
     const conversationsUserIds = conversationList.data
       .map((c) => c.lastMessage?.senderId)
       .filter((id) => id != null);
@@ -260,72 +268,73 @@ export class ChatWsGateway
     allUsersInvolved.push(...conversationsUserIds);
     const uniqueUserIds = Array.from(new Set(allUsersInvolved)) as string[];
 
-    const users = await this.userIntegrationPort.getUsersByIds(uniqueUserIds);
+    const users =
+      uniqueUserIds.length > 0
+        ? ((await this.userIntegrationPort.getUsersByIds(uniqueUserIds)) ?? [])
+        : [];
+    const usersById = new Map(users.map((u) => [u.id, u]));
+
+    const isSeenBy = (
+      member: ConversationMemberReadDto | undefined,
+      messageCreatedAt: string | Date,
+    ): boolean => {
+      if (!member?.lastSeenMessage?.createdAt) {
+        return false;
+      }
+      return (
+        new Date(messageCreatedAt).getTime() <=
+        new Date(member.lastSeenMessage.createdAt).getTime()
+      );
+    };
 
     return {
       meta: conversationList.meta,
       data: conversationList.data.map((item) => {
         const currentMember = item.members.find((m) => m.userId == authUserId);
+
+        const otherMember = item.members.find((m) => m.userId !== authUserId);
+        const isDirect = item.type === ConversationType.DIRECT;
+
         const conversation: UserConversationListItem = {
           id: item.id,
           title: item.title,
           picture: item.picture,
           identifier: item.identifier,
-          lastMessage: item.lastMessage
-            ? {
-                id: item.lastMessage.id,
-                text: item.lastMessage.text,
-                createdAt: item.lastMessage.createdAt,
-                seen: false,
-                user: null,
-              }
-            : null,
-          notSeenCount: currentMember.notSeenCount,
+          lastMessage: null,
+          notSeenCount: item?.notSeenCount ?? 0,
         };
 
-        if (item.type === ConversationType.DIRECT) {
-          const otherMember = item.members.find(
-            (cm) => cm.userId != authUserId,
-          );
-          if (otherMember) {
-            const otherUser = users.find((u) => u.id == otherMember.userId);
-            if (otherUser) {
-              conversation.title = `${otherUser.firstName} ${otherUser.lastName}`;
-              conversation.identifier = otherUser.username;
-              conversation.picture = otherUser.avatar;
-            }
-          }
-
-          if (conversation.lastMessage) {
-            const sender = users.find(
-              (user) => user.id === item.lastMessage.senderId,
-            );
-            if (sender) {
-              conversation.lastMessage.user = {
-                id: sender.id,
-                username: sender.username,
-                name: `${sender.firstName} ${sender.lastName}`,
-              };
-
-              if (sender.id === authUserId) {
-                if (
-                  otherMember?.lastSeenMessage &&
-                  item.lastMessage.createdAt <=
-                    otherMember.lastSeenMessage.createdAt
-                ) {
-                  conversation.lastMessage.seen = true;
-                }
-              } else {
-                if (currentMember?.lastSeenMessage) {
-                  conversation.lastMessage.seen =
-                    item.lastMessage.createdAt <=
-                    currentMember.lastSeenMessage.createdAt;
-                }
-              }
-            }
+        if (isDirect && otherMember) {
+          const otherUser = usersById.get(otherMember.userId);
+          if (otherUser) {
+            conversation.title = `${otherUser.firstName} ${otherUser.lastName}`;
+            conversation.identifier = otherUser.username;
+            conversation.picture = otherUser.avatar;
           }
         }
 
+        if (item.lastMessage) {
+          const sender = usersById.get(item.lastMessage.senderId);
+          const isOwn = item.lastMessage.senderId === authUserId;
+
+          const seen = isOwn
+            ? isDirect && isSeenBy(otherMember, item.lastMessage.createdAt)
+            : isSeenBy(currentMember, item.lastMessage.createdAt);
+
+          conversation.lastMessage = {
+            id: item.lastMessage.id,
+            text: item.lastMessage.text,
+            createdAt: item.lastMessage.createdAt,
+            seen,
+            user: sender
+              ? {
+                  id: sender.id,
+                  username: sender.username,
+                  name: `${sender.firstName} ${sender.lastName}`,
+                }
+              : null,
+          };
+        }
         return conversation;
       }),
     };
@@ -517,6 +526,16 @@ export class ChatWsGateway
       users.map((user) => user.id),
     );
 
+    const isDirect = conversation.type === ConversationType.DIRECT;
+
+    const otherMember = conversation.members.find(
+      (m) => m.userId !== authUserId,
+    );
+    const otherLastSeenAt = otherMember?.lastSeenMessage?.createdAt;
+
+    const me = conversation.members.find((m) => m.userId === authUserId);
+    const myLastSeenAt = me?.lastSeenMessage?.createdAt;
+
     return {
       id: conversation.id,
       name:
@@ -563,13 +582,24 @@ export class ChatWsGateway
             };
           }
 
+          const isOwn = item.senderId === authUserId;
+          const seenAt = isOwn
+            ? isDirect
+              ? otherLastSeenAt
+              : null
+            : myLastSeenAt;
+
+          const seen =
+            !!seenAt &&
+            new Date(item.createdAt).getTime() <= new Date(seenAt).getTime();
+
           const message = {
             id: item.id,
             content: item.deletedAt ? null : item.text,
             createdAt: item.createdAt,
             editedAt: item.editedAt ?? null,
             deletedAt: item.deletedAt ?? null,
-            seen: false,
+            seen,
             user: user
               ? {
                   id: user.id,
@@ -580,18 +610,6 @@ export class ChatWsGateway
             replyTo,
             clientMessageId: item.clientMessageId ?? null,
           };
-
-          if (message.user?.id === authUserId) {
-            const otherMember = conversation.members.find(
-              (m) => m.userId !== authUserId,
-            );
-            if (
-              otherMember?.lastSeenMessage?.createdAt &&
-              item.createdAt <= otherMember.lastSeenMessage.createdAt
-            ) {
-              message.seen = true;
-            }
-          }
 
           return message;
         }),
