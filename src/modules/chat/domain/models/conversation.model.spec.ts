@@ -3,6 +3,7 @@ import { ConversationType } from '../enums/conversation-type.enum';
 import { ConversationMemberEntity } from './conversation-member.model';
 import { MessageEntity } from './message.entity';
 import { MessageType } from '../enums/chat-type.enum';
+import { ChatDomainError } from '../chat.exceptions';
 
 describe('ConversationEntity', () => {
   it('should create direct correctly and add members', () => {
@@ -77,6 +78,22 @@ describe('ConversationEntity', () => {
   it('should mark as read', () => {
     const conv = ConversationEntity.createDirect('u-1', 'u-2');
     conv.markAsRead('u-1', 'msg-1');
+    expect(
+      conv.members.find((m) => m.userId === 'u-1')?.lastSeenMessageId,
+    ).toBe('msg-1');
+  });
+
+  it('should throw ChatDomainError when user is not a member of the conversation', () => {
+    const conv = ConversationEntity.createDirect('u-1', 'u-2');
+    expect(() => conv.markAsRead('u-non-member', 'msg-1')).toThrow(
+      ChatDomainError,
+    );
+  });
+
+  it('should be idempotent and a no-op when message is already marked as read', () => {
+    const conv = ConversationEntity.createDirect('u-1', 'u-2');
+    conv.markAsRead('u-1', 'msg-1');
+    expect(() => conv.markAsRead('u-1', 'msg-1')).not.toThrow();
     expect(
       conv.members.find((m) => m.userId === 'u-1')?.lastSeenMessageId,
     ).toBe('msg-1');
