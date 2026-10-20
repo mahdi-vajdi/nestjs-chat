@@ -384,7 +384,7 @@ export class ChatWsGateway
     if (createMessage.replyToMessageId && createMessage.replyToMessage) {
       const parentMsg = createMessage.replyToMessage;
       const parentMember = conversation.members.find(
-        (m: any) => m.id === parentMsg.senderId,
+        (m) => m.id === parentMsg.senderId,
       );
       const parentUserId = parentMember ? parentMember.userId : null;
       let parentUser = null;

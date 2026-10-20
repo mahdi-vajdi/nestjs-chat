@@ -286,10 +286,4 @@ export class MessageEntity extends AggregateRoot<string> {
       this._deletedForUserIds.push(userId);
     }
   }
-
-  public loadDeletedForUserIds(userIds: string[]): void {
-    for (const userId of userIds) {
-      this.loadDeletedForUserId(userId);
-    }
-  }
 }

@@ -239,13 +239,16 @@ export class ConversationPostgresRepository implements ConversationRepositoryPor
             conversationId: messageEntity.conversationId,
           })
           .andWhere('m.deleted_at IS NULL')
-          .andWhere(
-            `NOT EXISTS (
-              SELECT 1 FROM chat.deleted_messages dm
-              WHERE dm.message_id = m.id AND dm.user_id = :cmUserId
-            )`,
-            { cmUserId: cm.user_id },
-          )
+          .andWhere(() => {
+            const sq = entityManager
+              .getRepository(DeletedMessage)
+              .createQueryBuilder('dm')
+              .where('dm.message_id = m.id AND dm.user_id = :cmUserId')
+              .getQuery();
+
+            return `NOT EXISTS (${sq})`;
+          })
+          .setParameter('cmUserId', cm.user_id)
           .orderBy('m.created_at', 'DESC')
           .getOne();
 

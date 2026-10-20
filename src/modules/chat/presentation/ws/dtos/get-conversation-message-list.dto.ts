@@ -35,6 +35,7 @@ export class UserConversationMessageItem {
   user: UserConversationMessageItemUser;
   replyToMessageId?: string | null;
   replyTo?: UserConversationMessageItemReplyTo | null;
+  clientMessageId?: string | null;
 }
 
 export class UserConversationMessageList {

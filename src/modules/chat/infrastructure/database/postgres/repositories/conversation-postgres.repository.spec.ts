@@ -28,6 +28,8 @@ describe('ConversationPostgresRepository', () => {
       into: jest.fn().mockReturnThis(),
       values: jest.fn().mockReturnThis(),
       orIgnore: jest.fn().mockReturnThis(),
+      setParameter: jest.fn().mockReturnThis(),
+      getQuery: jest.fn().mockReturnValue(''),
       execute: jest.fn(),
     };
 

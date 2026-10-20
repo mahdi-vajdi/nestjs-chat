@@ -9,6 +9,7 @@ import {
   UserMessageCreatedEvent,
 } from '@modules/chat/presentation/ws/events/message-created.event';
 import { ConversationRepositoryPort } from '@modules/chat/application/ports/conversation-repository.port';
+import { ConversationEntity } from '@modules/chat/domain/models/conversation.model';
 
 @EventsHandler(MessageCreatedDomainEvent)
 export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreatedDomainEvent> {
@@ -29,7 +30,7 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
     // Get conversation to find target users
     let conversationDto;
     let senderUserId: string;
-    let convEntity: any;
+    let convEntity: ConversationEntity | null;
 
     try {
       convEntity = await this.commandRepo.getConversationById(
@@ -76,7 +77,7 @@ export class MessageCreatedWsEventHandler implements IEventHandler<MessageCreate
           );
           if (parentMsg) {
             const parentMember = convEntity?.members?.find(
-              (m: any) => m.id === parentMsg.senderId,
+              (m) => m.id === parentMsg.senderId,
             );
             const parentUserId = parentMember ? parentMember.userId : null;
             let parentUser = null;
