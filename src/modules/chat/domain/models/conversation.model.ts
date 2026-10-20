@@ -4,6 +4,7 @@ import { ConversationMemberEntity } from '@modules/chat/domain/models/conversati
 import { v7 as uuidv7 } from 'uuid';
 
 import { AggregateRoot } from '@common/domain/aggregate-root';
+import { ChatDomainError } from '@modules/chat/domain/chat.exceptions';
 
 export class ConversationEntity extends AggregateRoot<string> {
   private readonly _title: string | null;
@@ -136,9 +137,15 @@ export class ConversationEntity extends AggregateRoot<string> {
 
   public markAsRead(userId: string, messageId: string): void {
     const member = this.members.find((m) => m.userId === userId);
-    if (member) {
-      member.updateLastSeenMessage(messageId);
+    if (!member) {
+      throw new ChatDomainError(
+        `User ${userId} is not a member of the conversation`,
+      );
     }
+    if (member.lastSeenMessageId === messageId) {
+      return;
+    }
+    member.updateLastSeenMessage(messageId);
   }
 
   public softDelete(): void {
